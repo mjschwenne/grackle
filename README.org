@@ -2,7 +2,7 @@
 
 Grackle is a project to automate the marshaling and unmarshaling code for [[https://github.com/mit-pdos/grove][grove]].
 
-* Why "Grackle"
+** Why "Grackle"
 
 A [[https://en.wikipedia.org/wiki/Common_grackle][grackle]] is a bird capable of mimicking other birds and even human speech if it
 wants to, and it's also a bird whose name starts with 'g' to complement [[https://github.com/goose-lang/goose][goose]], a
