@@ -15,11 +15,7 @@ func main() {
 	enc := timeStamp.marshal()
 
 	var newTime *TimeStamp
-	var err error
-	newTime, err = UnmarshalTimeStamp(enc)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
+	newTime = UnmarshalTimeStamp(enc)
 
 	fmt.Printf("Struct Time: %02d:%02d:%02d\n", newTime.hour, newTime.minute, newTime.second)
 }

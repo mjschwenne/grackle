@@ -1,8 +1,6 @@
 package main
 
 import (
-	"errors"
-	"fmt"
 	"github.com/goose-lang/primitive"
 )
 
@@ -14,7 +12,7 @@ type TimeStamp struct {
 
 func (t TimeStamp) marshal() []byte {
 	enc := make([]byte, 12)
-	var off uint8 = 0
+	var off uint32 = 0
 	primitive.UInt32Put(enc[off:], t.hour)
 	off += 4
 	primitive.UInt32Put(enc[off:], t.minute)
@@ -24,20 +22,20 @@ func (t TimeStamp) marshal() []byte {
 	return enc
 }
 
-func UnmarshalTimeStamp(enc []byte) (*TimeStamp, error) {
-	var err error = nil
+func UnmarshalTimeStamp(enc []byte) *TimeStamp {
+	// var err error = nil
 	var ts TimeStamp
-	if len(enc) != 12 {
-		err = errors.New(fmt.Sprintf("encoding has incorrect number of bytes (%v), 12 expected.", len(enc)))
-		return nil, err
-	}
+	// if len(enc) != 12 {
+	// 	err = errors.New(fmt.Sprintf("encoding has incorrect number of bytes (%v), 12 expected.", len(enc)))
+	// 	return nil, err
+	// }
 
-	var off uint8
+	var off uint32
 	ts.hour = primitive.UInt32Get(enc[off:])
 	off += 4
 	ts.minute = primitive.UInt32Get(enc[off:])
 	off += 4
 	ts.second = primitive.UInt32Get(enc[off:])
 
-	return &ts, err
+	return &ts //, err
 }

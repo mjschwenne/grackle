@@ -41,7 +41,8 @@ type TimeStamp struct{
 }
 #+end_src
 
-and the struct would have a =marhsal= and =unmarshal= function as well.
+and the struct would have a =marhsal= and an =unmarshal= constructor function would
+be generated as well.
 
 #+begin_src go
 func (t TimeStamp) marshal() []byte {
@@ -88,12 +89,81 @@ Then we can use these structs in the code we're interested in verifying.
 
 #+begin_src go
 func main() {
-    var time = TimeStamp{hour: 11, minute: 59, second: 59}
-    var time_bin []bytes = time.marshal()
-    var new_time TimeStamp
-    new_time.unmarshal(time_bin)
+	hours, minutes, seconds := time.Now().Clock()
+	fmt.Printf("True Time:   %02d:%02d:%02d\n", hours, minutes, seconds)
+	timeStamp := TimeStamp{hour: uint32(hours), minute: uint32(minutes), second: uint32(seconds)}
+	enc := timeStamp.marshal()
+
+	var newTime *TimeStamp
+	newTime = UnmarshalTimeStamp(enc)
+
+	fmt.Printf("Struct Time: %02d:%02d:%02d\n", newTime.hour, newTime.minute, newTime.second)
 }
 #+end_src
+
+* Wire Format
+
+After reviewing the [[https://protobuf.dev/programming-guides/encoding/][encoding documentation]] for protobuf, I now have a much
+better understanding of where the flexibility of protobufs come from. Also, it
+turns out that this is much simpler than I though.
+
+Overall, I like the record structure of a tag containing the field label and
+type of payload. This remove the requirement that each field in the struct /
+message is strictly ordered.
+
+** Remaining Questions
+
+1. How to handle =optional= fields. Both the protobuf implementation and the go
+   programming language have default values for every field, which I believe
+   align. This is probably most useful during the de-serialization process
+   where a field can have the inferred correct value even if it is missing from
+   the encoded message. However, there is really no way to tell the different
+   between a field left as zero (the default go value) or a missing field. It
+   doesn't impact the user experience since the de-serialization process is
+   agnostic towards it but it would effect binary size. At this point, I'm
+   unsure how difficult it would be to implement this. Probably not that
+   difficult.
+
+   Do we care about stripping optional fields with a default value out of the
+   serialized message at this stage or is using a few extra bytes for now
+   acceptable.
+
+2. Merging fields and "Last One Wins". If an encoded message contains the same
+   field multiple times, the last occurrence of the field is what becomes the
+   value. That part should be easy. But for =LEN= fields, we have to track and
+   merge multiple occurrences of the same field. To borrow the [[https://github.com/protocolbuffers/protoscope][protoscope]]
+   language, if we see
+
+   #+begin_src protoscope
+6: {3 270}
+6: {86942}
+   #+end_src
+
+   we should be able to reconstruct this as =6: {3 270 86942}= by merging the two
+   fields. But if field 6 isn't a repeated (packed) field, such as a string,
+   then the older value would just win even though it's a =LEN= field.
+
+3. Negative numbers. It appears that the current [[https://github.com/goose-lang/primitive/blob/main/prims.go][goose primitives]] only support
+   unsigned integers out of the box, although I suppose you could manually
+   calculate the 2's complement encoding and treat that as an unsigned integer.
+   On the other hand, the protobuf specification definitely supports both signed
+   and unsigned integers explicitly. It can do this with both the =s=-prefixed
+   types like =sint64= which use the more space efficient [[https://en.wikipedia.org/wiki/Variable-length_quantity#Zigzag_encoding][zigzag encoding]] as
+   opposed to a =varint= encoding (which will always use the maximum number of
+   bytes since a 2's complement encoding will start with a 1).
+
+   Should we add explicit support negative numbers?
+
+4. Variable length integers. The protobuf =varint='s don't seem to be that
+   complex. Then encode a 64 bit unsigned integer into between 1 and 10 bytes by
+   using the most significant bit to mark if the next byte is also part of the
+   same =varint= followed by 7 bits of payload. The bytes use little-edian order.
+
+   Is this something that we're interested in? We could choose to support only
+   fixed width types (i.e. =fixed64= and =fixed32=) but protobuf uses =varint= as part
+   of the record header, so we will never be compatible with protobuf wire
+   format without some support for variable width integers. Assuming that goose
+   supports go bit-wise operators this format seems doable.
 
 * Meta
 
