@@ -173,7 +173,7 @@
     in
       pkgs.mkShell {
         # create an environment with the required coq libraries
-        packages = [
+        packages = with pkgs; [
           # Coq deps
           coq
           stdpp
@@ -185,8 +185,15 @@
           perennial
 
           # Go deps
-          pkgs.go
+          go
+          gopls
           goose
+
+          # Protobuf deps
+          protobuf
+          protoc-gen-go
+          proto-contrib
+          protoscope
         ];
 
         shellHook = ''
