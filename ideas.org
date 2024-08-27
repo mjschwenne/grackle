@@ -60,23 +60,18 @@ func (t TimeStamp) marshal() []byte {
 #+end_src
 
 #+begin_src go
-func UnmarshalTimeStamp(enc []byte) (*TimeStamp, error) {
+func UnmarshalTimeStamp(enc []byte) *TimeStamp {
 	// unmarshaling code
-	var err error = nil
-	var ts timestamp
-	if len(enc) != 12 {
-		err = errors.new(fmt.sprintf("encoding has incorrect number of bytes (%v), 12 expected.", len(enc)))
-		return nil, err
-	}
+	var ts TimeStamp
 
-	var off uint8
-	ts.hour = primitive.uint32get(enc[off:])
+	var off uint32
+	ts.hour = primitive.UInt32Get(enc[off:])
 	off += 4
-	ts.minute = primitive.uint32get(enc[off:])
+	ts.minute = primitive.UInt32Get(enc[off:])
 	off += 4
-	ts.second = primitive.uint32get(enc[off:])
+	ts.second = primitive.UInt32Get(enc[off:])
 
-	return &ts, err
+	return &ts
 }
 #+end_src
 
