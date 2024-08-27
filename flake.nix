@@ -186,6 +186,7 @@
 
           # Go deps
           pkgs.go
+          pkgs.gopls
           goose
         ];
 

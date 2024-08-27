@@ -28,8 +28,8 @@ func UnmarshalTimeStamp(enc []byte) (*TimeStamp, error) {
 	var err error = nil
 	var ts TimeStamp
 	if len(enc) != 12 {
-		err = errors.New(fmt.Sprintf("Encoding has incorrect number of bytes (%v), 12 expected.", len(enc)))
-		return &ts, err
+		err = errors.New(fmt.Sprintf("encoding has incorrect number of bytes (%v), 12 expected.", len(enc)))
+		return nil, err
 	}
 
 	var off uint8

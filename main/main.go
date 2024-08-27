@@ -10,7 +10,7 @@ func main() {
 	// a new TimeStamp before printing the result.
 
 	hours, minutes, seconds := time.Now().Clock()
-	fmt.Printf("True Time:   %v:%v:%v\n", hours, minutes, seconds)
+	fmt.Printf("True Time:   %02d:%02d:%02d\n", hours, minutes, seconds)
 	timeStamp := TimeStamp{hour: uint32(hours), minute: uint32(minutes), second: uint32(seconds)}
 	enc := timeStamp.marshal()
 
@@ -21,5 +21,5 @@ func main() {
 		fmt.Println(err.Error())
 	}
 
-	fmt.Printf("Struct Time: %v:%v:%v\n", newTime.hour, newTime.minute, newTime.second)
+	fmt.Printf("Struct Time: %02d:%02d:%02d\n", newTime.hour, newTime.minute, newTime.second)
 }

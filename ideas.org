@@ -35,9 +35,9 @@ which contains a struct definition for each message.
 
 #+begin_src go
 type TimeStamp struct{
-    int32 hour
-    int32 minute
-    int32 second
+	hour   uint32
+	minute uint32
+	second uint32
 }
 #+end_src
 
@@ -46,12 +46,36 @@ and the struct would have a =marhsal= and =unmarshal= function as well.
 #+begin_src go
 func (t TimeStamp) marshal() []byte {
     // marhsaling code
+	enc := make([]byte, 12)
+	var off uint8 = 0
+	primitive.UInt32Put(enc[off:], t.hour)
+	off += 4
+	primitive.UInt32Put(enc[off:], t.minute)
+	off += 4
+	primitive.UInt32Put(enc[off:], t.second)
+
+	return enc
 }
 #+end_src
 
 #+begin_src go
-func (t TimeStamp) unmarshal([]byte) {
-   // unmarshaling code
+func UnmarshalTimeStamp(enc []byte) (*TimeStamp, error) {
+	// unmarshaling code
+	var err error = nil
+	var ts timestamp
+	if len(enc) != 12 {
+		err = errors.new(fmt.sprintf("encoding has incorrect number of bytes (%v), 12 expected.", len(enc)))
+		return nil, err
+	}
+
+	var off uint8
+	ts.hour = primitive.uint32get(enc[off:])
+	off += 4
+	ts.minute = primitive.uint32get(enc[off:])
+	off += 4
+	ts.second = primitive.uint32get(enc[off:])
+
+	return &ts, err
 }
 #+end_src
 
