@@ -1,0 +1,76 @@
+#+title: Ideas
+#+author: Matt Schwennesen
+#+date: <2024-08-27 Tue>
+
+The existing marshaling code ([[https://github.com/tchajed/marshal/blob/master/marshal.go][here]]) makes use of the [[https://github.com/goose-lang/primitive/tree/main][goose primitive module]] to
+encode a sequence of data fields into a little endian byte array.
+
+* Workflow
+
+Using this as a template, and some design philosophy from protobuf itself, I
+would expect a workflow like this.
+
+** Protobuf file
+
+We'll start with a protobuf specification (of which only a subset of the proto 3
+language will be supported). That might look like this:
+
+#+begin_src proto3
+syntax = "proto3"
+
+message TimeStamp {
+    int32 hour = 1;
+    int32 minute = 2;
+    int32 second = 3;
+}
+#+end_src
+
+This protobuf spec defines one message with three 32-bit integers. The numbers
+represent tags and are primarily used to ensure backwards and forward
+compatibility. That's not a goal for this project (yet) but we will have to at
+least accommodate their presence in the protobuf definition.
+
+The grackle compiler can parse the =.proto= with [[https://github.com/yoheimuta/go-protoparser][go-protoparser]] and outputs code
+which contains a struct definition for each message.
+
+#+begin_src go
+type TimeStamp struct{
+    int32 hour
+    int32 minute
+    int32 second
+}
+#+end_src
+
+and the struct would have a =marhsal= and =unmarshal= function as well.
+
+#+begin_src go
+func (t TimeStamp) marshal() []byte {
+    // marhsaling code
+}
+#+end_src
+
+#+begin_src go
+func (t TimeStamp) unmarshal([]byte) {
+   // unmarshaling code
+}
+#+end_src
+
+I'm not sure if these struct methods are idiomatic go. Go isn't really
+object-oriented and doesn't really have constructors, so I'm thinking that the
+=unmarshal= function will overwrite the values in the struct it is being called
+on. Create a new, empty =TimeStamp= before calling =unmarshal= to populate it.
+
+Then we can use these structs in the code we're interested in verifying.
+
+#+begin_src go
+func main() {
+    var time = TimeStamp{hour: 11, minute: 59, second: 59}
+    var time_bin []bytes = time.marshal()
+    var new_time TimeStamp
+    new_time.unmarshal(time_bin)
+}
+#+end_src
+
+* Meta
+
+#  LocalWords:  endian protobuf struct
