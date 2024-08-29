@@ -1,0 +1,3 @@
+[submodule "perennial"]
+	path = perennial
+	url = https://github.com/mit-pdos/perennial
