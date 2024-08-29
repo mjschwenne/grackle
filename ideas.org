@@ -160,6 +160,36 @@ message is strictly ordered.
    format without some support for variable width integers. Assuming that goose
    supports go bit-wise operators this format seems doable.
 
+* Reasoning About Marshaling Code
+
+So, the primary motivation here is that we want to use this code as part of a
+verified system which has been formally proved to be correct using the Coq proof
+assistant. In order to know what Coq code grackle needs to produce, we must
+first digest what it means for marshaling code to be correct. Looking at code
+which imports =marshal_stateless_proof.v= in the perennial source tree, we find
+files such as =src/program_proof/vrsm/paxos/marshal_proof.v= which contains some
+proofs that are so repetitive that yesterday I scrolled down to a different
+section of the file, glanced away from my computer and when I looked back I
+thought that I hadn't actually scrolled down at all.
+
+The file is structured into a module and section for each of the functions
+listed [[https://github.com/mit-pdos/gokv/blob/main/vrsm/paxos/0_marshal.go][here]]. Each section contains these definitions and theorems:
+
+- =has_encoding=: A proposition asserting that a list of bytes matches the binary
+  concatenation of the fields in the struct.
+- =own=: An iris proposition asserting that there exists a byte slice with the
+  correct binary value that's own by the encoding/decoding function.
+- =wp_Encode=: Defines the behavior of the marshaling function with the separating
+  logic triple stating if the marshaling function owns the input struct then it
+  will return a new byte slice those value meets the =has_encoding= definition.
+- =wp_Decode=: Defines the behavior of the unmarshaling function with a
+  separating logic triple asserting that if given a byte slice meeting the
+  definition =has_encoding=, the unmarshaling function will return a pointer to a
+  struct =args= containing the correct values per the =own= definition
+
+The primary difference between the sections is the structure of the struct =C=,
+which roughly matches the corresponding struct in the go code.
+
 * Meta
 
-#  LocalWords:  endian protobuf struct
+#  LocalWords:  endian protobuf struct unmarshaling
