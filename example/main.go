@@ -1,4 +1,6 @@
-package main
+//go:build !goose
+
+package example
 
 import (
 	"fmt"
