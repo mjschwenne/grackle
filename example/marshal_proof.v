@@ -58,4 +58,20 @@ Lemma wp_Decode enc enc_sl (args:C) :
         args_ptr, RET #args_ptr; own args_ptr args (DfracOwn 1)
   }}}.
 Proof.
-  Admitted.
+  iIntros (?) "[%Henc Hsl] HΦ".
+  wp_rec. wp_apply wp_allocStruct; first by val_ty.
+  iIntros (?) "Hs". wp_pures. wp_apply wp_ref_to; first done.
+  iIntros (?) "Hptr". wp_pures.
+
+  wp_load. iDestruct (struct_fields_split with "Hs") as "HH".
+  iNamed "HH". rewrite Henc. wp_apply (wp_ReadInt32 with "[$]").
+  iIntros (?) "Hs". wp_pures. wp_storeField. wp_store.
+
+  wp_load. wp_apply (wp_ReadInt32 with "[$]"). iIntros (?) "Hs".
+  wp_pures. wp_storeField. wp_store.
+
+  wp_load. wp_apply (wp_ReadInt32 with "[$]"). iIntros (?) "Hs".
+  wp_pures. wp_storeField. wp_store.
+
+  iApply "HΦ". iModIntro. iFrame.
+Qed.
