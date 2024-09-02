@@ -28,17 +28,25 @@ Lemma wp_Encode (args_ptr:loc) (args:C) :
   {{{
         own args_ptr args (DfracDiscarded)
   }}}
-    TimeStamp__marshal #args_ptr
+    MarshalTimeStamp #args_ptr
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜has_encoding enc args⌝ ∗
         own_slice enc_sl byteT (DfracOwn 1) enc
   }}}.
 Proof.
-  iIntros (?) "H HΦ".
-  wp_rec. wp_apply (wp_NewSlice).
-  iIntros (?) "Hsl". wp_pures. wp_apply (wp_ref_to); first by val_ty.
-  iIntros (?) "Hptr". wp_pures.
+  iIntros (?) "H HΦ". iNamed "H".
+  wp_rec. wp_apply (wp_NewSliceWithCap).
+  { apply encoding.unsigned_64_nonneg. }
+  iIntros (?) "Hsl". wp_apply (wp_ref_to); first by val_ty.
+  iIntros (?) "Hptr". wp_pures. wp_loadField. wp_load.
+  wp_apply (wp_WriteInt32 with "[$]").
+  iIntros (?) "Hsl". wp_store. wp_loadField. wp_load.
+  wp_apply (wp_WriteInt32 with "[$]"). iIntros (?) "Hsl". wp_store.
+  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$]").
+  iIntros (?) "Hsl". wp_store. wp_load. iApply "HΦ". iFrame. iPureIntro.
+  done.
+Qed.
 
 Lemma wp_Decode enc enc_sl (args:C) :
   {{{
