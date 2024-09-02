@@ -35,7 +35,10 @@ Lemma wp_Encode (args_ptr:loc) (args:C) :
         own_slice enc_sl byteT (DfracOwn 1) enc
   }}}.
 Proof.
-  Admitted.
+  iIntros (?) "H HΦ".
+  wp_rec. wp_apply (wp_NewSlice).
+  iIntros (?) "Hsl". wp_pures. wp_apply (wp_ref_to); first by val_ty.
+  iIntros (?) "Hptr". wp_pures.
 
 Lemma wp_Decode enc enc_sl (args:C) :
   {{{
