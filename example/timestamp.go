@@ -1,7 +1,7 @@
-package example
+package main
 
 import (
-	"github.com/goose-lang/primitive"
+	"github.com/tchajed/marshal"
 )
 
 type TimeStamp struct {
@@ -10,32 +10,19 @@ type TimeStamp struct {
 	second uint32
 }
 
-func (t TimeStamp) marshal() []byte {
-	enc := make([]byte, 12)
-	var off uint32 = 0
-	primitive.UInt32Put(enc[off:], t.hour)
-	off += 4
-	primitive.UInt32Put(enc[off:], t.minute)
-	off += 4
-	primitive.UInt32Put(enc[off:], t.second)
-
+func MarshalTimeStamp(t *TimeStamp) []byte {
+	var enc = make([]byte, 0, 12)
+	enc = marshal.WriteInt32(enc, t.hour)
+	enc = marshal.WriteInt32(enc, t.minute)
+	enc = marshal.WriteInt32(enc, t.second)
 	return enc
 }
 
-func UnmarshalTimeStamp(enc []byte) *TimeStamp {
-	// var err error = nil
-	var ts TimeStamp
-	// if len(enc) != 12 {
-	// 	err = errors.New(fmt.Sprintf("encoding has incorrect number of bytes (%v), 12 expected.", len(enc)))
-	// 	return nil, err
-	// }
-
-	var off uint32
-	ts.hour = primitive.UInt32Get(enc[off:])
-	off += 4
-	ts.minute = primitive.UInt32Get(enc[off:])
-	off += 4
-	ts.second = primitive.UInt32Get(enc[off:])
-
-	return &ts //, err
+func UnmarshalTimeStamp(s []byte) *TimeStamp {
+	t := new(TimeStamp)
+	var enc = s // Needed for goose compatibility
+	t.hour, enc = marshal.ReadInt32(enc)
+	t.minute, enc = marshal.ReadInt32(enc)
+	t.second, enc = marshal.ReadInt32(enc)
+	return t
 }

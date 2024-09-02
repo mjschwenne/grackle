@@ -1,6 +1,6 @@
 //go:build !goose
 
-package example
+package main
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ func main() {
 	hours, minutes, seconds := time.Now().Clock()
 	fmt.Printf("True Time:   %02d:%02d:%02d\n", hours, minutes, seconds)
 	timeStamp := TimeStamp{hour: uint32(hours), minute: uint32(minutes), second: uint32(seconds)}
-	enc := timeStamp.marshal()
+	enc := MarshalTimeStamp(&timeStamp)
 
 	var newTime *TimeStamp
 	newTime = UnmarshalTimeStamp(enc)
