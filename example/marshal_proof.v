@@ -202,3 +202,6 @@ Proof.
      this. *)
   iFrame.
 Qed.
+
+End encodeTimestamp.
+End encodeTimestamp.
