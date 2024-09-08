@@ -190,6 +190,24 @@ listed [[https://github.com/mit-pdos/gokv/blob/main/vrsm/paxos/0_marshal.go][her
 The primary difference between the sections is the structure of the struct =C=,
 which roughly matches the corresponding struct in the go code.
 
+After having completed the proofs of the =TimeStamp= struct in the =example=
+directory, I can confirm that these are repetitive proofs. The proof divides
+into three sections, the setup of the =[]byte= or =struct=, a sequence of calls to
+=read= / =write= call and a conclusion where we apply the frame rule and any other
+logic needed finish the proof. The exact structure of the proof is of course
+dependent on the structure of the original =go= code.
+
+The other question is how to handle pointers. As we talked about in our last
+meeting but there are multiple different ways to handle pointers, arrays and
+slices in the message, a.k.a =repeated= protobuf fields. At this point, I don't
+know which option makes the most sense, but it will be important to set the
+policy for these in advance.
+
+Looking at the existing marshaling code, error handling also needs to be
+uniform. Unfortunately, goose doesn't support the built-in =error= interface and
+it's possible that the error message is coming from the other computer we're
+communicating with.
+
 * Meta
 
 #  LocalWords:  endian protobuf struct unmarshaling

@@ -4,20 +4,19 @@ package main
 
 import (
 	"fmt"
-	"time"
 )
 
 func main() {
-	// This simple example creates a new time stamp, then marshals and unmarshals it into
-	// a new TimeStamp before printing the result.
+	// This simple example creates a new event, then marshals and unmarshals it into
+	// a new Event before printing the result.
 
-	hours, minutes, seconds := time.Now().Clock()
-	fmt.Printf("True Time:   %02d:%02d:%02d\n", hours, minutes, seconds)
-	timeStamp := TimeStamp{hour: uint32(hours), minute: uint32(minutes), second: uint32(seconds)}
-	enc := MarshalTimeStamp(&timeStamp)
+	event := Event{name: "Grackle Meeting", start: TimeStamp{hour: 13, minute: 00, second: 00}, end: TimeStamp{hour: 14, minute: 00, second: 00}}
+	fmt.Printf("Name:  %v\nStart: %02d:%02d:%02d\nEnd:   %02d:%02d:%02d\n", event.name, event.start.hour, event.start.minute, event.start.second, event.end.hour, event.end.minute, event.end.second)
 
-	var newTime *TimeStamp
-	newTime = UnmarshalTimeStamp(enc)
+	enc := MarshalEvent(&event)
 
-	fmt.Printf("Struct Time: %02d:%02d:%02d\n", newTime.hour, newTime.minute, newTime.second)
+	var newEvent *Event
+	newEvent = UnmarshalEvent(enc)
+
+	fmt.Printf("Name:  %v\nStart: %02d:%02d:%02d\nEnd:   %02d:%02d:%02d\n", newEvent.name, newEvent.start.hour, newEvent.start.minute, newEvent.start.second, newEvent.end.hour, newEvent.end.minute, newEvent.end.second)
 }
