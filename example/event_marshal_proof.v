@@ -48,7 +48,10 @@ Proof.
   wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$]").
   iIntros (?) "Hsl". wp_store.
 
-  wp_apply (wp_struct_fieldRef_pointsto). { simpl. Admitted.
+  wp_apply (wp_struct_fieldRef). { done. }
+  wp_apply (encodeTimestamp.wp_Encode with "[Hargs_start Hargs_start_sl]").
+  - unfold encodeTimestamp.own.
+Admitted.
 
 Lemma wp_Decode enc enc_sl (args:EventStruct) :
   {{{
