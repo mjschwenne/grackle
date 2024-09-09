@@ -15,18 +15,16 @@ Record EventStruct :=
       endTime : encodeTimestamp.Timestamp ;
     }.
 
-Search loc.
-
-Definition has_encoding (encoded:list u8) (args:EventStruct) : Prop :=
-  encoded = (u32_le args.(id)) ++ (encodeTimestamp.wp_Encode args.(startTime)) ++ args.(endTime).
+Fail Definition has_encoding (encoded:list u8) (args:EventStruct) : Prop :=
+  encoded = (u32_le args.(id)) ++ args.(startTime) ++ args.(endTime).
 
 Definition own args_ptr args q : iProp Σ :=
   ∃ start_sl end_sl,
   "Hargs_id" ∷ args_ptr ↦[Event :: "id"]{q} #args.(id) ∗
-  "Hargs_start" ∷ args_ptr ↦[Event :: "startTimeBin"]{q} (slice_val start_sl) ∗
-  "Hargs_start_sl" ∷ own_slice_small start_sl byteT q args.(startTimeBin) ∗
-  "Hargs_end" ∷ args_ptr ↦[Event :: "endTimeBin"]{q} (slice_val end_sl) ∗
-  "Hargs_end_sl" ∷ own_slice_small end_sl byteT q args.(endTimeBin).
+  "Hargs_start" ∷ args_ptr ↦[Event :: "start"]{q} (slice_val start_sl) ∗
+  "Hargs_start_sl" ∷ own_slice_small start_sl byteT q args.(startTime) ∗
+  "Hargs_end" ∷ args_ptr ↦[Event :: "end"]{q} (slice_val end_sl) ∗
+  "Hargs_end_sl" ∷ own_slice_small end_sl byteT q args.(endTime).
 
 Lemma wp_Encode (args_ptr:loc) (args:EventStruct) :
   {{{
