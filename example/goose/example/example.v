@@ -8,18 +8,18 @@ Local Coercion Var' s: expr := Var s.
 
 (* event.go *)
 
+Definition Event := struct.decl [
+  "id" :: uint32T;
+  "start" :: ptrT;
+  "end" :: ptrT
+].
+
 (* TimeStamp from timestamp.go *)
 
 Definition TimeStamp := struct.decl [
   "hour" :: uint32T;
   "minute" :: uint32T;
   "second" :: uint32T
-].
-
-Definition Event := struct.decl [
-  "id" :: uint32T;
-  "start" :: struct.t TimeStamp;
-  "end" :: struct.t TimeStamp
 ].
 
 Definition MarshalTimeStamp: val :=
@@ -34,8 +34,8 @@ Definition MarshalEvent: val :=
   rec: "MarshalEvent" "e" :=
     let: "enc" := ref_to (slice.T byteT) (NewSliceWithCap byteT #0 #28) in
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF Event "id" "e"));;
-    "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") (MarshalTimeStamp (struct.fieldRef Event "start" "e")));;
-    "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") (MarshalTimeStamp (struct.fieldRef Event "end" "e")));;
+    "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") (MarshalTimeStamp (struct.loadF Event "start" "e")));;
+    "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") (MarshalTimeStamp (struct.loadF Event "end" "e")));;
     ![slice.T byteT] "enc".
 
 Definition UnmarshalTimeStamp: val :=
@@ -60,9 +60,9 @@ Definition UnmarshalEvent: val :=
     let: ("0_ret", "1_ret") := marshal.ReadInt32 (![slice.T byteT] "enc") in
     struct.storeF Event "id" "e" "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    struct.storeF Event "start" "e" (struct.load TimeStamp (UnmarshalTimeStamp (SliceTake (![slice.T byteT] "enc") #12)));;
+    struct.storeF Event "start" "e" (UnmarshalTimeStamp (SliceTake (![slice.T byteT] "enc") #12));;
     "enc" <-[slice.T byteT] (SliceSkip byteT (![slice.T byteT] "enc") #12);;
-    struct.storeF Event "end" "e" (struct.load TimeStamp (UnmarshalTimeStamp (SliceTake (![slice.T byteT] "enc") #12)));;
+    struct.storeF Event "end" "e" (UnmarshalTimeStamp (SliceTake (![slice.T byteT] "enc") #12));;
     "e".
 
 (* timestamp.go *)
