@@ -9,14 +9,14 @@ Section encodeTimestamp.
 
 Context `{!heapGS Σ}.
 
-Record C :=
+Record Timestamp :=
   mkC {
       hour : u32 ;
       minute : u32 ;
       second : u32 ;
     }.
 
-Definition has_encoding (encoded:list u8) (args:C) : Prop :=
+Definition has_encoding (encoded:list u8) (args:Timestamp) : Prop :=
   encoded = (u32_le args.(hour)) ++ (u32_le args.(minute)) ++ (u32_le args.(second)).
 
 Definition own args_ptr args q : iProp Σ :=
@@ -24,7 +24,7 @@ Definition own args_ptr args q : iProp Σ :=
   "Hargs_minute" ∷ args_ptr ↦[TimeStamp :: "minute"]{q} #args.(minute) ∗
   "Hargs_second" ∷ args_ptr ↦[TimeStamp :: "second"]{q} #args.(second).
 
-Lemma wp_Encode (args_ptr:loc) (args:C) :
+Lemma wp_Encode (args_ptr:loc) (args:Timestamp) :
   {{{
         own args_ptr args (DfracDiscarded)
   }}}
@@ -56,7 +56,7 @@ Proof.
   wp_load. iApply "HΦ". iFrame. iPureIntro. done.
 Qed.
 
-Lemma wp_Decode enc enc_sl (args:C) :
+Lemma wp_Decode enc enc_sl (args:Timestamp) :
   {{{
         ⌜has_encoding enc args⌝ ∗
         own_slice_small enc_sl byteT (DfracOwn 1) enc

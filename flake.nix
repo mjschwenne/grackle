@@ -46,7 +46,6 @@
         ];
 
         shellHook = ''
-          make
         '';
       };
   };
