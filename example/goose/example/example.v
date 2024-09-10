@@ -4,7 +4,6 @@ From Goose Require github_com.tchajed.marshal.
 
 Section code.
 Context `{ext_ty: ext_types}.
-Local Coercion Var' s: expr := Var s.
 
 (* event.go *)
 
@@ -14,7 +13,15 @@ Definition Event := struct.decl [
   "end" :: ptrT
 ].
 
-(* TimeStamp from timestamp.go *)
+(* TimeStamp__maxSize from timestamp.go *)
+
+Definition TimeStamp__maxSize: val :=
+  rec: "TimeStamp__maxSize" "t" :=
+    #12.
+
+Definition Event__maxSize: val :=
+  rec: "Event__maxSize" "e" :=
+    (#4 + (TimeStamp__maxSize (struct.loadF Event "start" "e"))) + (TimeStamp__maxSize (struct.loadF Event "end" "e")).
 
 Definition TimeStamp := struct.decl [
   "hour" :: uint32T;
@@ -23,20 +30,20 @@ Definition TimeStamp := struct.decl [
 ].
 
 Definition MarshalTimeStamp: val :=
-  rec: "MarshalTimeStamp" "t" :=
-    let: "enc" := ref_to (slice.T byteT) (NewSliceWithCap byteT #0 #12) in
+  rec: "MarshalTimeStamp" "t" "prefix" :=
+    let: "enc" := ref_to (slice.T byteT) (NewSliceWithCap byteT #0 (TimeStamp__maxSize "t")) in
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF TimeStamp "hour" "t"));;
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF TimeStamp "minute" "t"));;
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF TimeStamp "second" "t"));;
-    ![slice.T byteT] "enc".
+    SliceAppendSlice byteT "prefix" (![slice.T byteT] "enc").
 
 Definition MarshalEvent: val :=
-  rec: "MarshalEvent" "e" :=
-    let: "enc" := ref_to (slice.T byteT) (NewSliceWithCap byteT #0 #28) in
+  rec: "MarshalEvent" "e" "prefix" :=
+    let: "enc" := ref_to (slice.T byteT) (NewSliceWithCap byteT #0 (Event__maxSize "e")) in
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF Event "id" "e"));;
-    "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") (MarshalTimeStamp (struct.loadF Event "start" "e")));;
-    "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") (MarshalTimeStamp (struct.loadF Event "end" "e")));;
-    ![slice.T byteT] "enc".
+    "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "start" "e") (![slice.T byteT] "enc"));;
+    "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "end" "e") (![slice.T byteT] "enc"));;
+    SliceAppendSlice byteT "prefix" (![slice.T byteT] "enc").
 
 Definition UnmarshalTimeStamp: val :=
   rec: "UnmarshalTimeStamp" "s" :=
@@ -51,7 +58,7 @@ Definition UnmarshalTimeStamp: val :=
     let: ("0_ret", "1_ret") := marshal.ReadInt32 (![slice.T byteT] "enc") in
     struct.storeF TimeStamp "second" "t" "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    "t".
+    ("t", ![slice.T byteT] "enc").
 
 Definition UnmarshalEvent: val :=
   rec: "UnmarshalEvent" "s" :=
@@ -60,10 +67,13 @@ Definition UnmarshalEvent: val :=
     let: ("0_ret", "1_ret") := marshal.ReadInt32 (![slice.T byteT] "enc") in
     struct.storeF Event "id" "e" "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    struct.storeF Event "start" "e" (UnmarshalTimeStamp (SliceTake (![slice.T byteT] "enc") #12));;
-    "enc" <-[slice.T byteT] (SliceSkip byteT (![slice.T byteT] "enc") #12);;
-    struct.storeF Event "end" "e" (UnmarshalTimeStamp (SliceTake (![slice.T byteT] "enc") #12));;
-    "e".
+    let: ("0_ret", "1_ret") := UnmarshalTimeStamp (SliceTake (![slice.T byteT] "enc") #12) in
+    struct.storeF Event "start" "e" "0_ret";;
+    "enc" <-[slice.T byteT] "1_ret";;
+    let: ("0_ret", "1_ret") := UnmarshalTimeStamp (SliceTake (![slice.T byteT] "enc") #12) in
+    struct.storeF Event "end" "e" "0_ret";;
+    "enc" <-[slice.T byteT] "1_ret";;
+    ("e", ![slice.T byteT] "enc").
 
 (* timestamp.go *)
 

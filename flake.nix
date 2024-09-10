@@ -6,7 +6,6 @@
   };
 
   outputs = {
-    self,
     nixpkgs,
     ...
   }: let
@@ -21,8 +20,8 @@
         src = pkgs.fetchFromGitHub {
           owner = "goose-lang";
           repo = "goose";
-          rev = "8c44ba97cb0bdc3aeffee8c88af20178241d0223";
-          hash = "sha256-n56XASmaaAVHhtisN4vuf4Ip+NgIv8J7qoe7sY5we/U=";
+          rev = "6787e01cef93d900c0018ed84f44141f26d1fbb9";
+          hash = "sha256-6HywCVDZF1AVRgsLaIWiuvJcrEr75WOLXXdvgpgF2DU=";
         };
         vendorHash = "sha256-sI5HJmskJ+Qdf7lgbk2ztE4gfRY6YvR7wxK2g3knQko=";
       };

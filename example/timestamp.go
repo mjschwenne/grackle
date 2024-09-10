@@ -10,19 +10,23 @@ type TimeStamp struct {
 	second uint32
 }
 
-func MarshalTimeStamp(t *TimeStamp) []byte {
-	var enc = make([]byte, 0, 12)
+func (t *TimeStamp) maxSize() uint64 {
+	return 12
+}
+
+func MarshalTimeStamp(t *TimeStamp, prefix []byte) []byte {
+	var enc = make([]byte, 0, t.maxSize())
 	enc = marshal.WriteInt32(enc, t.hour)
 	enc = marshal.WriteInt32(enc, t.minute)
 	enc = marshal.WriteInt32(enc, t.second)
-	return enc
+	return append(prefix, enc...)
 }
 
-func UnmarshalTimeStamp(s []byte) *TimeStamp {
+func UnmarshalTimeStamp(s []byte) (*TimeStamp, []byte) {
 	t := new(TimeStamp)
 	var enc = s // Needed for goose compatibility
 	t.hour, enc = marshal.ReadInt32(enc)
 	t.minute, enc = marshal.ReadInt32(enc)
 	t.second, enc = marshal.ReadInt32(enc)
-	return t
+	return t, enc
 }
