@@ -5,3 +5,9 @@ message TimeStamp {
     int32 minute = 2;
     int32 second = 3;
 }
+
+message Event {
+    int32 id = 1;
+    TimeStamp startTime = 2;
+    TimeStamp endTime = 3;
+}

@@ -1,7 +1,13 @@
 
-r
+Û
 example/timestamp.proto"O
 	TimeStamp
 hour (Rhour
 minute (Rminute
-second (Rsecondbproto3
+second (Rsecond"g
+Event
+id (Rid(
+	startTime (2
+.TimeStampR	startTime$
+endTime (2
+.TimeStampRendTimebproto3

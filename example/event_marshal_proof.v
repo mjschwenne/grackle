@@ -24,10 +24,12 @@ Definition has_encoding (encoded:list u8) (args:EventStruct) : Prop :=
 Definition own args_ptr args q : iProp Σ :=
   ∃ start_enc end_enc,
   "Hargs_id" ∷ args_ptr ↦[Event :: "id"]{q} #args.(id) ∗
+  (* So, I think the problem with this definition is that start_enc isn't
+     related to a timestamp... *)
   "Hargs_start" ∷ args_ptr ↦[Event :: "start"]{q} start_enc ∗
-  "Hargs_start_enc" ∷ encodeTimestamp.own (loc_add args_ptr 4) args.(startTime) q ∗
+  "Hargs_start_enc" ∷ encodeTimestamp.own (args_ptr +ₗ 4) args.(startTime) q ∗
   "Hargs_end" ∷ args_ptr ↦[Event :: "end"]{q} end_enc ∗
-  "Hargs_end_enc" ∷ encodeTimestamp.own (loc_add args_ptr 16) args.(endTime) q.
+  "Hargs_end_enc" ∷ encodeTimestamp.own (args_ptr +ₗ 16) args.(endTime) q.
 
 Lemma wp_Encode (args_ptr:loc) (args:EventStruct) :
   {{{
@@ -51,7 +53,8 @@ Proof.
   wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$]").
   iIntros (?) "Hsl". wp_store.
 
-  wp_apply (wp_loadField_struct with "[Hargs_start Hargs_start_enc]").
+  wp_loadField.
+  (* wp_apply (encodeTimestamp.wp_Encode (args_ptr +ₗ 4) args.(startTime) Φ with "[Hargs_start Hargs_start_enc]"). *)
 Abort.
 
 Lemma wp_Decode enc enc_sl (args:EventStruct) :

@@ -29,12 +29,16 @@ func main() {
 
 	// Access the first FileDescriptorProto
 	if len(fileDescriptorSet.File) > 0 {
-		fields := fileDescriptorSet.File[0].MessageType[0].GetField()
-
-		// Print some information about the protobuf
-		for i, f := range fields {
-			fmt.Printf("Field %v: %s of type %v\n", i, *f.Name, f.Type)
+		messages := fileDescriptorSet.File[0].MessageType
+		for _, m := range messages {
+			fields := m.GetField()
+			// Print some information about the protobuf
+			fmt.Printf("Message: %s\n", *m.Name)
+			for i, f := range fields {
+				fmt.Printf("Field %v: %s of type %v\n", i, *f.Name, f.Type)
+			}
 		}
+
 	} else {
 		log.Println("No file descriptors found in the set.")
 	}
