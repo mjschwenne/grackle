@@ -21,15 +21,15 @@ Definition has_encoding (encoded:list u8) (args:EventStruct) : Prop :=
   /\ encodeTimestamp.has_encoding start_enc args.(startTime)
   /\ encodeTimestamp.has_encoding end_enc args.(endTime).
 
+Print Event.
+
 Definition own args_ptr args q : iProp Σ :=
-  ∃ start_enc end_enc,
+  ∃ (start_l end_l: loc),
   "Hargs_id" ∷ args_ptr ↦[Event :: "id"]{q} #args.(id) ∗
-  (* So, I think the problem with this definition is that start_enc isn't
-     related to a timestamp... *)
-  "Hargs_start" ∷ args_ptr ↦[Event :: "start"]{q} start_enc ∗
-  "Hargs_start_enc" ∷ encodeTimestamp.own (args_ptr +ₗ 4) args.(startTime) q ∗
-  "Hargs_end" ∷ args_ptr ↦[Event :: "end"]{q} end_enc ∗
-  "Hargs_end_enc" ∷ encodeTimestamp.own (args_ptr +ₗ 16) args.(endTime) q.
+  "Hargs_start" ∷ args_ptr ↦[Event :: "start"]{q} #start_l ∗
+  "Hargs_start_enc" ∷ encodeTimestamp.own start_l args.(startTime) q ∗
+  "Hargs_end" ∷ args_ptr ↦[Event :: "end"]{q} #end_l ∗
+  "Hargs_end_enc" ∷ encodeTimestamp.own end_l args.(endTime) q.
 
 Lemma wp_Encode (args_ptr:loc) (args:EventStruct) :
   {{{
@@ -54,7 +54,8 @@ Proof.
   iIntros (?) "Hsl". wp_store.
 
   wp_loadField.
-  (* wp_apply (encodeTimestamp.wp_Encode (args_ptr +ₗ 4) args.(startTime) Φ with "[Hargs_start Hargs_start_enc]"). *)
+  wp_apply (encodeTimestamp.wp_Encode with "[$Hargs_start_enc]").
+  iIntros (??) "Hstart_enc". wp_load. wp_apply (wp_WriteBytes with "[Hstart_enc]").
 Abort.
 
 Lemma wp_Decode enc enc_sl (args:EventStruct) :
