@@ -15,16 +15,19 @@ Record EventStruct :=
       endTime : encodeTimestamp.Timestamp ;
     }.
 
-Fail Definition has_encoding (encoded:list u8) (args:EventStruct) : Prop :=
-  encoded = (u32_le args.(id)) ++ args.(startTime) ++ args.(endTime).
+Definition has_encoding (encoded:list u8) (args:EventStruct) : Prop :=
+  ∃ start_enc end_enc,
+  encoded = (u32_le args.(id)) ++ start_enc ++ end_enc
+  /\ encodeTimestamp.has_encoding start_enc args.(startTime)
+  /\ encodeTimestamp.has_encoding end_enc args.(endTime).
 
 Definition own args_ptr args q : iProp Σ :=
-  ∃ start_sl end_sl,
+  ∃ start_enc end_enc,
   "Hargs_id" ∷ args_ptr ↦[Event :: "id"]{q} #args.(id) ∗
-  "Hargs_start" ∷ args_ptr ↦[Event :: "start"]{q} (slice_val start_sl) ∗
-  "Hargs_start_sl" ∷ own_slice_small start_sl byteT q args.(startTime) ∗
-  "Hargs_end" ∷ args_ptr ↦[Event :: "end"]{q} (slice_val end_sl) ∗
-  "Hargs_end_sl" ∷ own_slice_small end_sl byteT q args.(endTime).
+  "Hargs_start" ∷ args_ptr ↦[Event :: "start"]{q} start_enc ∗
+  "Hargs_start_enc" ∷ encodeTimestamp.own (loc_add args_ptr 4) args.(startTime) q ∗
+  "Hargs_end" ∷ args_ptr ↦[Event :: "end"]{q} end_enc ∗
+  "Hargs_end_enc" ∷ encodeTimestamp.own (loc_add args_ptr 16) args.(endTime) q.
 
 Lemma wp_Encode (args_ptr:loc) (args:EventStruct) :
   {{{
@@ -48,9 +51,7 @@ Proof.
   wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$]").
   iIntros (?) "Hsl". wp_store.
 
-  wp_apply (wp_struct_fieldRef). { done. }
-  wp_apply (encodeTimestamp.wp_Encode with "[Hargs_start Hargs_start_sl]").
-  - unfold encodeTimestamp.own. Search (_ -> loc).
+  wp_apply (wp_loadField_struct with "[Hargs_start Hargs_start_enc]").
 Abort.
 
 Lemma wp_Decode enc enc_sl (args:EventStruct) :
