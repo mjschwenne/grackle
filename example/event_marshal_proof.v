@@ -31,18 +31,19 @@ Definition own args_ptr args q : iProp Σ :=
   "Hargs_end" ∷ args_ptr ↦[Event :: "end"]{q} #end_l ∗
   "Hargs_end_enc" ∷ encodeTimestamp.own end_l args.(endTime) q.
 
-Lemma wp_Encode (args_ptr:loc) (args:EventStruct) :
+Lemma wp_Encode (args_ptr:loc) (args:EventStruct) (prefix:list u8) (pre_sl:Slice.t) :
   {{{
-        own args_ptr args (DfracDiscarded)
+        "Hown" ∷ own args_ptr args (DfracDiscarded) ∗
+        "Hpre" ∷ own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    MarshalEvent #args_ptr
+    MarshalEvent #args_ptr (slice_val pre_sl)
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜has_encoding enc args⌝ ∗
-        own_slice enc_sl byteT (DfracOwn 1) enc
+        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
   }}}.
 Proof.
-  iIntros (?) "H HΦ". iNamed "H". wp_rec.
+  iIntros (?) "H HΦ". iNamed "H". iNamed "Hown". wp_rec.
   wp_apply (wp_NewSliceWithCap).
   { apply encoding.unsigned_64_nonneg. }
   iIntros (?) "Hsl".
@@ -53,19 +54,29 @@ Proof.
   wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$]").
   iIntros (?) "Hsl". wp_store.
 
-  wp_loadField.
-  wp_apply (encodeTimestamp.wp_Encode with "[$Hargs_start_enc]").
-  iIntros (??) "Hstart_enc". wp_load. wp_apply (wp_WriteBytes with "[Hstart_enc]").
-Abort.
+  wp_load. wp_loadField.
+  wp_apply (encodeTimestamp.wp_Encode with "[$Hargs_start_enc $Hsl]").
+  iIntros (??) "Hsl". iDestruct "Hsl" as (Hhe) "Hsl". wp_store.
 
-Lemma wp_Decode enc enc_sl (args:EventStruct) :
+  wp_load. wp_loadField.
+  wp_apply (encodeTimestamp.wp_Encode with "[$Hargs_end_enc $Hsl]").
+  iIntros (??) "Hsl". iDestruct "Hsl" as (Hhe') "Hsl". wp_store.
+
+  wp_load. wp_apply (wp_SliceAppendSlice with "[Hpre Hsl]"); first auto.
+  { iApply own_slice_to_small in "Hsl". iFrame. }
+  iIntros (?) "[Hs1 Hs2]". iApply "HΦ". iFrame. iPureIntro.
+  unfold has_encoding. exists enc, enc0. auto.
+Qed.
+
+Lemma wp_Decode enc enc_sl (args:EventStruct) (suffix : list u8) (q : dfrac) :
   {{{
         ⌜has_encoding enc args⌝ ∗
-        own_slice_small enc_sl byteT (DfracOwn 1) enc
+        own_slice_small enc_sl byteT (DfracOwn 1) (enc ++ suffix)
   }}}
     UnmarshalEvent (slice_val enc_sl)
   {{{
-        args_ptr, RET #args_ptr; own args_ptr args (DfracOwn 1)
+        args_ptr suff_sl, RET (#args_ptr, suff_sl); own args_ptr args (DfracOwn 1) ∗
+                                 own_slice_small suff_sl byteT q suffix
   }}}.
 Proof.
   Abort.
