@@ -10,9 +10,9 @@ type TimeStamp struct {
 	second uint32
 }
 
-// func (t *TimeStamp) maxSize() uint64 {
-// 	return 12
-// }
+func (t *TimeStamp) maxSize() uint64 {
+	return 12
+}
 
 func MarshalTimeStamp(t *TimeStamp, prefix []byte) []byte {
 	var enc = make([]byte, 0, 12)

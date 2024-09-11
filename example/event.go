@@ -10,9 +10,9 @@ type Event struct {
 	end   *TimeStamp
 }
 
-// func (e *Event) maxSize() uint64 {
-// 	return 4 + e.start.maxSize() + e.end.maxSize()
-// }
+func (e *Event) maxSize() uint64 {
+	return 4 + e.start.maxSize() + e.end.maxSize()
+}
 
 func MarshalEvent(e *Event, prefix []byte) []byte {
 	// Getting the length right during code generation could be tricky

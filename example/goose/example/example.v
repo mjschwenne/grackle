@@ -13,7 +13,15 @@ Definition Event := struct.decl [
   "end" :: ptrT
 ].
 
-(* TimeStamp from timestamp.go *)
+(* TimeStamp__maxSize from timestamp.go *)
+
+Definition TimeStamp__maxSize: val :=
+  rec: "TimeStamp__maxSize" "t" :=
+    #12.
+
+Definition Event__maxSize: val :=
+  rec: "Event__maxSize" "e" :=
+    (#4 + (TimeStamp__maxSize (struct.loadF Event "start" "e"))) + (TimeStamp__maxSize (struct.loadF Event "end" "e")).
 
 Definition TimeStamp := struct.decl [
   "hour" :: uint32T;

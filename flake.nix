@@ -5,10 +5,7 @@
     nixpkgs.url = "nixpkgs";
   };
 
-  outputs = {
-    nixpkgs,
-    ...
-  }: let
+  outputs = {nixpkgs, ...}: let
     system = "x86_64-linux";
   in {
     devShells."${system}".default = let
