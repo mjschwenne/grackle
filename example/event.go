@@ -10,14 +10,14 @@ type Event struct {
 	end   *TimeStamp
 }
 
-func (e *Event) maxSize() uint64 {
-	return 4 + e.start.maxSize() + e.end.maxSize()
-}
+// func (e *Event) maxSize() uint64 {
+// 	return 4 + e.start.maxSize() + e.end.maxSize()
+// }
 
 func MarshalEvent(e *Event, prefix []byte) []byte {
 	// Getting the length right during code generation could be tricky
 	// How important is knowing the capacity in the first place?
-	var enc = make([]byte, 0, e.maxSize())
+	var enc = make([]byte, 0, 28)
 	enc = marshal.WriteInt32(enc, e.id)
 	enc = MarshalTimeStamp(e.start, enc)
 	enc = MarshalTimeStamp(e.end, enc)

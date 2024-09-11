@@ -13,15 +13,7 @@ Definition Event := struct.decl [
   "end" :: ptrT
 ].
 
-(* TimeStamp__maxSize from timestamp.go *)
-
-Definition TimeStamp__maxSize: val :=
-  rec: "TimeStamp__maxSize" "t" :=
-    #12.
-
-Definition Event__maxSize: val :=
-  rec: "Event__maxSize" "e" :=
-    (#4 + (TimeStamp__maxSize (struct.loadF Event "start" "e"))) + (TimeStamp__maxSize (struct.loadF Event "end" "e")).
+(* TimeStamp from timestamp.go *)
 
 Definition TimeStamp := struct.decl [
   "hour" :: uint32T;
@@ -31,7 +23,7 @@ Definition TimeStamp := struct.decl [
 
 Definition MarshalTimeStamp: val :=
   rec: "MarshalTimeStamp" "t" "prefix" :=
-    let: "enc" := ref_to (slice.T byteT) (NewSliceWithCap byteT #0 (TimeStamp__maxSize "t")) in
+    let: "enc" := ref_to (slice.T byteT) (NewSliceWithCap byteT #0 #12) in
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF TimeStamp "hour" "t"));;
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF TimeStamp "minute" "t"));;
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF TimeStamp "second" "t"));;
@@ -39,7 +31,7 @@ Definition MarshalTimeStamp: val :=
 
 Definition MarshalEvent: val :=
   rec: "MarshalEvent" "e" "prefix" :=
-    let: "enc" := ref_to (slice.T byteT) (NewSliceWithCap byteT #0 (Event__maxSize "e")) in
+    let: "enc" := ref_to (slice.T byteT) (NewSliceWithCap byteT #0 #28) in
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF Event "id" "e"));;
     "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "start" "e") (![slice.T byteT] "enc"));;
     "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "end" "e") (![slice.T byteT] "enc"));;
