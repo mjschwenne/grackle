@@ -47,8 +47,6 @@ clean:
 	$(Q)find $(SRC_DIRS) \( -name "*.vo" -o -name "*.vo[sk]" \
 		-o -name ".*.aux" -o -name ".*.cache" -name "*.glob" \) -delete
 	$(Q)rm -f .timing.sqlite3
-	$(Q)find src/software_foundations \( -not -name "impdriver.ml" \
-		-name "*.ml" -o -name "*.mli" \) -delete
 	rm -f .coqdeps.d
 
 .PHONY: default
