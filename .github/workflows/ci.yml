@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-coq:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+      - uses: coq-community/docker-coq-action@v1
+        with:
+          coq_version: "8.20"
+          ocaml_version: "default"
+          install: ""
+          before_script: |
+            sudo chown -R coq:coq .
+          script: |
+            startGroup Build
+              make -j4 -k vok
+            endGroup
+          uninstall: |
+            make clean
+      - name: Revert permissions
+        if: ${{ always() }}
+        run: sudo chown -R 1001:116 .
+
+  build-go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Go
+        uses: actions/setup-go@v5
+
+      - name: Check style
+        run: |
+          gofmt -w -s .
+          git diff --exit-code
+
+      - name: Install dependencies
+        run: go get -t ./...
+      - name: go test
+        run: go test -vet=all -v ./...
+
+      - name: Check goose output
+        run: |
+          go run github.com/goose-lang/goose/cmd/goose@latest -out example/goose ./example
+          git diff --exit-code
