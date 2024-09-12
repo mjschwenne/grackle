@@ -7,6 +7,12 @@ and emitting the Go code which can perform the marshaling and unmarshaling of
 the described buffers and a Gallina script which enables reasoning about the
 marshaling process.
 
+** Usage
+
+Re-run goose: ~goose -out example/goose ./example~
+
+Run test: ~go run ./example~
+
 ** Why "Grackle"
 
 A [[https://en.wikipedia.org/wiki/Common_grackle][grackle]] is a bird capable of mimicking other birds and even human speech if it
