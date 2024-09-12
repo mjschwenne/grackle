@@ -28,7 +28,7 @@ func UnmarshalEvent(s []byte) (*Event, []byte) {
 	e := new(Event)
 	var enc = s // Needed for goose compatibility
 	e.id, enc = marshal.ReadInt32(enc)
-	e.start, enc = UnmarshalTimeStamp(enc[:12])
-	e.end, enc = UnmarshalTimeStamp(enc[:12])
+	e.start, enc = UnmarshalTimeStamp(enc)
+	e.end, enc = UnmarshalTimeStamp(enc)
 	return e, enc
 }

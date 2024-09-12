@@ -67,10 +67,10 @@ Definition UnmarshalEvent: val :=
     let: ("0_ret", "1_ret") := marshal.ReadInt32 (![slice.T byteT] "enc") in
     struct.storeF Event "id" "e" "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    let: ("0_ret", "1_ret") := UnmarshalTimeStamp (SliceTake (![slice.T byteT] "enc") #12) in
+    let: ("0_ret", "1_ret") := UnmarshalTimeStamp (![slice.T byteT] "enc") in
     struct.storeF Event "start" "e" "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    let: ("0_ret", "1_ret") := UnmarshalTimeStamp (SliceTake (![slice.T byteT] "enc") #12) in
+    let: ("0_ret", "1_ret") := UnmarshalTimeStamp (![slice.T byteT] "enc") in
     struct.storeF Event "end" "e" "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     ("e", ![slice.T byteT] "enc").

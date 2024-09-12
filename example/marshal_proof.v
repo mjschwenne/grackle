@@ -17,7 +17,7 @@ Record Timestamp :=
     }.
 
 Definition has_encoding (encoded:list u8) (args:Timestamp) : Prop :=
-  encoded = (u32_le args.(hour)) ++ (u32_le args.(minute)) ++ (u32_le args.(second)).
+  encoded = ((u32_le args.(hour)) ++ (u32_le args.(minute)) ++ (u32_le args.(second))).
 
 Definition own args_ptr args q : iProp Σ :=
   "Hargs_hour" ∷ args_ptr ↦[TimeStamp :: "hour"]{q} #args.(hour) ∗
@@ -55,8 +55,9 @@ Proof.
   iIntros (?) "Hsl". wp_store.
 
   wp_load. wp_apply (wp_SliceAppendSlice with "[Hpre Hsl]"); first auto.
-  { iFrame. iApply own_slice_to_small in "Hsl". iFrame. }
-  iIntros (?) "[Hs1 Hs2]". iApply "HΦ". iFrame. iPureIntro. done.
+  { iApply own_slice_to_small in "Hsl". iFrame. }
+  iIntros (?) "[Hs1 Hs2]". iApply "HΦ". iFrame. iPureIntro.
+  done.
 Qed.
 
 Lemma wp_Decode enc enc_sl (args:Timestamp) (suffix : list u8) (q : dfrac):
@@ -77,7 +78,10 @@ Proof.
   wp_apply wp_ref_to; first done.
   iIntros (?) "Hptr". wp_pures.
   iDestruct (struct_fields_split with "Hs") as "HH".
-  iNamed "HH". rewrite Henc.
+
+  rewrite Henc.
+
+  iNamed "HH".
 
   wp_load. wp_apply (wp_ReadInt32 with "[$]"). iIntros (?) "Hs".
   wp_pures. wp_storeField. wp_store.
