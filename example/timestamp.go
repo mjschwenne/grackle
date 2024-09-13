@@ -10,12 +10,12 @@ type TimeStamp struct {
 	second uint32
 }
 
-func (t *TimeStamp) maxSize() uint64 {
+func (t *TimeStamp) approxSize() uint64 {
 	return 12
 }
 
 func MarshalTimeStamp(t *TimeStamp, prefix []byte) []byte {
-	var enc = make([]byte, 0, 12)
+	var enc = make([]byte, 0, t.approxSize())
 	enc = marshal.WriteInt32(enc, t.hour)
 	enc = marshal.WriteInt32(enc, t.minute)
 	enc = marshal.WriteInt32(enc, t.second)
