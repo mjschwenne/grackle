@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/goose-lang/std"
 	"github.com/tchajed/marshal"
 )
 
@@ -11,7 +12,8 @@ type Event struct {
 }
 
 func (e *Event) approxSize() uint64 {
-	return 4 + e.start.approxSize() + e.end.approxSize()
+	size := std.SumAssumeNoOverflow(4, e.start.approxSize())
+	return std.SumAssumeNoOverflow(size, e.end.approxSize())
 }
 
 func MarshalEvent(e *Event, prefix []byte) []byte {
