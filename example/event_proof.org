@@ -1,0 +1,40 @@
+#+title: Event Marshal Proof
+#+author: Matt Schwennesen
+#+date: <2024-09-10 Tue>
+
+* Coq API
+
+The timestamp constructs have this API:
+- Goose structure =TimeStamp= : Automatically generated from =go= source code.
+- Coq Record =Timestamp= : Designed to mirror the structure of the goose struct,
+  but using coq types. Required for later definitions.
+- Goose function =MarshalTimeStamp= : Automatically generated from =go= source code.
+- Goose function =UnmarshalTimeStamp= : Automatically generated from =go= source
+  code.
+- Coq definition =has_encoding= : A coq proposition which defines the expected
+  wire format for the marshaled struct.
+- Coq definition =own= : A separation logic statement about what we need to have
+  in order to marshal the structure.
+- Coq lemma =wp_Encode= : A weakest precondition statement about what the
+  =MarshalTimeStamp= function does.
+- Coq lemma =wp_Decode= : A weakest precondition statement about what the
+  =UnmarshalTimeStamp= function does.
+
+We expect that the event construct will have the same API, but since an event
+contains timestamps, there will be a relationship between the two APIs. More
+specifically,
+
+- =has_encoding= : This seeks to define a wire format for the event struct. That
+  should include two blobs which are valid encodings for timestamps. While the
+  timestamp encoding is deterministic, it's possible that might not always be
+  the case in the future, which is why we use \exists in the definition of
+  =has_encoding=.
+- =own= : Likewise, a separation logic statement which asserts ownership of the
+  event struct. In order to properly use the timestamp's encoding lemma in the
+  proof, we also need it to assert that we own the timestamp using the
+  timestamp's own =own= definition. Note that in order to do so, we have to
+  identify where the timestamp is in the event struct. That might not be
+  easy (or possible?) in messages with dynamic field lengths such as strings or
+  arrays/slices.
+
+#  LocalWords:  struct encodings

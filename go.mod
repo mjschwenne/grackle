@@ -9,4 +9,4 @@ require (
 	google.golang.org/protobuf v1.34.2
 )
 
-require github.com/goose-lang/std v0.4.1 // indirect
+require github.com/goose-lang/std v0.4.1
