@@ -9,6 +9,16 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+var typeMap = map[descriptorpb.FieldDescriptorProto_Type]string{
+	descriptorpb.FieldDescriptorProto_TYPE_INT32:   "u32",
+	descriptorpb.FieldDescriptorProto_TYPE_UINT32:  "u32",
+	descriptorpb.FieldDescriptorProto_TYPE_FIXED32: "u32",
+	descriptorpb.FieldDescriptorProto_TYPE_INT64:   "u64",
+	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  "u64",
+	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: "u64",
+	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "{{ .GetTypeName }}",
+}
+
 func main() {
 	descriptorFile := "src/timestamp_type.bin"
 	descriptorContent, err := os.ReadFile(descriptorFile)
@@ -33,9 +43,9 @@ func main() {
 		for _, m := range messages {
 			fields := m.GetField()
 			// Print some information about the protobuf
-			fmt.Printf("Message: %s\n", *m.Name)
+			fmt.Printf("---------------------------------------\nMessage: %s\n---------------------------------------\n", m.GetName())
 			for i, f := range fields {
-				fmt.Printf("Field %v: %s of type %v\n", i, *f.Name, f.Type)
+				fmt.Printf("Field %v: %s of type %v (%s)\n", i, f.GetName(), f.GetType(), f.GetTypeName())
 			}
 		}
 
