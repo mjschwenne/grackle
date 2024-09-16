@@ -1,0 +1,3 @@
+Definition own (args_ptr:loc) (args:{{- RecordName . -}}) (q:dfrac) : iProp Σ :=
+  {{ Exists . }} {{- range . -}}
+  "Hargs_{{- .Field.Name -}}" ∷ args_ptr ↦[{{- RecordName .MessageName }} :: "{{ . }}"]{q} #args.(hour) {{ if Next . }}∗{{ else }}.{{ end }}

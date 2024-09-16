@@ -1,0 +1,5 @@
+  wp_load. wp_apply (wp_SliceAppendSlice with "[Hpre Hsl]"); first auto.
+  { iApply own_slice_to_small in "Hsl". iFrame. }
+  iIntros (?) "[Hs1 Hs2]". iApply "HΦ". iFrame. iPureIntro.
+  done.
+Qed.

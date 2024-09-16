@@ -1,0 +1,6 @@
+Record {{ RecordName .MessageName }} :=
+    mkC {
+        {{ range . }}
+        {{ .FieldName }} : {{ .FieldType -}};
+        {{ end }}
+    }.

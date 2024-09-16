@@ -1,0 +1,4 @@
+Definition has_encoding (encoded:list u8) (args:{{- RecordName .MessageName -}}) : Prop :=
+    encoded = {{ range . }}
+              {{ GetEncoding . }} {{ if .next }}++{{ end -}}
+              {{ end }}
