@@ -1,9 +1,10 @@
-Lemma wp_Decode enc enc_sl (args:{{- RecordName . -}}) (suffix : list u8) (q : dfrac):
+
+Lemma wp_Decode enc enc_sl (args:<<- .Name ->>) (suffix:list u8) (q:dfrac):
   {{{
         ⌜has_encoding enc args⌝ ∗
         own_slice_small enc_sl byteT q (enc ++ suffix)
   }}}
-    {{ .UnmarshalFuncName }} (slice_val enc_sl)
+    Unmarshal<< .Name >> (slice_val enc_sl)
   {{{
         args_ptr suff_sl, RET (#args_ptr, suff_sl); own args_ptr args (DfracOwn 1) ∗
                                                     own_slice_small suff_sl byteT q suffix

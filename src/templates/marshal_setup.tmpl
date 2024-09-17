@@ -1,7 +1,7 @@
 Proof.
   iIntros (?) "H HΦ". iDestruct "H" as "[Hown Hpre]". iNamed "Hown".
   wp_rec.
-  {{ ProcessSize . }}
+  << "processSize ." >>
   wp_pures. wp_apply (wp_NewSliceWithCap).
   { apply encoding.unsigned_64_nonneg. }
   iIntros (?) "Hsl".

@@ -1,6 +1,7 @@
-Record {{ RecordName .MessageName }} :=
+
+Record << .Name >> :=
     mkC {
-        {{ range . }}
-        {{ .FieldName }} : {{ .FieldType -}};
-        {{ end }}
+        << range .Fields ->>
+        <<- .Name >> : << coqType . ->>;
+        << end ->>
     }.
