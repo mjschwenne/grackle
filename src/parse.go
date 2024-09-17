@@ -113,6 +113,8 @@ func main() {
 			ret = buf.String()
 			return
 		},
+		"pred": func(i int) int { return i - 1 },
+		"succ": func(i int) int { return i + 1 },
 	}
 	tmpl, err = tmpl.Funcs(funcMap).ParseFiles(tmplFiles...)
 	if err != nil {

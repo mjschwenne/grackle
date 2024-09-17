@@ -1,3 +1,17 @@
+<<- define "coq_unmarshal_setup_enc_slices" ->>
+  <<- range $idx, $field := . ->>
+  [<<- .Name ->>_sl << if ge $idx (pred (len $)) ->>
+  [Henc << template "coq_unmarshal_setup_enc_hypothesis" $ >>]
+  <<- end ->><<- end ->><<- range . ->>]<<- end ->>
+<<- end ->>
+<<- define "coq_unmarshal_setup_enc_hypothesis" ->>
+  [<<- with $refF := index . 0 ->>H<<- $refF.Name ->>_enc << end >>
+  <<- if gt (len .) 2 ->>
+  << template "coq_unmarshal_setup_enc_hypothesis" (slice . 1) >> << else ->>
+  << with $refF := index . 1 ->>H<<- $refF.Name ->>_enc<<- end >>
+  <<- end ->>
+  ]
+<<- end ->>
 Proof.
   iIntros (?) "[%Henc Hsl] HΦ". wp_rec.
   wp_apply wp_allocStruct; first by val_ty.
@@ -7,4 +21,9 @@ Proof.
   iDestruct (struct_fields_split with "Hs") as "HH".
   iNamed "HH".
 
-  {{ ProcessHenc . }}
+  << $refs := (refFields .Fields) ->>
+  << if gt (len $refs) 0 ->>
+  unfold has_encoding in Henc.
+  destruct Henc as << template "coq_unmarshal_setup_enc_slices" $refs >>
+  << end >>
+  rewrite Henc.
