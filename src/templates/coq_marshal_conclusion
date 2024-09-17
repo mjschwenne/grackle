@@ -2,4 +2,6 @@
   { iApply own_slice_to_small in "Hsl". iFrame. }
   iIntros (?) "[Hs1 Hs2]". iApply "HΦ". iFrame. iPureIntro.
   done.
+
+  {{ Process has_encoding }}
 Qed.

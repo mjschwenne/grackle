@@ -1,7 +1,0 @@
-
-Definition has_encoding (encoded:list u8) (args:<<- .Name ->>) : Prop :=
-    encoded = << range $idx, $field := .Fields ->>
-              << if $idx >> ++
-              << end >>
-              <<- encoding $field >>
-              <<- end ->>.

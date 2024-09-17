@@ -1,7 +1,0 @@
-Definition own (args_ptr:loc) (args:<<- .Name ->>) (q:dfrac) : iProp Σ :=
-  << $recordName := .Name ->>
-  << exists .Fields >> <<- range $idx, $field := .Fields ->>
-  << if $idx >> ∗
-  << end ->>
-  "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- $recordName >> :: "<< .Name >>"]{q} #args.(<<- .Name ->>)
-  <<- end ->>.

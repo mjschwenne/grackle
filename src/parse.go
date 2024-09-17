@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"bytes"
 	"io/fs"
 	"log"
 	"os"
@@ -34,30 +34,21 @@ var typeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
 }
 
+var refTypeMap = map[fieldType]bool{
+	descriptorpb.FieldDescriptorProto_TYPE_INT32:   false,
+	descriptorpb.FieldDescriptorProto_TYPE_UINT32:  false,
+	descriptorpb.FieldDescriptorProto_TYPE_FIXED32: false,
+	descriptorpb.FieldDescriptorProto_TYPE_INT64:   false,
+	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  false,
+	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: false,
+	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: true,
+}
+
 func getCoqTypeName(field *field) string {
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		return field.GetTypeName()
 	}
 	return typeMap[field.GetType()]
-}
-
-func getEncoding(field *field) string {
-	coqType, ok := typeMap[field.GetType()]
-	if !ok {
-		panic("Attempted to get encoding of unsupported type")
-	}
-
-	var result string
-	switch coqType {
-	case "u32":
-		result = fmt.Sprintf("(u32_le args.(%s))", field.GetName())
-	case "u64":
-		result = fmt.Sprintf("(u64_le args.(%s))", field.GetName())
-	case "message":
-		result = fmt.Sprintf("MESSAGES NOT SUPPORTED YET\n")
-	}
-
-	return result
 }
 
 func filter[T any](slice []T, f func(T) bool) []T {
@@ -70,22 +61,16 @@ func filter[T any](slice []T, f func(T) bool) []T {
 	return n
 }
 
-func generateHasEncodingExistsQuant(fields []*field) string {
-	nestedMessages := filter(fields, func(f *field) bool {
-		return f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE
-	})
+func getRefFields(fields []*field) []*field {
+	return filter(fields, isReferenceType)
+}
 
-	if len(nestedMessages) == 0 {
-		return ""
-	}
+func isReferenceType(field *field) bool {
+	return refTypeMap[field.GetType()]
+}
 
-	resultBuilder := strings.Builder{}
-	resultBuilder.WriteString("∃ (")
-	for _, nestedMessage := range nestedMessages {
-		resultBuilder.WriteString(fmt.Sprintf("%s_l", nestedMessage.GetName()))
-	}
-	resultBuilder.WriteString(": loc),\n")
-	return resultBuilder.String()
+func join(sep string, s ...string) string {
+	return strings.Join(s, sep)
 }
 
 func main() {
@@ -107,26 +92,40 @@ func main() {
 	}
 
 	var tmplFiles []string
-	err = filepath.WalkDir("src/templates/", func(path string, info fs.DirEntry, err error) error {
-		if !info.IsDir() {
-			tmplFiles = append(tmplFiles, path)
-		}
-		return nil
-	})
+	err = filepath.WalkDir("src/templates/",
+		func(path string, info fs.DirEntry, err error) error {
+			if !info.IsDir() {
+				tmplFiles = append(tmplFiles, path)
+			}
+			return nil
+		})
 
+	tmpl := template.New("coq").Delims("<<", ">>")
 	funcMap := template.FuncMap{
-		"coqType":  getCoqTypeName,
-		"encoding": getEncoding,
-		"exists":   generateHasEncodingExistsQuant,
+		"coqType":   getCoqTypeName,
+		"isRef":     isReferenceType,
+		"refFields": getRefFields,
+		"join":      join,
+		// This is a bit of a hack to let me call templates with dynamic names
+		"callTemplate": func(name string, data interface{}) (ret string, err error) {
+			buf := bytes.NewBuffer([]byte{})
+			err = tmpl.ExecuteTemplate(buf, name, data)
+			ret = buf.String()
+			return
+		},
 	}
-	tmpl, err := template.New("coq_record").Funcs(funcMap).Delims("<<", ">>").ParseFiles(tmplFiles...)
+	tmpl, err = tmpl.Funcs(funcMap).ParseFiles(tmplFiles...)
 	if err != nil {
 		panic(err)
 	}
 
-	ts := fileDescriptorSet.File[0].MessageType[0]
+	ts := fileDescriptorSet.File[0].MessageType[1]
 	var fields []*field
 	for _, f := range ts.GetField() {
+		if f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+			realName := (f.GetTypeName())[1:]
+			f.TypeName = &realName
+		}
 		fields = append(fields, f)
 	}
 
@@ -138,7 +137,7 @@ func main() {
 		Fields:      fields,
 	}
 
-	err = tmpl.ExecuteTemplate(os.Stdout, "coq.tmpl", co)
+	err = tmpl.ExecuteTemplate(os.Stdout, "coq_proof", co)
 	if err != nil {
 		panic(err)
 	}
