@@ -1,16 +1,16 @@
-<<- define "coq_unmarshal_setup_enc_slices" ->>
+<<- define "coq_unmarshal_setup_enc" ->>
   <<- range $idx, $field := . ->>
   [<<- .Name ->>_sl << if ge $idx (pred (len $)) ->>
   [Henc << template "coq_unmarshal_setup_enc_hypothesis" $ >>]
   <<- end ->><<- end ->><<- range . ->>]<<- end ->>
 <<- end ->>
 <<- define "coq_unmarshal_setup_enc_hypothesis" ->>
-  [<<- with $refF := index . 0 ->>H<<- $refF.Name ->>_enc << end >>
-  <<- if gt (len .) 2 ->>
-  << template "coq_unmarshal_setup_enc_hypothesis" (slice . 1) >> << else ->>
-  << with $refF := index . 1 ->>H<<- $refF.Name ->>_enc<<- end >>
+  <<- if eq (len .) 1 ->>
+  << with $refF := index . 0 ->>H<<- $refF.Name ->>_enc<<- end >>
+  <<- else ->>
+  [<<- with $refF := index . 0 ->>H<<- $refF.Name ->>_enc << end ->>
+  << template "coq_unmarshal_setup_enc_hypothesis" (slice . 1) ->>]
   <<- end ->>
-  ]
 <<- end ->>
 Proof.
   iIntros (?) "[%Henc Hsl] HΦ". wp_rec.
@@ -24,6 +24,6 @@ Proof.
   << $refs := (refFields .Fields) ->>
   << if gt (len $refs) 0 ->>
   unfold has_encoding in Henc.
-  destruct Henc as << template "coq_unmarshal_setup_enc_slices" $refs >>
-  << end >>
+  destruct Henc as << template "coq_unmarshal_setup_enc" $refs >>.
+  << end ->>
   rewrite Henc.

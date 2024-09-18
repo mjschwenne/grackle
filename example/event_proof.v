@@ -61,18 +61,18 @@ Proof.
 
   wp_load. wp_loadField.
   wp_apply (Timestamp.wp_Encode with "[$Hargs_start_enc $Hsl]").
-  iIntros (??) "Hsl". iDestruct "Hsl" as (Hhe) "Hsl". wp_store.
+  iIntros (start_enc start_sl) "Hsl". iDestruct "Hsl" as (Hhe) "Hsl". wp_store.
 
   wp_load. wp_loadField.
   wp_apply (Timestamp.wp_Encode with "[$Hargs_end_enc $Hsl]").
-  iIntros (??) "Hsl". iDestruct "Hsl" as (Hhe') "Hsl". wp_store.
+  iIntros (end_enc end_sl) "Hsl". iDestruct "Hsl" as (Hhe') "Hsl". wp_store.
 
   wp_load. wp_apply (wp_SliceAppendSlice with "[Hpre Hsl]"); first auto.
   { iApply own_slice_to_small in "Hsl". iFrame. }
   iIntros (?) "[Hs1 Hs2]". iApply "HΦ". iFrame.
   iPureIntro.
 
-  unfold has_encoding. exists enc, enc0. split; first done.
+  unfold has_encoding. exists start_enc, end_enc. split. { exact. }
   split. { exact. } { exact. }
 Qed.
 

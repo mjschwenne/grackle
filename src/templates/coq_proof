@@ -6,7 +6,7 @@
 << template "coq_marshal_setup" . >>
 <<- range .Fields ->>
 <<- if isRef . ->>
-MESSAGE MARSHALING OMITTED
+<< template "coq_marshal_message" . >>
 <<- else ->>
 << callTemplate (join "_" "coq" "marshal" (coqType .)) . >>
 <<- end ->>
@@ -15,9 +15,9 @@ MESSAGE MARSHALING OMITTED
 << template "coq_decode" . >>
 << template "coq_unmarshal_setup" . >>
 <<- range .Fields ->>
-<<- if isRef . ->>
-MESSAGE MARSHALING OMITTED
-<<- else ->>
+<<- if isRef . >>
+MESSAGE UNMARSHALING OMITTED
+<< else >>
 << callTemplate (join "_" "coq" "unmarshal" (coqType .)) . >>
 <<- end ->>
 <<- end ->>

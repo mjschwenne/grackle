@@ -1,7 +1,16 @@
+
   wp_load. wp_apply (wp_SliceAppendSlice with "[Hpre Hsl]"); first auto.
   { iApply own_slice_to_small in "Hsl". iFrame. }
   iIntros (?) "[Hs1 Hs2]". iApply "HΦ". iFrame. iPureIntro.
   done.
 
-  {{ Process has_encoding }}
+  << $refs := (refFields .Fields) ->>
+  << if gt (len $refs) 0 ->>
+  unfold has_encoding. exists << range $idx, $field := $refs ->>
+  <<- if $idx >>, << end ->>
+  <<- .Name ->>_enc
+  <<- end ->>. << range $refs >>
+  split. { exact. }
+  <<- end >> { exact. }
+  << end >>
 Qed.

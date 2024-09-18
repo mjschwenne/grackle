@@ -1,0 +1,4 @@
+
+  wp_load. wp_loadField.
+  wp_apply (<<- .TypeName ->>.wp_Encode with "[$Hargs_<<- .Name ->>_enc $Hsl]").
+  iIntros (<<- .Name ->>_enc << .Name ->>_sl) "Hsl". iDestruct "Hsl" as (Hhe_<<- .Name ->>) "Hsl". wp_store.
