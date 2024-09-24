@@ -15,11 +15,11 @@ func (t *TimeStamp) approxSize() uint64 {
 }
 
 func MarshalTimeStamp(t *TimeStamp, prefix []byte) []byte {
-	var enc = make([]byte, 0, t.approxSize())
+	var enc = prefix
 	enc = marshal.WriteInt32(enc, t.hour)
 	enc = marshal.WriteInt32(enc, t.minute)
 	enc = marshal.WriteInt32(enc, t.second)
-	return append(prefix, enc...)
+	return enc
 }
 
 func UnmarshalTimeStamp(s []byte) (*TimeStamp, []byte) {

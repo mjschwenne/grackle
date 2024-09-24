@@ -33,19 +33,19 @@ Definition TimeStamp := struct.decl [
 
 Definition MarshalTimeStamp: val :=
   rec: "MarshalTimeStamp" "t" "prefix" :=
-    let: "enc" := ref_to (slice.T byteT) (NewSliceWithCap byteT #0 (TimeStamp__approxSize "t")) in
+    let: "enc" := ref_to (slice.T byteT) "prefix" in
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF TimeStamp "hour" "t"));;
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF TimeStamp "minute" "t"));;
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF TimeStamp "second" "t"));;
-    SliceAppendSlice byteT "prefix" (![slice.T byteT] "enc").
+    ![slice.T byteT] "enc".
 
 Definition MarshalEvent: val :=
   rec: "MarshalEvent" "e" "prefix" :=
-    let: "enc" := ref_to (slice.T byteT) (NewSliceWithCap byteT #0 (Event__approxSize "e")) in
+    let: "enc" := ref_to (slice.T byteT) "prefix" in
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF Event "id" "e"));;
     "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "start" "e") (![slice.T byteT] "enc"));;
     "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "end" "e") (![slice.T byteT] "enc"));;
-    SliceAppendSlice byteT "prefix" (![slice.T byteT] "enc").
+    ![slice.T byteT] "enc".
 
 Definition UnmarshalTimeStamp: val :=
   rec: "UnmarshalTimeStamp" "s" :=

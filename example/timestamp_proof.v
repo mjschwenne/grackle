@@ -37,27 +37,22 @@ Lemma wp_Encode (args_ptr:loc) (args:Timestamp) (pre_sl:Slice.t) (prefix:list u8
   }}}.
 
 Proof.
-  iIntros (?) "H HΦ". iDestruct "H" as "[Hown Hpre]". iNamed "Hown".
-  wp_rec. unfold TimeStamp__approxSize. wp_pures.
-  wp_apply (wp_NewSliceWithCap).
-  { apply encoding.unsigned_64_nonneg. }
-  iIntros (?) "Hsl".
+  iIntros (?) "H HΦ". iDestruct "H" as "[Hown Hsl]". iNamed "Hown".
+  wp_rec. wp_pures.
   wp_apply (wp_ref_to); first by val_ty.
   iIntros (?) "Hptr".
   wp_pures.
 
-  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$]").
-  iIntros (?) "Hsl". wp_store.
+  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
+  rewrite -?app_assoc. iIntros (?) "Hsl". wp_store.
 
-  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$]").
-  iIntros (?) "Hsl". wp_store.
+  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
+  rewrite -?app_assoc. iIntros (?) "Hsl". wp_store.
 
-  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$]").
-  iIntros (?) "Hsl". wp_store.
+  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
+  rewrite -?app_assoc. iIntros (?) "Hsl". wp_store.
 
-  wp_load. wp_apply (wp_SliceAppendSlice with "[Hpre Hsl]"); first auto.
-  { iApply own_slice_to_small in "Hsl". iFrame. }
-  iIntros (?) "[Hs1 Hs2]". iApply "HΦ". iFrame. iPureIntro.
+  wp_load. iApply "HΦ". iModIntro. iFrame. iPureIntro.
   done.
 Qed.
 

@@ -17,11 +17,11 @@ func (e *Event) approxSize() uint64 {
 }
 
 func MarshalEvent(e *Event, prefix []byte) []byte {
-	var enc = make([]byte, 0, e.approxSize())
+	var enc = prefix
 	enc = marshal.WriteInt32(enc, e.id)
 	enc = MarshalTimeStamp(e.start, enc)
 	enc = MarshalTimeStamp(e.end, enc)
-	return append(prefix, enc...)
+	return enc
 }
 
 func UnmarshalEvent(s []byte) (*Event, []byte) {
