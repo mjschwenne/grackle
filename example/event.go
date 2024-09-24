@@ -6,7 +6,7 @@ import (
 )
 
 type Event struct {
-	id    uint32
+	id        uint32
 	startTime *TimeStamp
 	endTime   *TimeStamp
 }
