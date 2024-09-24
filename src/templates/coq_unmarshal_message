@@ -1,0 +1,2 @@
+  wp_load. wp_apply (<< coqType . >>.wp_Decode << .Name >>_sl with "[Hsl]").
+  { iFrame. exact. } iIntros (??) "[H<< .Name >> Hsl]". wp_pures. wp_storeField. wp_store.

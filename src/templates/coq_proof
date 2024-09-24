@@ -16,7 +16,7 @@
 << template "coq_unmarshal_setup" . >>
 <<- range .Fields ->>
 <<- if isRef . >>
-MESSAGE UNMARSHALING OMITTED
+<< template "coq_unmarshal_message" . >>
 << else >>
 << callTemplate (join "_" "coq" "unmarshal" (coqType .)) . >>
 <<- end ->>

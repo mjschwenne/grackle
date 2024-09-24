@@ -1,5 +1,4 @@
-
-Lemma wp_Encode (args_ptr:loc) (args:<<- .Name ->>) (pre_sl:Slice.t) (prefix:list u8) :
+Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) :
   {{{
         own args_ptr args (DfracDiscarded) ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix

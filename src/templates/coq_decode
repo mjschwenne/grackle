@@ -1,5 +1,4 @@
-
-Lemma wp_Decode enc enc_sl (args:<<- .Name ->>) (suffix:list u8) (q:dfrac):
+Lemma wp_Decode enc enc_sl (args:C) (suffix:list u8) (q:dfrac):
   {{{
         ⌜has_encoding enc args⌝ ∗
         own_slice_small enc_sl byteT q (enc ++ suffix)

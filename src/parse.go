@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -17,11 +18,11 @@ type field = descriptorpb.FieldDescriptorProto
 type fieldType = descriptorpb.FieldDescriptorProto_Type
 
 type CoqOutput struct {
-	ProjectName string
-	Name        string
-	GooseOutput string
-	ModuleName  string
-	Fields      []*field
+	ProjectName    string
+	Name           string
+	GooseOutput    string
+	NestedMessages []string
+	Fields         []*field
 }
 
 var typeMap = map[fieldType]string{
@@ -123,20 +124,24 @@ func main() {
 
 	ts := fileDescriptorSet.File[0].MessageType[1]
 	var fields []*field
+	var nested []string
 	for _, f := range ts.GetField() {
 		if f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 			realName := (f.GetTypeName())[1:]
 			f.TypeName = &realName
+			if !slices.Contains(nested, realName) {
+				nested = append(nested, realName)
+			}
 		}
 		fields = append(fields, f)
 	}
 
 	co := CoqOutput{
-		ProjectName: "Grackel.example",
-		Name:        *ts.Name,
-		GooseOutput: "example",
-		ModuleName:  *ts.Name,
-		Fields:      fields,
+		ProjectName:    "Grackle.example",
+		Name:           *ts.Name,
+		GooseOutput:    "example",
+		NestedMessages: nested,
+		Fields:         fields,
 	}
 
 	err = tmpl.ExecuteTemplate(os.Stdout, "coq_proof", co)

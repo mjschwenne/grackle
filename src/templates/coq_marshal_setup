@@ -1,10 +1,5 @@
 Proof.
-  iIntros (?) "H HΦ". iDestruct "H" as "[Hown Hpre]". iNamed "Hown".
-  wp_rec.
-  << "processSize ." >>
-  wp_pures. wp_apply (wp_NewSliceWithCap).
-  { apply encoding.unsigned_64_nonneg. }
-  iIntros (?) "Hsl".
+  iIntros (?) "H HΦ". iDestruct "H" as "[Hown Hsl]". iNamed "Hown".
+  wp_rec. wp_pures.
   wp_apply (wp_ref_to); first by val_ty.
-  iIntros (?) "Hptr".
-  wp_pures.
+  iIntros (?) "Hptr". wp_pures.

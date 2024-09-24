@@ -1,8 +1,13 @@
 From Perennial.program_proof Require Import grove_prelude.
 From << .ProjectName >> Require Import << .GooseOutput >>.
 From Perennial.program_proof Require Import marshal_stateless_proof.
+<<- range .NestedMessages >>
+From << $.ProjectName >> Require Import << . >>_proof.
+<<- end >>
 
-Module << .ModuleName >>.
-Section << .ModuleName >>.
+Module << .Name >>.
+Section << .Name >>.
+
+Typeclasses Opaque app.
 
 Context `{!heapGS Σ}.

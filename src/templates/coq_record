@@ -1,7 +1,6 @@
-
-Record << .Name >> :=
+Record C :=
     mkC {
         << range .Fields ->>
-        <<- .Name >> : << coqType . ->>;
+        <<- .Name >> : << coqType . ->><<- if isRef . ->> .C <<- end ->>;
         << end ->>
     }.

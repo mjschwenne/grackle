@@ -10,8 +10,8 @@ Context `{ext_ty: ext_types}.
 
 Definition Event := struct.decl [
   "id" :: uint32T;
-  "start" :: ptrT;
-  "end" :: ptrT
+  "startTime" :: ptrT;
+  "endTime" :: ptrT
 ].
 
 (* TimeStamp__approxSize from timestamp.go *)
@@ -22,8 +22,8 @@ Definition TimeStamp__approxSize: val :=
 
 Definition Event__approxSize: val :=
   rec: "Event__approxSize" "e" :=
-    let: "size" := std.SumAssumeNoOverflow #4 (TimeStamp__approxSize (struct.loadF Event "start" "e")) in
-    std.SumAssumeNoOverflow "size" (TimeStamp__approxSize (struct.loadF Event "end" "e")).
+    let: "size" := std.SumAssumeNoOverflow #4 (TimeStamp__approxSize (struct.loadF Event "startTime" "e")) in
+    std.SumAssumeNoOverflow "size" (TimeStamp__approxSize (struct.loadF Event "endTime" "e")).
 
 Definition TimeStamp := struct.decl [
   "hour" :: uint32T;
@@ -43,8 +43,8 @@ Definition MarshalEvent: val :=
   rec: "MarshalEvent" "e" "prefix" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF Event "id" "e"));;
-    "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "start" "e") (![slice.T byteT] "enc"));;
-    "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "end" "e") (![slice.T byteT] "enc"));;
+    "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "startTime" "e") (![slice.T byteT] "enc"));;
+    "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "endTime" "e") (![slice.T byteT] "enc"));;
     ![slice.T byteT] "enc".
 
 Definition UnmarshalTimeStamp: val :=
@@ -70,10 +70,10 @@ Definition UnmarshalEvent: val :=
     struct.storeF Event "id" "e" "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := UnmarshalTimeStamp (![slice.T byteT] "enc") in
-    struct.storeF Event "start" "e" "0_ret";;
+    struct.storeF Event "startTime" "e" "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := UnmarshalTimeStamp (![slice.T byteT] "enc") in
-    struct.storeF Event "end" "e" "0_ret";;
+    struct.storeF Event "endTime" "e" "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     ("e", ![slice.T byteT] "enc").
 

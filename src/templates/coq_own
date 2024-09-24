@@ -1,11 +1,4 @@
-<<- define "lit" ->>
-  "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- $.Name >> :: "<<- .Name ->>"]{q} #args.(<<- .Name ->>)
-<<- end ->>
-<<- define "ref" ->>
-    "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- $.Name >> :: "<<- .Name ->>"]{q} #<<- .Name ->>_l ∗
-  "Hargs_<<- .Name ->>_enc" ∷ << $.Name ->>.own << .Name ->>_l args.(<<- .Name ->>) q
-<<- end ->>
-Definition own (args_ptr:loc) (args:<<- .Name ->>) (q:dfrac) : iProp Σ :=
+Definition own (args_ptr:loc) (args:C) (q:dfrac) : iProp Σ :=
   <<- $refs := (refFields .Fields) ->>
   <<- range $idx, $field := $refs ->>
   <<- if not $idx >>
@@ -18,7 +11,8 @@ Definition own (args_ptr:loc) (args:<<- .Name ->>) (q:dfrac) : iProp Σ :=
   << if $idx >> ∗
   << end ->>
   <<- if isRef . ->>
-  << template "ref" . >>
+  "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- $.Name >> :: "<<- .Name ->>"]{q} #<<- .Name ->>_l ∗
+  "Hargs_<<- .Name ->>_enc" ∷ << coqType . ->>.own << .Name ->>_l args.(<<- .Name ->>) q
   <<- else ->>
-  << template "lit" . >>
+  "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- $.Name >> :: "<<- .Name ->>"]{q} #args.(<<- .Name ->>)
   <<- end ->><<- end ->>.

@@ -1,29 +1,19 @@
-<<- define "coq_unmarshal_setup_enc" ->>
-  <<- range $idx, $field := . ->>
-  [<<- .Name ->>_sl << if ge $idx (pred (len $)) ->>
-  [Henc << template "coq_unmarshal_setup_enc_hypothesis" $ >>]
-  <<- end ->><<- end ->><<- range . ->>]<<- end ->>
-<<- end ->>
-<<- define "coq_unmarshal_setup_enc_hypothesis" ->>
-  <<- if eq (len .) 1 ->>
-  << with $refF := index . 0 ->>H<<- $refF.Name ->>_enc<<- end >>
-  <<- else ->>
-  [<<- with $refF := index . 0 ->>H<<- $refF.Name ->>_enc << end ->>
-  << template "coq_unmarshal_setup_enc_hypothesis" (slice . 1) ->>]
-  <<- end ->>
-<<- end ->>
 Proof.
   iIntros (?) "[%Henc Hsl] HΦ". wp_rec.
   wp_apply wp_allocStruct; first by val_ty.
-  iIntros (?) "Hs". wp_pures.
+  iIntros (?) "Hstruct". wp_pures.
   wp_apply wp_ref_to; first done.
   iIntros (?) "Hptr". wp_pures.
-  iDestruct (struct_fields_split with "Hs") as "HH".
+  iDestruct (struct_fields_split with "Hstruct") as "HH".
   iNamed "HH".
 
   << $refs := (refFields .Fields) ->>
   << if gt (len $refs) 0 ->>
   unfold has_encoding in Henc.
-  destruct Henc as << template "coq_unmarshal_setup_enc" $refs >>.
+  destruct Henc as (
+  <<- range $idx, $r := $refs ->>
+    <<- if $idx >>&<< end >> << .Name >>_sl << end ->>
+    & Henc
+    <<- range $idx, $r := $refs >> & Hencoding_<< .Name >> <<- end >> ).
   << end ->>
-  rewrite Henc.
+  rewrite Henc. rewrite -?app_assoc.
