@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package grackle;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FileOptions {
+    string coq_logical_path = 50621;
+    string coq_physical_path = 50622;
+    string goose_output_path = 50623;
+}
