@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "testdata/proto/timestamp.proto";
+
+message Event {
+    int32 id = 1;
+    TimeStamp startTime = 2;
+    TimeStamp endTime = 3;
+}

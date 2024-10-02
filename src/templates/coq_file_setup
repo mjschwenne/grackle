@@ -1,8 +1,8 @@
 From Perennial.program_proof Require Import grove_prelude.
-From << .ProjectName >> Require Import << .GooseOutput >>.
+From << .CoqLogicalPath >> Require Import << .GooseOutput >>.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 <<- range .NestedMessages >>
-From << $.ProjectName >> Require Import << . >>_proof.
+From << $.CoqLogicalPath >> Require Import << . >>_proof.
 <<- end >>
 
 Module << .Name >>.
