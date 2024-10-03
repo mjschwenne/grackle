@@ -42,6 +42,8 @@ jobs:
           gofmt -w -s .
           git diff --exit-code
 
+      - name: Install protoc
+        run: sudo apt-get install protobuf-compiler -y
       - name: Install dependencies
         run: go get -t ./...
       - name: go test
