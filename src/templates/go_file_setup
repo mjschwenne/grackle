@@ -1,0 +1,5 @@
+package << .GoPackage >>
+
+import (
+    "github.com/tchajed/marshal"
+)

@@ -1,0 +1,5 @@
+<< template "go_file_setup" . >>
+<< template "go_struct" . >>
+<< template "go_size" . >>
+<< template "go_marshal" . >>
+<< template "go_unmarshal" . >>

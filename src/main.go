@@ -13,7 +13,7 @@ func main() {
 	var coqLogicalPath = flag.String("coq-logical-path", "", "Logical path to import the marshal proofs from")
 	var coqPhysicalPath = flag.String("coq-physical-path", "", "Physical output path for coq proofs")
 	var debug = flag.Bool("debug", false, "Output all generated code to stdout")
-	// var goOutputPath = flag.String("go-output-path", "", "Physical path to output go code into")
+	var goOutputPath = flag.String("go-output-path", "", "Physical path to output go code into")
 	// var goPackageName = flag.String("go-package-name", "", "Name for the autogrenerated go package")
 	flag.Parse()
 
@@ -31,5 +31,5 @@ func main() {
 		capture = nil
 	}
 
-	grackle(&protoFiles, gooseOutputPath, coqLogicalPath, coqPhysicalPath, capture)
+	grackle(&protoFiles, gooseOutputPath, coqLogicalPath, coqPhysicalPath, goOutputPath, capture)
 }

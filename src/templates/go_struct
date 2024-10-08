@@ -1,0 +1,5 @@
+type << goName .Name >> struct {
+    << range .Fields ->>
+    <<- .Name >> << goType . >>
+    << end ->>
+}

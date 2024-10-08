@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
+	"strings"
 	"text/template"
 
 	"google.golang.org/protobuf/proto"
@@ -25,6 +26,8 @@ type fileParams struct {
 	GooseOutput     *string
 	CoqLogicalPath  *string
 	CoqPhysicalPath *string
+	GoOutputPath    *string
+	GoPackage       *string
 }
 
 type messageParams struct {
@@ -32,6 +35,8 @@ type messageParams struct {
 	GooseOutput     *string
 	CoqLogicalPath  *string
 	CoqPhysicalPath *string
+	GoPhysicalPath  *string
+	GoPackage       *string
 	NestedMessages  []string
 	Fields          []*field
 }
@@ -87,7 +92,7 @@ func setupTemplates() *template.Template {
 			return nil
 		})
 
-	tmpl := template.New("coq").Delims("<<", ">>")
+	tmpl := template.New("grackle").Delims("<<", ">>")
 	funcMap := template.FuncMap{
 		"coqType":   getCoqTypeName,
 		"isRef":     isReferenceType,
@@ -100,8 +105,12 @@ func setupTemplates() *template.Template {
 			ret = buf.String()
 			return
 		},
-		"pred": func(i int) int { return i - 1 },
-		"succ": func(i int) int { return i + 1 },
+		"pred":        func(i int) int { return i - 1 },
+		"succ":        func(i int) int { return i + 1 },
+		"goType":      getGoTypeName,
+		"goName":      getGoPublicName,
+		"param":       generateParameterName,
+		"marshalType": getBuiltInMarshalFuncType,
 	}
 	tmpl, err = tmpl.Funcs(funcMap).ParseFiles(tmplFiles...)
 	if err != nil {
@@ -112,7 +121,7 @@ func setupTemplates() *template.Template {
 }
 
 // Override options with file-specific values if needed
-func getFileOptions(file *descriptorpb.FileDescriptorProto, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string) *fileParams {
+func getFileOptions(file *descriptorpb.FileDescriptorProto, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goModule *string, goRoot *string, goOutputPath *string) *fileParams {
 	const COQ_LOGICAL_PATH_FIELD_TAG = 50621
 	const COQ_PHYSICAL_PATH_FIELD_TAG = 50622
 	const GOOSE_OUTPUT_PATH = 50623
@@ -134,10 +143,13 @@ func getFileOptions(file *descriptorpb.FileDescriptorProto, gooseOutput *string,
 		}
 	}
 
+	goPackage := strings.TrimRight(strings.TrimPrefix(*goOutputPath, *goRoot), "/\\")
 	return &fileParams{
 		GooseOutput:     fileGooseOutput,
 		CoqLogicalPath:  fileCoqLogicalPath,
 		CoqPhysicalPath: fileCoqPhysicalPath,
+		GoOutputPath:    goOutputPath,
+		GoPackage:       &goPackage,
 	}
 }
 
@@ -156,11 +168,14 @@ func getMessageOptions(message *descriptorpb.DescriptorProto, fileOpts *filePara
 	}
 
 	coqOutputPath := getCoqOutputPath(fileOpts.CoqPhysicalPath, message.Name)
+	goOutputPath := getGoOutputPath(fileOpts.GoOutputPath, message.Name)
 	messageOpts := messageParams{
 		Name:            message.Name,
 		GooseOutput:     fileOpts.GooseOutput,
 		CoqLogicalPath:  fileOpts.CoqLogicalPath,
 		CoqPhysicalPath: &coqOutputPath,
+		GoPhysicalPath:  &goOutputPath,
+		GoPackage:       fileOpts.GoPackage,
 		NestedMessages:  nested,
 		Fields:          fields,
 	}
@@ -177,27 +192,46 @@ func openGrackleFile(path *string) *os.File {
 	return file
 }
 
-func grackle(protoFiles *[]string, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, debug io.Writer) {
+func grackle(protoFiles *[]string, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, debug io.Writer) {
 	tmpl := setupTemplates()
+	goModule, goRoot := findGoModuleName(*goOutputPath)
+	// absGoOutputPath, err := filepath.Abs(*goOutputPath)
+	// if err != nil {
+	// 	log.Fatalf("Cannot resolve go output path: %v\n", goOutputPath)
+	// }
 
 	for _, file := range generateDescirptor(protoFiles).File {
-		fileOpts := getFileOptions(file, gooseOutput, coqLogicalPath, coqPhysicalPath)
+		fileOpts := getFileOptions(file, gooseOutput, coqLogicalPath, coqPhysicalPath, &goModule, &goRoot, goOutputPath)
 		for _, message := range file.MessageType {
 			msg := getMessageOptions(message, fileOpts)
-			var out io.Writer
+			var coqOut io.Writer
+			var goOut io.Writer
 			if debug != nil {
-				out = debug
-				fmt.Fprintf(out, "--- Begin: %s ---\n", *msg.CoqPhysicalPath)
+				coqOut = debug
+				goOut = debug
+				fmt.Fprintf(coqOut, "--- Begin: %s ---\n", *msg.CoqPhysicalPath)
 			} else {
-				out = openGrackleFile(msg.CoqPhysicalPath)
+				coqOut = openGrackleFile(msg.CoqPhysicalPath)
+				goOut = openGrackleFile(msg.GoPhysicalPath)
 			}
-			err := tmpl.ExecuteTemplate(out, "coq_proof", msg)
+
+			err := tmpl.ExecuteTemplate(coqOut, "coq_proof", msg)
 
 			if err != nil {
 				log.Fatalf("Error generating coq code: %v\n", err)
 			}
 			if debug != nil {
 				fmt.Fprintf(debug, "--- End: %s ---\n", *msg.CoqPhysicalPath)
+				fmt.Fprintf(debug, "--- Start: %s ---\n", *msg.GoPhysicalPath)
+			}
+
+			err = tmpl.ExecuteTemplate(goOut, "go_file", msg)
+
+			if err != nil {
+				log.Fatalf("Error generating go code: %v\n", err)
+			}
+			if debug != nil {
+				fmt.Fprintf(debug, "--- End: %s ---\n", *msg.GoPhysicalPath)
 			}
 		}
 	}

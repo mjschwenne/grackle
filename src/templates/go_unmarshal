@@ -1,0 +1,10 @@
+func Unmarshal<<- goName .Name ->>(s []byte) (*<<- goName .Name >>, []byte) {
+    << param .Name >> := new(<< goName .Name >>)
+    var enc = s // Needed for goose compatibility
+    << range .Fields ->>
+    << param $.Name >>.<< .Name >>, enc =
+    <<-  if isRef . >> Unmarshal<<- goType . ->>(enc)
+    << else >> marshal.Read<<- marshalType . ->>(enc)
+    << end ->> <<- end ->>
+    return e, enc
+}

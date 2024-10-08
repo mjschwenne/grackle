@@ -1,7 +1,7 @@
 #+title: Grackle
 
 Grackle is a project to automate the marshaling and unmarshaling code for [[https://github.com/mit-pdos/grove][grove]].
-Effectively, it aims to replace the old marshaling code found [[https://github.com/tchajed/marshal/blob/master/marshal_test.go][here]] by creating a
+Effectively, it aims to replace the old marshaling code found [[https://github.com/tchajed/marshal][here]] by creating a
 compiler capable of taking a subset of the [[https://protobuf.dev/][Protobuf]] specification (=.proto= file)
 and emitting the Go code which can perform the marshaling and unmarshaling of
 the described buffers and a Gallina script which enables reasoning about the
