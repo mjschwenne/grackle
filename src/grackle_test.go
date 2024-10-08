@@ -25,5 +25,6 @@ func TestCalendarExample(t *testing.T) {
 	coqLogicalPath := "Grackle.example"
 	coqPhysicalPath := "test"
 	grackle(&protoFiles, &gooseOutput, &coqLogicalPath, &coqPhysicalPath, grackleOutput)
+	grackleOutput.Flush()
 	golden.Assert(t, grackleBuffer.String(), "golden/calendar.golden")
 }
