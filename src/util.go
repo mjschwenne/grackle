@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 
@@ -67,7 +66,7 @@ func findGoModuleName(goOutputPath string) (string, string) {
 	err := goenv.Run()
 	if err != nil {
 		log.Print(goenvErr.String())
-		log.Fatalf("Error fingind go.mod path: %v\n", err)
+		log.Fatalf("Error finding go.mod path: %v\n", err)
 	}
 
 	goMod := strings.TrimSpace(goenvOut.String())
