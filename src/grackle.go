@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"go/format"
 	"io"
 	"io/fs"
 	"log"
@@ -225,11 +226,24 @@ func grackle(protoFiles *[]string, gooseOutput *string, coqLogicalPath *string, 
 				fmt.Fprintf(debug, "--- Start: %s ---\n", *msg.GoPhysicalPath)
 			}
 
-			err = tmpl.ExecuteTemplate(goOut, "go_file", msg)
-
+			// Write to a buffer, then format
+			// The buffer may seem large, but it is only 1 MB
+			goBuffer := bytes.NewBuffer(make([]byte, 0, 1000000))
+			err = tmpl.ExecuteTemplate(goBuffer, "go_file", msg)
 			if err != nil {
 				log.Fatalf("Error generating go code: %v\n", err)
 			}
+
+			formattedGo, err := format.Source(goBuffer.Bytes())
+			if err != nil {
+				log.Fatalf("Error formatting go code: %v\n", err)
+			}
+
+			_, err = goOut.Write(formattedGo)
+			if err != nil {
+				log.Fatalf("Error writing go code: %v\n", err)
+			}
+
 			if debug != nil {
 				fmt.Fprintf(debug, "--- End: %s ---\n", *msg.GoPhysicalPath)
 			}
