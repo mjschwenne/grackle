@@ -1,14 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
 
+	"golang.org/x/mod/modfile"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -56,39 +59,31 @@ var refTypeMap = map[fieldType]bool{
 // Returns both the name of the module listed in go.mod and the directory where
 // the go.mod is found.
 func findGoModuleName(goOutputPath string) (string, string) {
-	currentDir, err := filepath.Abs(goOutputPath)
+
+	goenv := exec.Command("go", "env", "GOMOD")
+	var goenvOut, goenvErr bytes.Buffer
+	goenv.Stderr = &goenvErr
+	goenv.Stdout = &goenvOut
+	err := goenv.Run()
 	if err != nil {
-		log.Fatalf("Could not resolve relative path: %v\n", err)
+		log.Print(goenvErr.String())
+		log.Fatalf("Error fingind go.mod path: %v\n", err)
 	}
 
-	for {
-		var goMod = path.Join(currentDir, "go.mod")
-		files, err := filepath.Glob(goMod)
-		if err != nil {
-			log.Fatalf("Error finding parent go.mod: %v\n", err)
-		}
-		if len(files) > 1 {
-			log.Fatalf("Error: Too many go.mod files found")
-		} else if len(files) == 1 {
-			regex := regexp.MustCompile(`(?m)^module (?<mod>[^\s]+)$`)
-			goModContents, err := os.ReadFile(goMod)
-			// Do y'all ever feel like you need a monad to handle all of these
-			// functions which return an error?
-			if err != nil {
-				log.Fatalf("Could not read go.mod contents: %v\n", err)
-			}
-			return regex.FindStringSubmatch(string(goModContents))[1], currentDir
-		} else {
-			// Peel off the trailing '/' and cut off the next directory
-			currentDir, _ = filepath.Split(currentDir[:len(currentDir)-1])
-			// Trying to search above the file system root.
-			// This check might not work on windows but I hope it does on mac
-			// I don't have a mac so I can't really test
-			if currentDir == "" {
-				log.Fatalf("Could not find go.mod.\n")
-			}
-		}
+	goMod := strings.TrimSpace(goenvOut.String())
+	goModContents, err := os.ReadFile(goMod)
+	if err != nil {
+		log.Fatalf("Could not read go.mod contents: %v\n", err)
 	}
+
+	goRootModule := modfile.ModulePath(goModContents)
+	if len(goRootModule) == 0 {
+		log.Fatalf("Could not detect module name in go.mod file: %s\n", goMod)
+	}
+
+	goRootPath, _ := filepath.Split(goMod)
+
+	return goRootModule, goRootPath
 }
 
 func getModulePath(suffix string) string {

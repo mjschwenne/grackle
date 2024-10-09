@@ -14,5 +14,6 @@ require (
 
 require (
 	github.com/goose-lang/std v0.4.1
+	golang.org/x/mod v0.6.0
 	gotest.tools/v3 v3.5.1
 )
