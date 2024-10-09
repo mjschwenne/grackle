@@ -1,6 +1,6 @@
 --- Begin: test/TimeStamp_proof.v ---
 From Perennial.program_proof Require Import grove_prelude.
-From Grackle.example Require Import example.
+From Grackle.example Require Import test.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 
 Module TimeStamp.
@@ -102,9 +102,9 @@ import (
 )
 
 type TimeStamp struct {
-	hour   int32
-	minute int32
-	second int32
+	hour   uint32
+	minute uint32
+	second uint32
 }
 
 func (t *TimeStamp) approxSize() uint64 {
@@ -125,12 +125,12 @@ func UnmarshalTimeStamp(s []byte) (*TimeStamp, []byte) {
 	t.hour, enc = marshal.ReadInt32(enc)
 	t.minute, enc = marshal.ReadInt32(enc)
 	t.second, enc = marshal.ReadInt32(enc)
-	return e, enc
+	return t, enc
 }
 --- End: test/timestamp.go ---
 --- Begin: test/Event_proof.v ---
 From Perennial.program_proof Require Import grove_prelude.
-From Grackle.example Require Import example.
+From Grackle.example Require Import test.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 From Grackle.example Require Import TimeStamp_proof.
 
@@ -251,9 +251,9 @@ import (
 )
 
 type Event struct {
-	id        int32
-	startTime TimeStamp
-	endTime   TimeStamp
+	id        uint32
+	startTime *TimeStamp
+	endTime   *TimeStamp
 }
 
 func (e *Event) approxSize() uint64 {

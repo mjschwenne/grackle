@@ -255,6 +255,10 @@ func grackle(protoFiles *[]string, gooseOutput *string, coqLogicalPath *string, 
 	}
 
 	// Goose translation
+	if debug != nil {
+		// Only invoke goose for non-debug runs for the moment 
+		return 
+	}
 	gooseConfig := goose.TranslationConfig{TypeCheck: false, AddSourceFileComments: false, SkipInterfaces: false}
 	gooseFiles, gooseErrs, err := gooseConfig.TranslatePackages(goRoot, "./"+*goOutputPath)
 	if err != nil {
