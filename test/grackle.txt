@@ -1,0 +1,1 @@
+go run ./src/ -coq-logical-path Grackle.test -coq-physical-path test -go-output-path test -goose-output test/goose/ event.proto timestamp.proto

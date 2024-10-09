@@ -25,10 +25,10 @@ var coqTypeMap = map[fieldType]string{
 }
 
 var goTypeMap = map[fieldType]string{
-	descriptorpb.FieldDescriptorProto_TYPE_INT32:   "int32",
+	descriptorpb.FieldDescriptorProto_TYPE_INT32:   "uint32",
 	descriptorpb.FieldDescriptorProto_TYPE_UINT32:  "uint32",
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED32: "uint32",
-	descriptorpb.FieldDescriptorProto_TYPE_INT64:   "int64",
+	descriptorpb.FieldDescriptorProto_TYPE_INT64:   "uint64",
 	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  "uint64",
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: "uint64",
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",

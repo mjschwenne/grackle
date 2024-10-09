@@ -3,8 +3,8 @@ syntax = "proto3";
 import "grackle.proto";
 import "timestamp.proto";
 
-option (grackle.coq_logical_path) = "grackle.example";
-option (grackle.coq_physical_path) = "example";
+// option (grackle.coq_logical_path) = "grackle.example";
+// option (grackle.coq_physical_path) = "example";
 
 message Event {
     int32 id = 1;

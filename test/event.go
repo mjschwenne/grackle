@@ -1,7 +1,6 @@
-package main
+package test
 
 import (
-	"github.com/goose-lang/std"
 	"github.com/tchajed/marshal"
 )
 

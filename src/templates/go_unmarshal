@@ -6,5 +6,5 @@ func Unmarshal<<- goName .Name ->>(s []byte) (*<<- goName .Name >>, []byte) {
     <<-  if isRef . >> Unmarshal<<- goType . ->>(enc)
     << else >> marshal.Read<<- marshalType . ->>(enc)
     << end ->> <<- end ->>
-    return e, enc
+    return << param .Name >>, enc
 }

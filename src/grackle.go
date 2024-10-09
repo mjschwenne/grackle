@@ -16,6 +16,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/goose-lang/goose"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -185,7 +186,7 @@ func getMessageOptions(message *descriptorpb.DescriptorProto, fileOpts *filePara
 }
 
 func openGrackleFile(path *string) *os.File {
-	file, err := os.OpenFile(*path, os.O_WRONLY|os.O_CREATE, 0644)
+	file, err := os.OpenFile(*path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		log.Fatalf("Could not open output file: %v\n", err)
 	}
@@ -201,6 +202,7 @@ func grackle(protoFiles *[]string, gooseOutput *string, coqLogicalPath *string, 
 	// 	log.Fatalf("Cannot resolve go output path: %v\n", goOutputPath)
 	// }
 
+	goFiles := make([]*string, 0, 10)
 	for _, file := range generateDescirptor(protoFiles).File {
 		fileOpts := getFileOptions(file, gooseOutput, coqLogicalPath, coqPhysicalPath, &goModule, &goRoot, goOutputPath)
 		for _, message := range file.MessageType {
@@ -210,10 +212,11 @@ func grackle(protoFiles *[]string, gooseOutput *string, coqLogicalPath *string, 
 			if debug != nil {
 				coqOut = debug
 				goOut = debug
-				fmt.Fprintf(coqOut, "--- Begin: %s ---\n", *msg.CoqPhysicalPath)
+				fmt.Fprintf(debug, "--- Begin: %s ---\n", *msg.CoqPhysicalPath)
 			} else {
 				coqOut = openGrackleFile(msg.CoqPhysicalPath)
 				goOut = openGrackleFile(msg.GoPhysicalPath)
+				goFiles = append(goFiles, msg.GoPhysicalPath)
 			}
 
 			err := tmpl.ExecuteTemplate(coqOut, "coq_proof", msg)
@@ -247,6 +250,29 @@ func grackle(protoFiles *[]string, gooseOutput *string, coqLogicalPath *string, 
 			if debug != nil {
 				fmt.Fprintf(debug, "--- End: %s ---\n", *msg.GoPhysicalPath)
 			}
+
 		}
+	}
+
+	// Goose translation
+	gooseConfig := goose.TranslationConfig{TypeCheck: false, AddSourceFileComments: false, SkipInterfaces: false}
+	gooseFiles, gooseErrs, err := gooseConfig.TranslatePackages(goRoot, "./"+*goOutputPath)
+	if err != nil {
+		log.Fatalf("Could not generate goose code: %v\n", err)
+	}
+
+	for _, ge := range gooseErrs {
+		if ge != nil {
+			log.Printf("Warning: Goose error: %v\n", ge)
+		}
+	}
+
+	for _, gf := range gooseFiles {
+		gooseFilePath := filepath.Join(*gooseOutput, gf.GoPackage+".v")
+		gooseFile := openGrackleFile(&gooseFilePath)
+		fmt.Printf("--- GOOSE Begin: %s ---\n", gooseFilePath)
+		gf.Write(os.Stdout)
+		gf.Write(gooseFile)
+		fmt.Printf("--- GOOSE End: %s ---\n", gooseFilePath)
 	}
 }
