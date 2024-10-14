@@ -20,7 +20,7 @@ func TestGetCoqOutput(t *testing.T) {
 func TestCalendarExample(t *testing.T) {
 	grackleBuffer := bytes.NewBuffer(make([]byte, 0, 10000))
 	grackleOutput := bufio.NewWriter(grackleBuffer)
-	protoFiles := []string{"testdata/proto/event.proto", "testdata/proto/timestamp.proto"}
+	protoFiles := "testdata/proto"
 	gooseOutput := "example"
 	coqLogicalPath := "Grackle.example"
 	coqPhysicalPath := "test"

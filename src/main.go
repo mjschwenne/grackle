@@ -17,9 +17,9 @@ func main() {
 	// var goPackageName = flag.String("go-package-name", "", "Name for the autogrenerated go package")
 	flag.Parse()
 
-	var protoFiles = flag.Args()
-	if len(protoFiles) < 1 {
-		fmt.Println("Usage: grackle [options] proto-files ...")
+	var protoDir = flag.Args()
+	if len(protoDir) != 1 {
+		fmt.Println("Usage: grackle [options] proto-directory ...")
 		os.Exit(1)
 	}
 
@@ -31,5 +31,5 @@ func main() {
 		capture = nil
 	}
 
-	grackle(&protoFiles, gooseOutputPath, coqLogicalPath, coqPhysicalPath, goOutputPath, capture)
+	grackle(&protoDir[0], gooseOutputPath, coqLogicalPath, coqPhysicalPath, goOutputPath, capture)
 }

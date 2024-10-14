@@ -1,5 +1,5 @@
 From Perennial.program_proof Require Import grove_prelude.
-From Grackle.test Require Import test.
+From grackle.example Require Import test.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 
 Module TimeStamp.

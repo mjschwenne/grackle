@@ -43,7 +43,26 @@ type messageParams struct {
 	Fields          []*field
 }
 
-func generateDescirptor(protoFiles *[]string) *descriptorpb.FileDescriptorSet {
+func generateDescirptor(protoDir *string) *descriptorpb.FileDescriptorSet {
+	absProtoDir, err := filepath.Abs(*protoDir)
+	if err != nil {
+		log.Fatalf("Could not locate directory '%s': %v\n", *protoDir, err)
+	}
+
+	// Find the proto files in the protoDir
+	var protoFiles []string
+	filepath.WalkDir(*protoDir, func(path string, d fs.DirEntry, err error) error {
+		relativePath, err := filepath.Rel(*protoDir, path)
+		if err != nil {
+			return err
+		}
+
+		if !d.Type().IsDir() && filepath.Ext(path) == ".proto" {
+			protoFiles = append(protoFiles, relativePath)
+		}
+
+		return nil
+	})
 	// Generate proto descriptor in temp file
 	descirptorFile, err := os.CreateTemp("", "grackle-")
 	if err != nil {
@@ -55,10 +74,10 @@ func generateDescirptor(protoFiles *[]string) *descriptorpb.FileDescriptorSet {
 	defer descirptorFile.Close()
 	defer os.Remove(descirptorName)
 
-	grackleProtoDir := getModulePath("proto/")
-	protoc := exec.Command("protoc", append([]string{"--descriptor_set_out=" + descirptorName, "--proto_path=" + grackleProtoDir, "--proto_path=."}, *protoFiles...)...)
+	protoc := exec.Command("protoc", append([]string{"--descriptor_set_out=" + descirptorName, "--proto_path=."}, protoFiles...)...)
 	var protocErr bytes.Buffer
 	protoc.Stderr = &protocErr
+	protoc.Dir = absProtoDir
 	err = protoc.Run()
 	if err != nil {
 		log.Print(protocErr.String())
@@ -194,16 +213,12 @@ func openGrackleFile(path *string) *os.File {
 	return file
 }
 
-func grackle(protoFiles *[]string, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, debug io.Writer) {
+func grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, debug io.Writer) {
 	tmpl := setupTemplates()
 	goModule, goRoot := findGoModuleName(*goOutputPath)
-	// absGoOutputPath, err := filepath.Abs(*goOutputPath)
-	// if err != nil {
-	// 	log.Fatalf("Cannot resolve go output path: %v\n", goOutputPath)
-	// }
 
 	goFiles := make([]*string, 0, 10)
-	for _, file := range generateDescirptor(protoFiles).File {
+	for _, file := range generateDescirptor(protoDir).File {
 		fileOpts := getFileOptions(file, gooseOutput, coqLogicalPath, coqPhysicalPath, &goModule, &goRoot, goOutputPath)
 		for _, message := range file.MessageType {
 			msg := getMessageOptions(message, fileOpts)
