@@ -1,6 +1,5 @@
 --- Begin: test/TimeStamp_proof.v ---
 From Perennial.program_proof Require Import grove_prelude.
-From Grackle.example Require Import test.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 
 Module TimeStamp.
@@ -95,7 +94,7 @@ End TimeStamp.
 
 --- End: test/TimeStamp_proof.v ---
 --- Start: test/timestamp.go ---
-package test
+package TimeStamp_gk
 
 import (
 	"github.com/tchajed/marshal"
@@ -130,9 +129,9 @@ func UnmarshalTimeStamp(s []byte) (*TimeStamp, []byte) {
 --- End: test/timestamp.go ---
 --- Begin: test/Event_proof.v ---
 From Perennial.program_proof Require Import grove_prelude.
-From Grackle.example Require Import test.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 From Grackle.example Require Import TimeStamp_proof.
+From Goose Require Import github_com.mjschwenne.grackle.test.TimeStamp.
 
 Module Event.
 Section Event.
@@ -244,9 +243,10 @@ End Event.
 
 --- End: test/Event_proof.v ---
 --- Start: test/event.go ---
-package test
+package Event_gk
 
 import (
+	"github.com/mjschwenne/grackle/test/TimeStamp_gk"
 	"github.com/tchajed/marshal"
 )
 
