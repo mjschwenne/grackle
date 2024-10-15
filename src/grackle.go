@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
-	"strings"
 	"text/template"
 
 	"github.com/goose-lang/goose"
@@ -142,7 +141,7 @@ func setupTemplates() *template.Template {
 }
 
 // Override options with file-specific values if needed
-func getFileOptions(file *descriptorpb.FileDescriptorProto, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goModule *string, goRoot *string, goOutputPath *string) *fileParams {
+func getFileOptions(file *descriptorpb.FileDescriptorProto, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goModule *string, goRoot *string, goOutputPath *string, goPackage *string) *fileParams {
 	const COQ_LOGICAL_PATH_FIELD_TAG = 50621
 	const COQ_PHYSICAL_PATH_FIELD_TAG = 50622
 	const GOOSE_OUTPUT_PATH = 50623
@@ -164,13 +163,12 @@ func getFileOptions(file *descriptorpb.FileDescriptorProto, gooseOutput *string,
 		}
 	}
 
-	goPackage := strings.TrimRight(strings.TrimPrefix(*goOutputPath, *goRoot), "/\\")
 	return &fileParams{
 		GooseOutput:     fileGooseOutput,
 		CoqLogicalPath:  fileCoqLogicalPath,
 		CoqPhysicalPath: fileCoqPhysicalPath,
 		GoOutputPath:    goOutputPath,
-		GoPackage:       &goPackage,
+		GoPackage:       goPackage,
 	}
 }
 
@@ -213,13 +211,13 @@ func openGrackleFile(path *string) *os.File {
 	return file
 }
 
-func grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, debug io.Writer) {
+func grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, goPackage *string, debug io.Writer) {
 	tmpl := setupTemplates()
 	goModule, goRoot := findGoModuleName(*goOutputPath)
 
 	goFiles := make([]*string, 0, 10)
 	for _, file := range generateDescirptor(protoDir).File {
-		fileOpts := getFileOptions(file, gooseOutput, coqLogicalPath, coqPhysicalPath, &goModule, &goRoot, goOutputPath)
+		fileOpts := getFileOptions(file, gooseOutput, coqLogicalPath, coqPhysicalPath, &goModule, &goRoot, goOutputPath, goPackage)
 		for _, message := range file.MessageType {
 			msg := getMessageOptions(message, fileOpts)
 			var coqOut io.Writer

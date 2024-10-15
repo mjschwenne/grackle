@@ -14,8 +14,28 @@ func main() {
 	var coqPhysicalPath = flag.String("coq-physical-path", "", "Physical output path for coq proofs")
 	var debug = flag.Bool("debug", false, "Output all generated code to stdout")
 	var goOutputPath = flag.String("go-output-path", "", "Physical path to output go code into")
-	// var goPackageName = flag.String("go-package-name", "", "Name for the autogrenerated go package")
+	var goPackage = flag.String("go-package", "", "Fully qualified root package for the output packages")
 	flag.Parse()
+
+	if len(*gooseOutputPath) < 1 {
+		fmt.Println("goose-output path must be at least 1 character long!")
+		os.Exit(1)
+	}
+
+	if len(*coqLogicalPath) < 1 {
+		fmt.Println("coq-logical-path must be at least 1 character long!")
+		os.Exit(1)
+	}
+
+	if len(*goOutputPath) < 1 {
+		fmt.Println("go-output-path must be at least 1 character long!")
+		os.Exit(1)
+	}
+
+	if len(*goPackage) < 1 {
+		fmt.Println("go-package must be at least 1 character long!")
+		os.Exit(1)
+	}
 
 	var protoDir = flag.Args()
 	if len(protoDir) != 1 {
@@ -31,5 +51,5 @@ func main() {
 		capture = nil
 	}
 
-	grackle(&protoDir[0], gooseOutputPath, coqLogicalPath, coqPhysicalPath, goOutputPath, capture)
+	grackle(&protoDir[0], gooseOutputPath, coqLogicalPath, coqPhysicalPath, goOutputPath, goPackage, capture)
 }
