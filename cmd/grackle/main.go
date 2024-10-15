@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/mjschwenne/grackle/src"
 )
 
 func main() {
@@ -51,5 +53,5 @@ func main() {
 		capture = nil
 	}
 
-	grackle(&protoDir[0], gooseOutputPath, coqLogicalPath, coqPhysicalPath, goOutputPath, goPackage, capture)
+	grackle.Grackle(&protoDir[0], gooseOutputPath, coqLogicalPath, coqPhysicalPath, goOutputPath, goPackage, capture)
 }

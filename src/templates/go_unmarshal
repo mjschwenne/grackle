@@ -3,7 +3,7 @@ func Unmarshal<<- goName .Name ->>(s []byte) (*<<- goName .Name >>, []byte) {
     var enc = s // Needed for goose compatibility
     << range .Fields ->>
     << param $.Name >>.<< .Name >>, enc =
-    <<-  if isRef . >> Unmarshal<<- goType . ->>(enc)
+    <<-  if isRef . >> << goType . | goName >>_gk.Unmarshal<<- goType . ->>(enc)
     << else >> marshal.Read<<- marshalType . ->>(enc)
     << end ->> <<- end ->>
     return << param .Name >>, enc

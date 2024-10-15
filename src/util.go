@@ -1,4 +1,4 @@
-package main
+package grackle
 
 import (
 	"bytes"
@@ -9,10 +9,14 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"unicode"
 
 	"golang.org/x/mod/modfile"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
+
+const dirPermissions = 0755
+const filePermissions = 0644
 
 var coqTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_INT32:   "u32",
@@ -102,7 +106,24 @@ func getCoqOutputPath(coqPhysicalPath *string, messageName *string) string {
 }
 
 func getGoOutputPath(goPhysicalPath *string, messageName *string) string {
-	return path.Join(*goPhysicalPath, strings.ToLower(*messageName)+".go")
+	lowerMessage := strings.ToLower(*messageName)
+	return path.Join(*goPhysicalPath, lowerMessage, lowerMessage+".go")
+}
+
+func createOutputDirectories(gooseOutput *string, coqPhysicalPath *string, goOutputPath *string) {
+	os.MkdirAll(*gooseOutput, dirPermissions)
+	os.MkdirAll(*coqPhysicalPath, dirPermissions)
+	os.MkdirAll(*goOutputPath, dirPermissions)
+}
+
+func openGrackleFile(path *string) *os.File {
+	os.MkdirAll(filepath.Dir(*path), dirPermissions)
+	file, err := os.OpenFile(*path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePermissions)
+	if err != nil {
+		log.Fatalf("Could not open output file: %v\n", err)
+	}
+
+	return file
 }
 
 func getCoqTypeName(field *field) string {
@@ -118,18 +139,26 @@ func generateParameterName(name string) string {
 
 func getGoTypeName(field *field) string {
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		return getGoPublicName(field.GetTypeName())
+		return capitialize(field.GetTypeName())
 	}
 	return goTypeMap[field.GetType()]
-}
-
-func getGoPublicName(name string) string {
-	return strings.ToUpper(string(name[0])) + name[1:]
 }
 
 func getBuiltInMarshalFuncType(field *field) string {
 	return marshalTypeMap[field.GetType()]
 }
+
+func compose[A any, B any, C any](f func(A) B, g func(B) C) func(A) C {
+	return func(a A) C {
+		return g(f(a))
+	}
+}
+
+var capitialize = compose(
+	func(s string) []rune { return []rune(s) },
+	func(r []rune) string {
+		return string(append([]rune{unicode.ToUpper(r[0])}, r[1:]...))
+	})
 
 func filter[T any](slice []T, f func(T) bool) []T {
 	var n []T

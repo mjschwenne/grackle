@@ -2,7 +2,7 @@ func Marshal<<- goName .Name ->>(<<- param .Name >> *<<- goName .Name >>, prefix
     var enc = prefix
     << range .Fields ->>
     enc = << if isRef . ->>
-    Marshal<<- goType . ->>(<< param $.Name ->>.<< .Name >>, enc)
+    << goType . | goName >>_gk.Marshal<<- goType . ->>(<< param $.Name ->>.<< .Name >>, enc)
     << else ->>
     marshal.Write<<- marshalType . ->>(enc, << param $.Name ->>.<< .Name >>)
     << end ->><<- end ->>

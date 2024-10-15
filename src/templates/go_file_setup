@@ -1,8 +1,8 @@
-package << .Name >>_gk
+package << goName .Name >>_gk
 
 import (
     "github.com/tchajed/marshal"
     << range .NestedMessages ->>
-    "<< $.GoPackage >>/<<- . ->>_gk"
+    "<< $.GoPackage >>/<<- lower . ->>"
     <<- end >>
 )

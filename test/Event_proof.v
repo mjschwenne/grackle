@@ -1,7 +1,7 @@
 From Perennial.program_proof Require Import grove_prelude.
-From grackle.example Require Import test.
 From Perennial.program_proof Require Import marshal_stateless_proof.
-From grackle.example Require Import TimeStamp_proof.
+From Grackle.example Require Import TimeStamp_proof.
+From Goose Require Import github_com.mjschwenne.grackle.test.TimeStamp.
 
 Module Event.
 Section Event.

@@ -1,4 +1,4 @@
-package main
+package grackle
 
 import (
 	"bytes"
@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
+	"strings"
 	"text/template"
 
 	"github.com/goose-lang/goose"
@@ -118,13 +119,14 @@ func setupTemplates() *template.Template {
 		"isRef":        isReferenceType,
 		"refFields":    getRefFields,
 		"join":         join,
+		"lower":        strings.ToLower,
 		"pred":         func(i int) int { return i - 1 },
 		"succ":         func(i int) int { return i + 1 },
 		"goType":       getGoTypeName,
-		"goName":       getGoPublicName,
 		"param":        generateParameterName,
 		"marshalType":  getBuiltInMarshalFuncType,
 		"cleanCoqName": cleanCoqName,
+		"goName":       capitialize,
 		// This is a bit of a hack to let me call templates with dynamic names
 		"callTemplate": func(name string, data interface{}) (ret string, err error) {
 			buf := bytes.NewBuffer([]byte{})
@@ -203,18 +205,35 @@ func getMessageOptions(message *descriptorpb.DescriptorProto, fileOpts *filePara
 	return messageOpts
 }
 
-func openGrackleFile(path *string) *os.File {
-	file, err := os.OpenFile(*path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+func gooseTranslate(gooseOutput *string, goRoot string, goDirectory string) {
+	gooseConfig := goose.TranslationConfig{TypeCheck: false, AddSourceFileComments: false, SkipInterfaces: false}
+	goAbs, err := filepath.Abs(goDirectory)
+	log.Printf("Translating '%s' from go root '%s'\n", goAbs, goRoot)
+	gooseFiles, gooseErrs, err := gooseConfig.TranslatePackages(goRoot, goAbs)
 	if err != nil {
-		log.Fatalf("Could not open output file: %v\n", err)
+		log.Fatalf("Could not generate goose code: %v\n", err)
 	}
 
-	return file
+	for _, ge := range gooseErrs {
+		if ge != nil {
+			log.Printf("Warning: Goose error: %v\n", ge)
+		}
+	}
+
+	for _, gf := range gooseFiles {
+		gooseFilePath := filepath.Join(*gooseOutput, gf.GoPackage+".v")
+		gooseFile := openGrackleFile(&gooseFilePath)
+		fmt.Printf("--- GOOSE Begin: %s ---\n", gooseFilePath)
+		gf.Write(os.Stdout)
+		gf.Write(gooseFile)
+		fmt.Printf("--- GOOSE End: %s ---\n", gooseFilePath)
+	}
 }
 
-func grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, goPackage *string, debug io.Writer) {
+func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, goPackage *string, debug io.Writer) {
 	tmpl := setupTemplates()
 	goModule, goRoot := findGoModuleName(*goOutputPath)
+	createOutputDirectories(gooseOutput, coqPhysicalPath, goOutputPath)
 
 	goFiles := make([]*string, 0, 10)
 	for _, file := range generateDescirptor(protoDir).File {
@@ -265,33 +284,10 @@ func grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqP
 				fmt.Fprintf(debug, "--- End: %s ---\n", *msg.GoPhysicalPath)
 			}
 
+			// Goose Translation, but only during actual grackle usage
+			if debug == nil {
+				gooseTranslate(gooseOutput, goRoot, filepath.Dir(*msg.GoPhysicalPath))
+			}
 		}
-	}
-
-	// Goose translation
-	if debug != nil {
-		// Only invoke goose for non-debug runs for the moment
-		return
-	}
-
-	gooseConfig := goose.TranslationConfig{TypeCheck: false, AddSourceFileComments: false, SkipInterfaces: false}
-	gooseFiles, gooseErrs, err := gooseConfig.TranslatePackages(goRoot, "./"+*goOutputPath)
-	if err != nil {
-		log.Fatalf("Could not generate goose code: %v\n", err)
-	}
-
-	for _, ge := range gooseErrs {
-		if ge != nil {
-			log.Printf("Warning: Goose error: %v\n", ge)
-		}
-	}
-
-	for _, gf := range gooseFiles {
-		gooseFilePath := filepath.Join(*gooseOutput, gf.GoPackage+".v")
-		gooseFile := openGrackleFile(&gooseFilePath)
-		fmt.Printf("--- GOOSE Begin: %s ---\n", gooseFilePath)
-		gf.Write(os.Stdout)
-		gf.Write(gooseFile)
-		fmt.Printf("--- GOOSE End: %s ---\n", gooseFilePath)
 	}
 }

@@ -1,4 +1,4 @@
-module example
+module github.com/mjschwenne/grackle
 
 go 1.22.5
 

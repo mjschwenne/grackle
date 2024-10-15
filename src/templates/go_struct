@@ -1,5 +1,5 @@
 type << goName .Name >> struct {
     << range .Fields ->>
-    <<- .Name >> << if isRef . >>*<<end>><< goType . >>
+    <<- .Name >> << if isRef . >>*<< goType . | goName >>_gk.<<end>><< goType . >>
     << end ->>
 }
