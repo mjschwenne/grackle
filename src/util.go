@@ -54,6 +54,13 @@ var refTypeMap = map[fieldType]bool{
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: true,
 }
 
+func cleanCoqName(goPackage string) string {
+	result := strings.Replace(goPackage, ".", "_", -1)
+	result = strings.Replace(result, "/", ".", -1)
+
+	return result
+}
+
 // Searches up the file tree for the go.mod file.
 // Returns both the name of the module listed in go.mod and the directory where
 // the go.mod is found.

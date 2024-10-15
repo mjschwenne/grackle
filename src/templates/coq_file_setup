@@ -3,6 +3,7 @@ From << .CoqLogicalPath >> Require Import << .GoPackage >>.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 <<- range .NestedMessages >>
 From << $.CoqLogicalPath >> Require Import << . >>_proof.
+From Goose Require Import << cleanCoqName $.GoPackage >>.<< . >>.
 <<- end >>
 
 Module << .Name >>.

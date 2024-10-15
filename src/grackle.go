@@ -114,10 +114,17 @@ func setupTemplates() *template.Template {
 
 	tmpl := template.New("grackle").Delims("<<", ">>")
 	funcMap := template.FuncMap{
-		"coqType":   getCoqTypeName,
-		"isRef":     isReferenceType,
-		"refFields": getRefFields,
-		"join":      join,
+		"coqType":      getCoqTypeName,
+		"isRef":        isReferenceType,
+		"refFields":    getRefFields,
+		"join":         join,
+		"pred":         func(i int) int { return i - 1 },
+		"succ":         func(i int) int { return i + 1 },
+		"goType":       getGoTypeName,
+		"goName":       getGoPublicName,
+		"param":        generateParameterName,
+		"marshalType":  getBuiltInMarshalFuncType,
+		"cleanCoqName": cleanCoqName,
 		// This is a bit of a hack to let me call templates with dynamic names
 		"callTemplate": func(name string, data interface{}) (ret string, err error) {
 			buf := bytes.NewBuffer([]byte{})
@@ -125,12 +132,6 @@ func setupTemplates() *template.Template {
 			ret = buf.String()
 			return
 		},
-		"pred":        func(i int) int { return i - 1 },
-		"succ":        func(i int) int { return i + 1 },
-		"goType":      getGoTypeName,
-		"goName":      getGoPublicName,
-		"param":       generateParameterName,
-		"marshalType": getBuiltInMarshalFuncType,
 	}
 	tmpl, err = tmpl.Funcs(funcMap).ParseFiles(tmplFiles...)
 	if err != nil {
