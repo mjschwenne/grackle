@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/mjschwenne/grackle"
 )
@@ -38,6 +39,7 @@ func main() {
 		fmt.Println("go-package must be at least 1 character long!")
 		os.Exit(1)
 	}
+	*goPackage = strings.TrimRight(*goPackage, "/")
 
 	var protoDir = flag.Args()
 	if len(protoDir) != 1 {

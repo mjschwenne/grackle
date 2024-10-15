@@ -1,9 +1,9 @@
-func Unmarshal<<- goName .Name ->>(s []byte) (*<<- goName .Name >>, []byte) {
-    << param .Name >> := new(<< goName .Name >>)
+func Unmarshal(s []byte) (*S, []byte) {
+    << param .Name >> := new(S)
     var enc = s // Needed for goose compatibility
     << range .Fields ->>
     << param $.Name >>.<< .Name >>, enc =
-    <<-  if isRef . >> << goType . | goName >>_gk.Unmarshal<<- goType . ->>(enc)
+    <<-  if isRef . >> << goType . | lower >>_gk.Unmarshal(enc)
     << else >> marshal.Read<<- marshalType . ->>(enc)
     << end ->> <<- end ->>
     return << param .Name >>, enc

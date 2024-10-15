@@ -1,8 +1,8 @@
-func Marshal<<- goName .Name ->>(<<- param .Name >> *<<- goName .Name >>, prefix []byte) []byte {
+func Marshal(<<- param .Name >> *S, prefix []byte) []byte {
     var enc = prefix
     << range .Fields ->>
     enc = << if isRef . ->>
-    << goType . | goName >>_gk.Marshal<<- goType . ->>(<< param $.Name ->>.<< .Name >>, enc)
+    << goType . | lower >>_gk.Marshal(<< param $.Name ->>.<< .Name >>, enc)
     << else ->>
     marshal.Write<<- marshalType . ->>(enc, << param $.Name ->>.<< .Name >>)
     << end ->><<- end ->>

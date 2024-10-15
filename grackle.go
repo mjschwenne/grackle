@@ -205,7 +205,6 @@ func getMessageOptions(message *descriptorpb.DescriptorProto, fileOpts *filePara
 func gooseTranslate(gooseOutput *string, goRoot string, goDirectory string) {
 	gooseConfig := goose.TranslationConfig{TypeCheck: false, AddSourceFileComments: false, SkipInterfaces: false}
 	goAbs, err := filepath.Abs(goDirectory)
-	log.Printf("Translating '%s' from go root '%s'\n", goAbs, goRoot)
 	gooseFiles, gooseErrs, err := gooseConfig.TranslatePackages(goRoot, goAbs)
 	if err != nil {
 		log.Fatalf("Could not generate goose code: %v\n", err)
@@ -220,10 +219,7 @@ func gooseTranslate(gooseOutput *string, goRoot string, goDirectory string) {
 	for _, gf := range gooseFiles {
 		gooseFilePath := filepath.Join(*gooseOutput, gf.GoPackage+".v")
 		gooseFile := util.OpenGrackleFile(&gooseFilePath)
-		fmt.Printf("--- GOOSE Begin: %s ---\n", gooseFilePath)
-		gf.Write(os.Stdout)
 		gf.Write(gooseFile)
-		fmt.Printf("--- GOOSE End: %s ---\n", gooseFilePath)
 	}
 }
 
