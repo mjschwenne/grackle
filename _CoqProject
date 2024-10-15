@@ -1,6 +1,5 @@
 # Grackle 
 -Q example Grackle.example
--Q test Grackle.test
 
 -arg -w -arg -ssr-search-moved
 -arg -w -arg +deprecated-instance-without-locality
