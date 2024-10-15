@@ -2,6 +2,7 @@ package grackle
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	"go/format"
 	"io"
@@ -17,6 +18,7 @@ import (
 	"text/template"
 
 	"github.com/goose-lang/goose"
+	"github.com/mjschwenne/grackle/internal/util"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -42,6 +44,9 @@ type messageParams struct {
 	NestedMessages  []string
 	Fields          []*field
 }
+
+//go:embed internal/templates
+var tmplFS embed.FS
 
 func generateDescirptor(protoDir *string) *descriptorpb.FileDescriptorSet {
 	absProtoDir, err := filepath.Abs(*protoDir)
@@ -103,31 +108,23 @@ func generateDescirptor(protoDir *string) *descriptorpb.FileDescriptorSet {
 }
 
 func setupTemplates() *template.Template {
-	// Load templates
-	var tmplFiles []string
-	err := filepath.WalkDir(getModulePath("templates/"),
-		func(path string, info fs.DirEntry, err error) error {
-			if !info.IsDir() {
-				tmplFiles = append(tmplFiles, path)
-			}
-			return nil
-		})
-
 	tmpl := template.New("grackle").Delims("<<", ">>")
 	funcMap := template.FuncMap{
-		"coqType":      getCoqTypeName,
-		"isRef":        isReferenceType,
-		"refFields":    getRefFields,
-		"join":         join,
+		"coqType":      util.GetCoqTypeName,
+		"isRef":        util.IsReferenceType,
+		"refFields":    func(fields []*field) []*field { return util.Filter(fields, util.IsReferenceType) },
+		"join":         func(sep string, s ...string) string { return strings.Join(s, sep) },
 		"lower":        strings.ToLower,
 		"pred":         func(i int) int { return i - 1 },
 		"succ":         func(i int) int { return i + 1 },
-		"goType":       getGoTypeName,
-		"param":        generateParameterName,
-		"marshalType":  getBuiltInMarshalFuncType,
-		"cleanCoqName": cleanCoqName,
-		"goName":       capitialize,
+		"goType":       util.GetGoTypeName,
+		"param":        func(s string) string { return strings.ToLower(string(s[0])) },
+		"marshalType":  util.GetBuiltInMarshalFuncType,
+		"cleanCoqName": util.CleanCoqName,
+		"goName":       util.Capitialize,
 		// This is a bit of a hack to let me call templates with dynamic names
+		// It requires tmpl in the closure of the function, so the inline definition
+		// makes the most sense
 		"callTemplate": func(name string, data interface{}) (ret string, err error) {
 			buf := bytes.NewBuffer([]byte{})
 			err = tmpl.ExecuteTemplate(buf, name, data)
@@ -135,7 +132,7 @@ func setupTemplates() *template.Template {
 			return
 		},
 	}
-	tmpl, err = tmpl.Funcs(funcMap).ParseFiles(tmplFiles...)
+	tmpl, err := tmpl.Funcs(funcMap).ParseFS(tmplFS, "internal/templates/*.tmpl")
 	if err != nil {
 		panic(err)
 	}
@@ -189,8 +186,8 @@ func getMessageOptions(message *descriptorpb.DescriptorProto, fileOpts *filePara
 		fields = append(fields, f)
 	}
 
-	coqOutputPath := getCoqOutputPath(fileOpts.CoqPhysicalPath, message.Name)
-	goOutputPath := getGoOutputPath(fileOpts.GoOutputPath, message.Name)
+	coqOutputPath := util.GetCoqOutputPath(fileOpts.CoqPhysicalPath, message.Name)
+	goOutputPath := util.GetGoOutputPath(fileOpts.GoOutputPath, message.Name)
 	messageOpts := messageParams{
 		Name:            message.Name,
 		GooseOutput:     fileOpts.GooseOutput,
@@ -222,7 +219,7 @@ func gooseTranslate(gooseOutput *string, goRoot string, goDirectory string) {
 
 	for _, gf := range gooseFiles {
 		gooseFilePath := filepath.Join(*gooseOutput, gf.GoPackage+".v")
-		gooseFile := openGrackleFile(&gooseFilePath)
+		gooseFile := util.OpenGrackleFile(&gooseFilePath)
 		fmt.Printf("--- GOOSE Begin: %s ---\n", gooseFilePath)
 		gf.Write(os.Stdout)
 		gf.Write(gooseFile)
@@ -232,8 +229,8 @@ func gooseTranslate(gooseOutput *string, goRoot string, goDirectory string) {
 
 func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, goPackage *string, debug io.Writer) {
 	tmpl := setupTemplates()
-	goModule, goRoot := findGoModuleName(*goOutputPath)
-	createOutputDirectories(gooseOutput, coqPhysicalPath, goOutputPath)
+	goModule, goRoot := util.FindGoModuleName(*goOutputPath)
+	util.CreateOutputDirectories(gooseOutput, coqPhysicalPath, goOutputPath)
 
 	goFiles := make([]*string, 0, 10)
 	for _, file := range generateDescirptor(protoDir).File {
@@ -247,12 +244,12 @@ func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqP
 				goOut = debug
 				fmt.Fprintf(debug, "--- Begin: %s ---\n", *msg.CoqPhysicalPath)
 			} else {
-				coqOut = openGrackleFile(msg.CoqPhysicalPath)
-				goOut = openGrackleFile(msg.GoPhysicalPath)
+				coqOut = util.OpenGrackleFile(msg.CoqPhysicalPath)
+				goOut = util.OpenGrackleFile(msg.GoPhysicalPath)
 				goFiles = append(goFiles, msg.GoPhysicalPath)
 			}
 
-			err := tmpl.ExecuteTemplate(coqOut, "coq_proof", msg)
+			err := tmpl.ExecuteTemplate(coqOut, "coq_proof.tmpl", msg)
 
 			if err != nil {
 				log.Fatalf("Error generating coq code: %v\n", err)
@@ -265,7 +262,7 @@ func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqP
 			// Write to a buffer, then format
 			// The buffer may seem large, but it is only 1 MB
 			goBuffer := bytes.NewBuffer(make([]byte, 0, 1000000))
-			err = tmpl.ExecuteTemplate(goBuffer, "go_file", msg)
+			err = tmpl.ExecuteTemplate(goBuffer, "go_file.tmpl", msg)
 			if err != nil {
 				log.Fatalf("Error generating go code: %v\n", err)
 			}

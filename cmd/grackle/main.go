@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/mjschwenne/grackle/src"
+	"github.com/mjschwenne/grackle"
 )
 
 func main() {

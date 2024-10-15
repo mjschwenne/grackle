@@ -1,4 +1,4 @@
-package grackle
+package util
 
 import (
 	"bytes"
@@ -14,6 +14,9 @@ import (
 	"golang.org/x/mod/modfile"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
+
+type field = descriptorpb.FieldDescriptorProto
+type fieldType = descriptorpb.FieldDescriptorProto_Type
 
 const dirPermissions = 0755
 const filePermissions = 0644
@@ -58,22 +61,56 @@ var refTypeMap = map[fieldType]bool{
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: true,
 }
 
-func cleanCoqName(goPackage string) string {
+// STRING MANIPULATION UTILITIES
+
+func CleanCoqName(goPackage string) string {
 	result := strings.Replace(goPackage, ".", "_", -1)
 	result = strings.Replace(result, "/", ".", -1)
 
 	return result
 }
 
+var Capitialize = Compose(
+	func(s string) []rune { return []rune(s) },
+	func(r []rune) string {
+		return string(append([]rune{unicode.ToUpper(r[0])}, r[1:]...))
+	})
+
+// MAP ACCESSORS & TRANSFORMERS
+
+func GetCoqTypeName(field *field) string {
+	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		return field.GetTypeName()
+	}
+	return coqTypeMap[field.GetType()]
+}
+
+func GetGoTypeName(field *field) string {
+	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		return Capitialize(field.GetTypeName())
+	}
+	return goTypeMap[field.GetType()]
+}
+
+func GetBuiltInMarshalFuncType(field *field) string {
+	return marshalTypeMap[field.GetType()]
+}
+
+func IsReferenceType(field *field) bool {
+	return refTypeMap[field.GetType()]
+}
+
+// FILESYSTEM UTILITIES
+
 // Searches up the file tree for the go.mod file.
 // Returns both the name of the module listed in go.mod and the directory where
 // the go.mod is found.
-func findGoModuleName(goOutputPath string) (string, string) {
-
+func FindGoModuleName(goDirectory string) (string, string) {
 	goenv := exec.Command("go", "env", "GOMOD")
 	var goenvOut, goenvErr bytes.Buffer
 	goenv.Stderr = &goenvErr
 	goenv.Stdout = &goenvOut
+	goenv.Dir = goDirectory
 	err := goenv.Run()
 	if err != nil {
 		log.Print(goenvErr.String())
@@ -96,27 +133,31 @@ func findGoModuleName(goOutputPath string) (string, string) {
 	return goRootModule, goRootPath
 }
 
-func getModulePath(suffix string) string {
+func GetModulePath(suffix string) string {
 	_, b, _, _ := runtime.Caller(0)
-	return path.Join(filepath.Dir(b), suffix)
+	log.Printf(b)
+	a, _ := filepath.Split(b)
+	_, r := FindGoModuleName(a)
+	log.Printf(r)
+	return path.Join(filepath.Dir(r), suffix)
 }
 
-func getCoqOutputPath(coqPhysicalPath *string, messageName *string) string {
+func GetCoqOutputPath(coqPhysicalPath *string, messageName *string) string {
 	return path.Join(*coqPhysicalPath, *messageName+"_proof.v")
 }
 
-func getGoOutputPath(goPhysicalPath *string, messageName *string) string {
+func GetGoOutputPath(goPhysicalPath *string, messageName *string) string {
 	lowerMessage := strings.ToLower(*messageName)
 	return path.Join(*goPhysicalPath, lowerMessage, lowerMessage+".go")
 }
 
-func createOutputDirectories(gooseOutput *string, coqPhysicalPath *string, goOutputPath *string) {
+func CreateOutputDirectories(gooseOutput *string, coqPhysicalPath *string, goOutputPath *string) {
 	os.MkdirAll(*gooseOutput, dirPermissions)
 	os.MkdirAll(*coqPhysicalPath, dirPermissions)
 	os.MkdirAll(*goOutputPath, dirPermissions)
 }
 
-func openGrackleFile(path *string) *os.File {
+func OpenGrackleFile(path *string) *os.File {
 	os.MkdirAll(filepath.Dir(*path), dirPermissions)
 	file, err := os.OpenFile(*path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePermissions)
 	if err != nil {
@@ -126,41 +167,15 @@ func openGrackleFile(path *string) *os.File {
 	return file
 }
 
-func getCoqTypeName(field *field) string {
-	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		return field.GetTypeName()
-	}
-	return coqTypeMap[field.GetType()]
-}
+// FUNCTIONAL UTILITIES
 
-func generateParameterName(name string) string {
-	return strings.ToLower(string(name[0]))
-}
-
-func getGoTypeName(field *field) string {
-	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		return capitialize(field.GetTypeName())
-	}
-	return goTypeMap[field.GetType()]
-}
-
-func getBuiltInMarshalFuncType(field *field) string {
-	return marshalTypeMap[field.GetType()]
-}
-
-func compose[A any, B any, C any](f func(A) B, g func(B) C) func(A) C {
+func Compose[A any, B any, C any](f func(A) B, g func(B) C) func(A) C {
 	return func(a A) C {
 		return g(f(a))
 	}
 }
 
-var capitialize = compose(
-	func(s string) []rune { return []rune(s) },
-	func(r []rune) string {
-		return string(append([]rune{unicode.ToUpper(r[0])}, r[1:]...))
-	})
-
-func filter[T any](slice []T, f func(T) bool) []T {
+func Filter[T any](slice []T, f func(T) bool) []T {
 	var n []T
 	for _, e := range slice {
 		if f(e) {
@@ -168,16 +183,4 @@ func filter[T any](slice []T, f func(T) bool) []T {
 		}
 	}
 	return n
-}
-
-func getRefFields(fields []*field) []*field {
-	return filter(fields, isReferenceType)
-}
-
-func isReferenceType(field *field) bool {
-	return refTypeMap[field.GetType()]
-}
-
-func join(sep string, s ...string) string {
-	return strings.Join(s, sep)
 }

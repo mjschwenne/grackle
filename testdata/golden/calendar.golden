@@ -1,4 +1,4 @@
---- Begin: test/TimeStamp_proof.v ---
+--- Begin: example/TimeStamp_proof.v ---
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 
@@ -92,8 +92,8 @@ Qed.
 End TimeStamp.
 End TimeStamp.
 
---- End: test/TimeStamp_proof.v ---
---- Start: test/timestamp.go ---
+--- End: example/TimeStamp_proof.v ---
+--- Start: example/timestamp/timestamp.go ---
 package TimeStamp_gk
 
 import (
@@ -126,12 +126,12 @@ func UnmarshalTimeStamp(s []byte) (*TimeStamp, []byte) {
 	t.second, enc = marshal.ReadInt32(enc)
 	return t, enc
 }
---- End: test/timestamp.go ---
---- Begin: test/Event_proof.v ---
+--- End: example/timestamp/timestamp.go ---
+--- Begin: example/Event_proof.v ---
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 From Grackle.example Require Import TimeStamp_proof.
-From Goose Require Import github_com.mjschwenne.grackle.test.TimeStamp.
+From Goose Require Import github_com.mjschwenne.grackle.example.TimeStamp.
 
 Module Event.
 Section Event.
@@ -241,19 +241,19 @@ Qed.
 End Event.
 End Event.
 
---- End: test/Event_proof.v ---
---- Start: test/event.go ---
+--- End: example/Event_proof.v ---
+--- Start: example/event/event.go ---
 package Event_gk
 
 import (
-	"github.com/mjschwenne/grackle/test/TimeStamp_gk"
+	"github.com/mjschwenne/grackle/example/timestamp"
 	"github.com/tchajed/marshal"
 )
 
 type Event struct {
 	id        uint32
-	startTime *TimeStamp
-	endTime   *TimeStamp
+	startTime *TimeStamp_gk.TimeStamp
+	endTime   *TimeStamp_gk.TimeStamp
 }
 
 func (e *Event) approxSize() uint64 {
@@ -263,8 +263,8 @@ func (e *Event) approxSize() uint64 {
 func MarshalEvent(e *Event, prefix []byte) []byte {
 	var enc = prefix
 	enc = marshal.WriteInt32(enc, e.id)
-	enc = MarshalTimeStamp(e.startTime, enc)
-	enc = MarshalTimeStamp(e.endTime, enc)
+	enc = TimeStamp_gk.MarshalTimeStamp(e.startTime, enc)
+	enc = TimeStamp_gk.MarshalTimeStamp(e.endTime, enc)
 	return enc
 }
 
@@ -272,8 +272,8 @@ func UnmarshalEvent(s []byte) (*Event, []byte) {
 	e := new(Event)
 	var enc = s // Needed for goose compatibility
 	e.id, enc = marshal.ReadInt32(enc)
-	e.startTime, enc = UnmarshalTimeStamp(enc)
-	e.endTime, enc = UnmarshalTimeStamp(enc)
+	e.startTime, enc = TimeStamp_gk.UnmarshalTimeStamp(enc)
+	e.endTime, enc = TimeStamp_gk.UnmarshalTimeStamp(enc)
 	return e, enc
 }
---- End: test/event.go ---
+--- End: example/event/event.go ---

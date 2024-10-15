@@ -1,0 +1,25 @@
+<< template "coq_file_setup.tmpl" . >>
+<< template "coq_record.tmpl" . >>
+<< template "coq_has_encoding.tmpl" . >>
+<< template "coq_own.tmpl" . >>
+<< template "coq_encode.tmpl" . >>
+<< template "coq_marshal_setup.tmpl" . >>
+<<- range .Fields ->>
+<<- if isRef . ->>
+<< template "coq_marshal_message.tmpl" . >>
+<<- else ->>
+<< callTemplate (join "" (join "_" "coq" "marshal" (coqType .)) ".tmpl") . >>
+<<- end ->>
+<<- end ->>
+<< template "coq_marshal_conclusion.tmpl" . >>
+<< template "coq_decode.tmpl" . >>
+<< template "coq_unmarshal_setup.tmpl" . >>
+<<- range .Fields ->>
+<<- if isRef . >>
+<< template "coq_unmarshal_message.tmpl" . >>
+<< else >>
+<< callTemplate (join "" (join "_" "coq" "unmarshal" (coqType .)) ".tmpl") . >>
+<<- end ->>
+<<- end ->>
+<< template "coq_unmarshal_conclusion.tmpl" . >>
+<< template "coq_file_conculsion.tmpl" . >>
