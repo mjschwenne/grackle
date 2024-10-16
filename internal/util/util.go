@@ -45,9 +45,9 @@ var marshalTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_INT32:   "Int32",
 	descriptorpb.FieldDescriptorProto_TYPE_UINT32:  "Int32",
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED32: "Int32",
-	descriptorpb.FieldDescriptorProto_TYPE_INT64:   "Int64",
-	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  "Int64",
-	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: "Int64",
+	descriptorpb.FieldDescriptorProto_TYPE_INT64:   "Int",
+	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  "Int",
+	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: "Int",
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
 }
 

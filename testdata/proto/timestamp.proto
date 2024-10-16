@@ -3,5 +3,5 @@ syntax = "proto3";
 message TimeStamp {
     int32 hour = 1;
     int32 minute = 2;
-    int32 second = 3;
+    int64 second = 3;
 }
