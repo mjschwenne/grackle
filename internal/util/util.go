@@ -148,7 +148,13 @@ func GetCoqOutputPath(coqPhysicalPath *string, messageName *string) string {
 
 func GetGoOutputPath(goPhysicalPath *string, messageName *string) string {
 	lowerMessage := strings.ToLower(*messageName)
-	return path.Join(*goPhysicalPath, lowerMessage, lowerMessage+".go")
+	return path.Join(*goPhysicalPath, lowerMessage+"_gk", lowerMessage+"_gk.go")
+}
+
+func GetGooseOutputPath(gooseOutput *string, goosePackagePath string) string {
+	components := strings.Split(CleanCoqName(goosePackagePath), ".")
+	components = append([]string{*gooseOutput}, components...)
+	return filepath.Join(components...) + ".v"
 }
 
 func CreateOutputDirectories(gooseOutput *string, coqPhysicalPath *string, goOutputPath *string) {

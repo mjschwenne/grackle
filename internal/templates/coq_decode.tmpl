@@ -3,7 +3,7 @@ Lemma wp_Decode enc enc_sl (args:C) (suffix:list u8) (q:dfrac):
         ⌜has_encoding enc args⌝ ∗
         own_slice_small enc_sl byteT q (enc ++ suffix)
   }}}
-    Unmarshal<< .Name >> (slice_val enc_sl)
+    << lower .Name >>_gk.Unmarshal (slice_val enc_sl)
   {{{
         args_ptr suff_sl, RET (#args_ptr, suff_sl); own args_ptr args (DfracOwn 1) ∗
                                                     own_slice_small suff_sl byteT q suffix

@@ -13,8 +13,8 @@ func TestGetCoqOutput(t *testing.T) {
 	logicalPath := "example"
 	name := "Event"
 	actual := util.GetCoqOutputPath(&logicalPath, &name)
-	if actual != "example/Event_proof.v" {
-		t.Errorf("Wanted `example/Event_proof.v`, got %v\n", actual)
+	if actual != "example/event_proof.v" {
+		t.Errorf("Wanted `example/event_proof.v`, got %v\n", actual)
 	}
 }
 
