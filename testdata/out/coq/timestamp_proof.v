@@ -13,13 +13,13 @@ Record C :=
     mkC {
         hour : u32;
         minute : u32;
-        second : u32;
+        second : u64;
         }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   encoded = (u32_le args.(hour)) ++
               (u32_le args.(minute)) ++
-              (u32_le args.(second)).
+              (u64_le args.(second)).
 
 Definition own (args_ptr:loc) (args:C) (q:dfrac) : iProp Σ :=
   "Hargs_hour" ∷ args_ptr ↦[timestamp_gk.S :: "hour"]{q} #args.(hour) ∗
@@ -47,7 +47,7 @@ Proof.
   iIntros (?) "Hsl". wp_store.
   wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
-  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
+  wp_loadField. wp_load. wp_apply (wp_WriteInt with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
 
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
@@ -84,7 +84,7 @@ Proof.
   wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
   wp_pures. wp_storeField. wp_store.
 
-  wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
+  wp_load. wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl".
   wp_pures. wp_storeField. wp_store.
   wp_load. wp_pures. iApply "HΦ". iModIntro. iFrame.
 Qed.

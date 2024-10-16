@@ -1,0 +1,1 @@
+go run ./cmd/grackle/ -coq-logical-path Grackle.test -coq-physical-path testdata/out/coq -go-output-path testdata/out/go -go-package github.com/mjschwenne/grackle/testdata/out/go -goose-output testdata/out/goose testdata/proto/
