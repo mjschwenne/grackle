@@ -65,6 +65,7 @@ var refTypeMap = map[fieldType]bool{
 
 func CleanCoqName(goPackage string) string {
 	result := strings.Replace(goPackage, ".", "_", -1)
+	result = strings.Replace(result, "-", "_", -1)
 	result = strings.Replace(result, "/", ".", -1)
 
 	return result
