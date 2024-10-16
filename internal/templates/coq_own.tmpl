@@ -11,8 +11,8 @@ Definition own (args_ptr:loc) (args:C) (q:dfrac) : iProp Σ :=
   << if $idx >> ∗
   << end ->>
   <<- if isRef . ->>
-  "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- $.Name >> :: "<<- .Name ->>"]{q} #<<- .Name ->>_l ∗
+  "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- lower $.Name >>_gk.S :: "<<- .Name ->>"]{q} #<<- .Name ->>_l ∗
   "Hargs_<<- .Name ->>_enc" ∷ << coqType . ->>.own << .Name ->>_l args.(<<- .Name ->>) q
   <<- else ->>
-  "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- $.Name >> :: "<<- .Name ->>"]{q} #args.(<<- .Name ->>)
+  "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- lower $.Name >>_gk.S :: "<<- .Name ->>"]{q} #args.(<<- .Name ->>)
   <<- end ->><<- end ->>.

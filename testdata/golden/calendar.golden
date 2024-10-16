@@ -1,6 +1,7 @@
---- Begin: example/TimeStamp_proof.v ---
+--- Begin: example/timestamp_proof.v ---
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
+From Goose Require Import github_com.mjschwenne.grackle.example.timestamp_gk.
 
 Module TimeStamp.
 Section TimeStamp.
@@ -22,16 +23,16 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               (u32_le args.(second)).
 
 Definition own (args_ptr:loc) (args:C) (q:dfrac) : iProp Σ :=
-  "Hargs_hour" ∷ args_ptr ↦[TimeStamp :: "hour"]{q} #args.(hour) ∗
-  "Hargs_minute" ∷ args_ptr ↦[TimeStamp :: "minute"]{q} #args.(minute) ∗
-  "Hargs_second" ∷ args_ptr ↦[TimeStamp :: "second"]{q} #args.(second).
+  "Hargs_hour" ∷ args_ptr ↦[timestamp_gk.S :: "hour"]{q} #args.(hour) ∗
+  "Hargs_minute" ∷ args_ptr ↦[timestamp_gk.S :: "minute"]{q} #args.(minute) ∗
+  "Hargs_second" ∷ args_ptr ↦[timestamp_gk.S :: "second"]{q} #args.(second).
 
 Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) :
   {{{
         own args_ptr args (DfracDiscarded) ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    MarshalTimeStamp #args_ptr (slice_val pre_sl)
+    timestamp_gk.Marshal #args_ptr (slice_val pre_sl)
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜has_encoding enc args⌝ ∗
@@ -61,7 +62,7 @@ Lemma wp_Decode enc enc_sl (args:C) (suffix:list u8) (q:dfrac):
         ⌜has_encoding enc args⌝ ∗
         own_slice_small enc_sl byteT q (enc ++ suffix)
   }}}
-    UnmarshalTimeStamp (slice_val enc_sl)
+    timestamp_gk.Unmarshal (slice_val enc_sl)
   {{{
         args_ptr suff_sl, RET (#args_ptr, suff_sl); own args_ptr args (DfracOwn 1) ∗
                                                     own_slice_small suff_sl byteT q suffix
@@ -92,25 +93,25 @@ Qed.
 End TimeStamp.
 End TimeStamp.
 
---- End: example/TimeStamp_proof.v ---
---- Start: example/timestamp/timestamp.go ---
-package TimeStamp_gk
+--- End: example/timestamp_proof.v ---
+--- Start: example/timestamp_gk/timestamp_gk.go ---
+package timestamp_gk
 
 import (
 	"github.com/tchajed/marshal"
 )
 
-type TimeStamp struct {
+type S struct {
 	hour   uint32
 	minute uint32
 	second uint32
 }
 
-func (t *TimeStamp) approxSize() uint64 {
+func (t *S) approxSize() uint64 {
 	return 0
 }
 
-func MarshalTimeStamp(t *TimeStamp, prefix []byte) []byte {
+func Marshal(t *S, prefix []byte) []byte {
 	var enc = prefix
 	enc = marshal.WriteInt32(enc, t.hour)
 	enc = marshal.WriteInt32(enc, t.minute)
@@ -118,20 +119,21 @@ func MarshalTimeStamp(t *TimeStamp, prefix []byte) []byte {
 	return enc
 }
 
-func UnmarshalTimeStamp(s []byte) (*TimeStamp, []byte) {
-	t := new(TimeStamp)
+func Unmarshal(s []byte) (*S, []byte) {
+	t := new(S)
 	var enc = s // Needed for goose compatibility
 	t.hour, enc = marshal.ReadInt32(enc)
 	t.minute, enc = marshal.ReadInt32(enc)
 	t.second, enc = marshal.ReadInt32(enc)
 	return t, enc
 }
---- End: example/timestamp/timestamp.go ---
---- Begin: example/Event_proof.v ---
+--- End: example/timestamp_gk/timestamp_gk.go ---
+--- Begin: example/event_proof.v ---
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
-From Grackle.example Require Import TimeStamp_proof.
-From Goose Require Import github_com.mjschwenne.grackle.example.TimeStamp.
+From Goose Require Import github_com.mjschwenne.grackle.example.event_gk.
+From Grackle.example Require Import timestamp_proof.
+From Goose Require Import github_com.mjschwenne.grackle.example.timestamp_gk.
 
 Module Event.
 Section Event.
@@ -157,10 +159,10 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
 
 Definition own (args_ptr:loc) (args:C) (q:dfrac) : iProp Σ :=
   ∃ (startTime_l endTime_l : loc),
-  "Hargs_id" ∷ args_ptr ↦[Event :: "id"]{q} #args.(id) ∗
-  "Hargs_startTime" ∷ args_ptr ↦[Event :: "startTime"]{q} #startTime_l ∗
+  "Hargs_id" ∷ args_ptr ↦[event_gk.S :: "id"]{q} #args.(id) ∗
+  "Hargs_startTime" ∷ args_ptr ↦[event_gk.S :: "startTime"]{q} #startTime_l ∗
   "Hargs_startTime_enc" ∷ TimeStamp.own startTime_l args.(startTime) q ∗
-  "Hargs_endTime" ∷ args_ptr ↦[Event :: "endTime"]{q} #endTime_l ∗
+  "Hargs_endTime" ∷ args_ptr ↦[event_gk.S :: "endTime"]{q} #endTime_l ∗
   "Hargs_endTime_enc" ∷ TimeStamp.own endTime_l args.(endTime) q.
 
 Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) :
@@ -168,7 +170,7 @@ Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) :
         own args_ptr args (DfracDiscarded) ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    MarshalEvent #args_ptr (slice_val pre_sl)
+    event_gk.Marshal #args_ptr (slice_val pre_sl)
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜has_encoding enc args⌝ ∗
@@ -206,7 +208,7 @@ Lemma wp_Decode enc enc_sl (args:C) (suffix:list u8) (q:dfrac):
         ⌜has_encoding enc args⌝ ∗
         own_slice_small enc_sl byteT q (enc ++ suffix)
   }}}
-    UnmarshalEvent (slice_val enc_sl)
+    event_gk.Unmarshal (slice_val enc_sl)
   {{{
         args_ptr suff_sl, RET (#args_ptr, suff_sl); own args_ptr args (DfracOwn 1) ∗
                                                     own_slice_small suff_sl byteT q suffix
@@ -241,39 +243,39 @@ Qed.
 End Event.
 End Event.
 
---- End: example/Event_proof.v ---
---- Start: example/event/event.go ---
-package Event_gk
+--- End: example/event_proof.v ---
+--- Start: example/event_gk/event_gk.go ---
+package event_gk
 
 import (
-	"github.com/mjschwenne/grackle/example/timestamp"
+	"github.com/mjschwenne/grackle/example/timestamp_gk"
 	"github.com/tchajed/marshal"
 )
 
-type Event struct {
+type S struct {
 	id        uint32
-	startTime *TimeStamp_gk.TimeStamp
-	endTime   *TimeStamp_gk.TimeStamp
+	startTime *timestamp_gk.S
+	endTime   *timestamp_gk.S
 }
 
-func (e *Event) approxSize() uint64 {
+func (e *S) approxSize() uint64 {
 	return 0
 }
 
-func MarshalEvent(e *Event, prefix []byte) []byte {
+func Marshal(e *S, prefix []byte) []byte {
 	var enc = prefix
 	enc = marshal.WriteInt32(enc, e.id)
-	enc = TimeStamp_gk.MarshalTimeStamp(e.startTime, enc)
-	enc = TimeStamp_gk.MarshalTimeStamp(e.endTime, enc)
+	enc = timestamp_gk.Marshal(e.startTime, enc)
+	enc = timestamp_gk.Marshal(e.endTime, enc)
 	return enc
 }
 
-func UnmarshalEvent(s []byte) (*Event, []byte) {
-	e := new(Event)
+func Unmarshal(s []byte) (*S, []byte) {
+	e := new(S)
 	var enc = s // Needed for goose compatibility
 	e.id, enc = marshal.ReadInt32(enc)
-	e.startTime, enc = TimeStamp_gk.UnmarshalTimeStamp(enc)
-	e.endTime, enc = TimeStamp_gk.UnmarshalTimeStamp(enc)
+	e.startTime, enc = timestamp_gk.Unmarshal(enc)
+	e.endTime, enc = timestamp_gk.Unmarshal(enc)
 	return e, enc
 }
---- End: example/event/event.go ---
+--- End: example/event_gk/event_gk.go ---

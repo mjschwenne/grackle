@@ -217,16 +217,17 @@ func gooseTranslate(gooseOutput *string, goRoot string, goDirectory string) {
 	}
 
 	for _, gf := range gooseFiles {
-		gooseFilePath := filepath.Join(*gooseOutput, gf.GoPackage+".v")
+		gooseFilePath := util.GetGooseOutputPath(gooseOutput, gf.PkgPath)
 		gooseFile := util.OpenGrackleFile(&gooseFilePath)
 		gf.Write(gooseFile)
+		gooseFile.Close()
 	}
 }
 
 func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, goPackage *string, debug io.Writer) {
 	tmpl := setupTemplates()
-	goModule, goRoot := util.FindGoModuleName(*goOutputPath)
 	util.CreateOutputDirectories(gooseOutput, coqPhysicalPath, goOutputPath)
+	goModule, goRoot := util.FindGoModuleName(*goOutputPath)
 
 	goFiles := make([]*string, 0, 10)
 	for _, file := range generateDescirptor(protoDir).File {
