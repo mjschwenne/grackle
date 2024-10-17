@@ -208,6 +208,75 @@ uniform. Unfortunately, goose doesn't support the built-in =error= interface and
 it's possible that the error message is coming from the other computer we're
 communicating with.
 
+* Notes on string marshaling
+
+Compared to examples of =string= marshaling in the =gokv= tutorial, there are a few
+differences here. First, we will use =*string= in the struct, not raw strings.
+This will just help keep everything more consistent with the non-integer message
+fields. They also aren't using a full-stateless design, which we will need to.
+
+For example, the =putArgs= struct in =kvservice= is defined as
+
+#+begin_src go
+type putArgs struct {
+	opId uint64
+	key  string
+	val  string
+}
+#+end_src
+
+And when encoding, we write the length of the =key= field but not the =val= field
+since it's assumed to be whatever is left in the byte slice when decoding. If we
+were to embed a =putArgs= into another message for some reason, this shortcut
+wouldn't work anymore.
+
+Encoding a string on the =go= side should always be
+
+#+begin_src go
+	keyBytes := []byte(a.key)
+	e = marshal.WriteInt(e, uint64(len(keyBytes)))
+	e = marshal.WriteBytes(e, keyBytes)
+#+end_src
+
+While decoding a string would be something like this:
+
+#+begin_src go
+	// FIXME: this does not get translated correctly
+	// keyLen, e := marshal.ReadInt(e)
+
+	keyLen, e2 := marshal.ReadInt(e)
+	keyBytes, valBytes := marshal.ReadBytes(e2, keyLen)
+	a.key = string(keyBytes)
+#+end_src
+
+I should ask about the =FIXEME= comment. I wonder if this got fixed in goose or if
+I'll have to work around this limitation. Note that =valBytes= is really =e2= or
+maybe =e3= here.
+
+We also need =coq= snippets for this stuff. I can see in the proof for the
+=kvservice= that in =encode= (\mapsto =has_encoding=) we have this fragment:
+
+=(u64_le $ length $ string_to_bytes a.(key)) ++ string_to_bytes a.(key)=
+
+From [[https://github.com/coq-community/coq-tricks][here]], and my own Haskell experience, this should be function application
+and produce the length of the underlying byte slice then the value of the byte
+slice.
+
+For =own=, we will use existential quantification and get something that looks
+like this perhaps.
+
+#+begin_src coq
+Definition own args_ptr args q : iProp Σ :=
+  ∃ (key_l val_l: loc),
+  "Hargs_opId" ∷ args_ptr ↦[putargs_gk.S :: "opId"]{q} #args.(opId) ∗
+  "Hargs_key" ∷ args_ptr ↦[putargs_gk.S :: "key"]{q} #key_l ∗
+  "Hargs_key_enc" ∷ key_l ↦[string]{q} #args.(key)
+  "Hargs_val" ∷ args_ptr ↦[putargs_gk.S :: "val"]{q} #val_l ∗
+  "Hargs_val_enc" ∷ key_l ↦[string]{q} #args.(val).
+#+end_src
+
+Now all we need as a composable proof snippet for encoding and decoding these.
+
 * Meta
 
 #  LocalWords:  endian protobuf struct unmarshaling
