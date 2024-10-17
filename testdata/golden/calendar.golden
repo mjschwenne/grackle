@@ -102,9 +102,9 @@ import (
 )
 
 type S struct {
-	hour   uint32
-	minute uint32
-	second uint64
+	Hour   uint32
+	Minute uint32
+	Second uint64
 }
 
 func (t *S) approxSize() uint64 {
@@ -253,9 +253,9 @@ import (
 )
 
 type S struct {
-	id        uint32
-	startTime *timestamp_gk.S
-	endTime   *timestamp_gk.S
+	Id        uint32
+	StartTime *timestamp_gk.S
+	EndTime   *timestamp_gk.S
 }
 
 func (e *S) approxSize() uint64 {
