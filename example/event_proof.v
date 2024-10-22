@@ -1,5 +1,5 @@
 From Perennial.program_proof Require Import grove_prelude.
-From Grackle.example Require Import example.
+From Grackle.example Require Import goose.github_com.mjschwenne.grackle.example.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 From Grackle.example Require Import timestamp_proof.
 
@@ -11,19 +11,27 @@ Context `{!heapGS Σ}.
 Record C :=
   mkC {
       id : u32 ;
+      name : list u8 ;
       startTime : TimeStamp.C ;
       endTime : TimeStamp.C ;
     }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   ∃ start_enc end_enc,
-  encoded = (u32_le args.(id)) ++ start_enc ++ end_enc
-  /\ TimeStamp.has_encoding start_enc args.(startTime)
-  /\ TimeStamp.has_encoding end_enc args.(endTime).
+    encoded = (u32_le args.(id)) ++
+              (u64_le $ length $ args.(name)) ++ args.(name) ++
+              start_enc ++ end_enc
+    /\ TimeStamp.has_encoding start_enc args.(startTime)
+    /\ TimeStamp.has_encoding end_enc args.(endTime).
 
 Definition own args_ptr args q : iProp Σ :=
-  ∃ (start_l end_l: loc),
+  ∃ (name_l start_l end_l: loc) (name_sl: Slice.t),
   "Hargs_id" ∷ args_ptr ↦[Event :: "id"]{q} #args.(id) ∗
+
+  "Hargs_name" ∷ args_ptr ↦[Event :: "name"]{q} #name_l ∗
+  "Hargs_name_sl" ∷ name_l ↦[slice.T byteT]{q} (slice_val name_sl) ∗
+  "Hargs_name_enc" ∷ own_slice_small name_sl byteT q args.(name) ∗
+
   "Hargs_start" ∷ args_ptr ↦[Event :: "startTime"]{q} #start_l ∗
   "Hargs_start_enc" ∷ TimeStamp.own start_l args.(startTime) q ∗
   "Hargs_end" ∷ args_ptr ↦[Event :: "endTime"]{q} #end_l ∗
@@ -49,6 +57,14 @@ Proof.
   wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
 
+  iDestruct (own_slice_small_sz with "Hargs_name_enc") as "%Hargs_name_sz".
+  wp_loadField. wp_load. wp_apply wp_slice_len. wp_load.
+  wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
+
+  wp_loadField. wp_load. wp_load.
+  wp_apply (wp_WriteBytes with "[$Hsl $Hargs_name_enc]").
+  iIntros (?) "[Hsl _]". wp_store.
+
   wp_load. wp_loadField.
   wp_apply (TimeStamp.wp_Encode with "[$Hargs_start_enc $Hsl]").
   iIntros (start_enc start_sl) "Hsl".
@@ -62,7 +78,7 @@ Proof.
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  unfold has_encoding. exists start_enc, end_enc. split. { exact. }
+  unfold has_encoding. exists start_enc, end_enc. split. { rewrite Hargs_name_sz. rewrite w64_to_nat_id. exact. }
   split. { exact. } { exact. }
 Qed.
 
@@ -93,6 +109,20 @@ Proof.
 
   wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
   wp_pures. wp_storeField. wp_store.
+
+  wp_apply wp_allocN; first done; first by val_ty.
+  iIntros (?) "HnameLen". iApply array_singleton in "HnameLen". wp_pures.
+  wp_apply wp_allocN; first done; first by val_ty.
+  iIntros (?) "Hname". iApply array_singleton in "Hname". wp_pures. wp_load.
+  wp_apply (wp_ReadInt with "[$Hsl]").
+  iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
+
+  iDestruct (own_slice_small_sz with "Hsl") as %Hsz.
+  wp_apply (wp_ReadBytesCopy with "[$]").
+  { rewrite length_app in Hsz. word. }
+  iIntros (??) "[Hname' Hsl]". iApply own_slice_to_small in "Hname'".
+
+  wp_pures. wp_store. wp_store. wp_storeField.
 
   wp_load.
   wp_apply (TimeStamp.wp_Decode startTime_sl with "[Hsl]").

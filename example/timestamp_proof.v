@@ -1,5 +1,5 @@
 From Perennial.program_proof Require Import grove_prelude.
-From Grackle.example Require Import example.
+From Grackle.example Require Import goose.github_com.mjschwenne.grackle.example.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 
 (* Annotations and discussion for this file is in timestamp_proof.org *)
