@@ -78,7 +78,11 @@ Proof.
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  unfold has_encoding. exists start_enc, end_enc. split. { rewrite Hargs_name_sz. rewrite w64_to_nat_id. exact. }
+  unfold has_encoding. exists start_enc, end_enc. split.
+  {
+    rewrite Hargs_name_sz. rewrite w64_to_nat_id.
+    exact.
+  }
   split. { exact. } { exact. }
 Qed.
 

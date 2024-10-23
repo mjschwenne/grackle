@@ -22,9 +22,9 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               (u64_le args.(second)).
 
 Definition own (args_ptr:loc) (args:C) (q:dfrac) : iProp Σ :=
-  "Hargs_hour" ∷ args_ptr ↦[timestamp_gk.S :: "hour"]{q} #args.(hour) ∗
-  "Hargs_minute" ∷ args_ptr ↦[timestamp_gk.S :: "minute"]{q} #args.(minute) ∗
-  "Hargs_second" ∷ args_ptr ↦[timestamp_gk.S :: "second"]{q} #args.(second).
+  "Hargs_hour" ∷ args_ptr ↦[timestamp_gk.S :: "Hour"]{q} #args.(hour) ∗
+  "Hargs_minute" ∷ args_ptr ↦[timestamp_gk.S :: "Minute"]{q} #args.(minute) ∗
+  "Hargs_second" ∷ args_ptr ↦[timestamp_gk.S :: "Second"]{q} #args.(second).
 
 Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) :
   {{{

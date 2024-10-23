@@ -8,12 +8,13 @@ Proof.
   iNamed "HH".
 
   << $refs := (refFields .Fields) ->>
+  << $msgs := (messageFields $refs) ->>
   << if gt (len $refs) 0 ->>
   unfold has_encoding in Henc.
   destruct Henc as (
-  <<- range $idx, $r := $refs ->>
+  <<- range $idx, $r := $msgs ->>
     <<- if $idx >>&<< end >> << .Name >>_sl << end ->>
     & Henc
-    <<- range $idx, $r := $refs >> & Hencoding_<< .Name >> <<- end >> ).
+    <<- range $idx, $m := $msgs >> & Hencoding_<< .Name >> <<- end >> ).
   << end ->>
   rewrite Henc. rewrite -?app_assoc.

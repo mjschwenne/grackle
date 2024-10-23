@@ -2,9 +2,16 @@ func Unmarshal(s []byte) (*S, []byte) {
     << param .Name >> := new(S)
     var enc = s // Needed for goose compatibility
     << range .Fields ->>
-    << param $.Name >>.<< .Name >>, enc =
-    <<-  if isRef . >> << goType . | lower >>_gk.Unmarshal(enc)
-    << else >> marshal.Read<<- marshalType . ->>(enc)
-    << end ->> <<- end ->>
+    <<- if isMessage . >>
+    << param $.Name >>.<< goName .Name >>, enc = << goType . | lower >>_gk.Unmarshal(enc)
+    <<- else if isRef . ->>
+    var << .Name >>Len uint64
+    var << .Name >> []byte
+    << .Name >>Len, enc = marshal.ReadInt(enc)
+    << .Name >>, enc = marshal.ReadBytesCopy(enc, << .Name >>Len)
+    << param $.Name >>.<< goName .Name >> = &<< .Name >>
+    <<- else >>
+    << param $.Name >>.<< goName .Name >>, enc = marshal.Read<<- marshalType . ->>(enc)
+    << end ->> <<- end >>
     return << param .Name >>, enc
 }

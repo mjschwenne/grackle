@@ -29,6 +29,8 @@ var coqTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  "u64",
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: "u64",
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
+	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "list u8",
+	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "list u8",
 }
 
 var goTypeMap = map[fieldType]string{
@@ -39,6 +41,8 @@ var goTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  "uint64",
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: "uint64",
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
+	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "*[]byte",
+	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "*string",
 }
 
 var marshalTypeMap = map[fieldType]string{
@@ -49,6 +53,8 @@ var marshalTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  "Int",
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: "Int",
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
+	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "BytesCopy",
+	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "BytesCopy",
 }
 
 var refTypeMap = map[fieldType]bool{
@@ -59,6 +65,8 @@ var refTypeMap = map[fieldType]bool{
 	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  false,
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: false,
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: true,
+	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   true,
+	descriptorpb.FieldDescriptorProto_TYPE_STRING:  true,
 }
 
 // STRING MANIPULATION UTILITIES
@@ -99,6 +107,10 @@ func GetBuiltInMarshalFuncType(field *field) string {
 
 func IsReferenceType(field *field) bool {
 	return refTypeMap[field.GetType()]
+}
+
+func IsMessageType(field *field) bool {
+	return field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE
 }
 
 // FILESYSTEM UTILITIES

@@ -1,10 +1,13 @@
 func Marshal(<<- param .Name >> *S, prefix []byte) []byte {
     var enc = prefix
     << range .Fields ->>
-    enc = << if isRef . ->>
-    << goType . | lower >>_gk.Marshal(<< param $.Name ->>.<< .Name >>, enc)
+    enc = << if isMessage . ->>
+    << goType . | lower >>_gk.Marshal(<< param $.Name ->>.<< goName .Name >>, enc)
+    << else if isRef . ->>
+    marshal.WriteInt(enc, uint64(len(*<< param $.Name ->>.<< goName .Name >>)))
+    enc = marshal.WriteBytes(enc, *<< param $.Name ->>.<< goName .Name>>)
     << else ->>
-    marshal.Write<<- marshalType . ->>(enc, << param $.Name ->>.<< .Name >>)
+    marshal.Write<<- marshalType . ->>(enc, << param $.Name ->>.<< goName .Name >>)
     << end ->><<- end ->>
     return enc
 }

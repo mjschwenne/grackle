@@ -6,9 +6,9 @@ Section code.
 Context `{ext_ty: ext_types}.
 
 Definition S := struct.decl [
-  "hour" :: uint32T;
-  "minute" :: uint32T;
-  "second" :: uint64T
+  "Hour" :: uint32T;
+  "Minute" :: uint32T;
+  "Second" :: uint64T
 ].
 
 Definition S__approxSize: val :=
@@ -18,9 +18,9 @@ Definition S__approxSize: val :=
 Definition Marshal: val :=
   rec: "Marshal" "t" "prefix" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
-    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF S "hour" "t"));;
-    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF S "minute" "t"));;
-    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (struct.loadF S "second" "t"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF S "Hour" "t"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF S "Minute" "t"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (struct.loadF S "Second" "t"));;
     ![slice.T byteT] "enc".
 
 Definition Unmarshal: val :=
@@ -28,13 +28,13 @@ Definition Unmarshal: val :=
     let: "t" := struct.alloc S (zero_val (struct.t S)) in
     let: "enc" := ref_to (slice.T byteT) "s" in
     let: ("0_ret", "1_ret") := marshal.ReadInt32 (![slice.T byteT] "enc") in
-    struct.storeF S "hour" "t" "0_ret";;
+    struct.storeF S "Hour" "t" "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := marshal.ReadInt32 (![slice.T byteT] "enc") in
-    struct.storeF S "minute" "t" "0_ret";;
+    struct.storeF S "Minute" "t" "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := marshal.ReadInt (![slice.T byteT] "enc") in
-    struct.storeF S "second" "t" "0_ret";;
+    struct.storeF S "Second" "t" "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     ("t", ![slice.T byteT] "enc").
 

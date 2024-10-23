@@ -1,18 +1,20 @@
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-  <<- $refs := (refFields .Fields) ->>
-  <<- range $idx, $field := $refs ->>
+  <<- $msgs := (messageFields .Fields) ->>
+  <<- range $idx, $field := $msgs ->>
   <<- if not $idx >>
   ∃ (<<- end ->>
   <<- $field.Name ->>_enc << end ->>
-  << if len $refs >>: list u8), << end >>
+  << if len $msgs >>: list u8), << end >>
   encoded = << range $idx, $field := .Fields ->>
               << if $idx >> ++
               << end >>
-              <<- if isRef . ->>
+              <<- if isMessage . ->>
               << $field.Name ->>_enc
+              <<- else if isRef . ->>
+              (u64_le $ length $ args.(<< $field.Name >>)) ++ args.(<< $field.Name >>)
               <<- else ->>
               (<<- coqType $field >>_le args.(<<- $field.Name ->>))
               <<- end ->><<- end ->>
-  <<- range $idx, $field := $refs >>
+  <<- range $idx, $field := $msgs >>
   /\ << $field.TypeName ->>.has_encoding << $field.Name ->>_enc args.(<<- $field.Name ->>)
   <<- end ->>.

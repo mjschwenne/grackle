@@ -6,9 +6,10 @@ import (
 )
 
 type S struct {
-	id        uint32
-	startTime *timestamp_gk.S
-	endTime   *timestamp_gk.S
+	Id        uint32
+	Name      *[]byte
+	StartTime *timestamp_gk.S
+	EndTime   *timestamp_gk.S
 }
 
 func (e *S) approxSize() uint64 {
@@ -17,17 +18,25 @@ func (e *S) approxSize() uint64 {
 
 func Marshal(e *S, prefix []byte) []byte {
 	var enc = prefix
-	enc = marshal.WriteInt32(enc, e.id)
-	enc = timestamp_gk.Marshal(e.startTime, enc)
-	enc = timestamp_gk.Marshal(e.endTime, enc)
+	enc = marshal.WriteInt32(enc, e.Id)
+	enc = marshal.WriteInt(enc, uint64(len(*e.Name)))
+	enc = marshal.WriteBytes(enc, *e.Name)
+	enc = timestamp_gk.Marshal(e.StartTime, enc)
+	enc = timestamp_gk.Marshal(e.EndTime, enc)
 	return enc
 }
 
 func Unmarshal(s []byte) (*S, []byte) {
 	e := new(S)
 	var enc = s // Needed for goose compatibility
-	e.id, enc = marshal.ReadInt32(enc)
-	e.startTime, enc = timestamp_gk.Unmarshal(enc)
-	e.endTime, enc = timestamp_gk.Unmarshal(enc)
+
+	e.Id, enc = marshal.ReadInt32(enc)
+	var nameLen uint64
+	var name []byte
+	nameLen, enc = marshal.ReadInt(enc)
+	name, enc = marshal.ReadBytesCopy(enc, nameLen)
+	e.Name = &name
+	e.StartTime, enc = timestamp_gk.Unmarshal(enc)
+	e.EndTime, enc = timestamp_gk.Unmarshal(enc)
 	return e, enc
 }

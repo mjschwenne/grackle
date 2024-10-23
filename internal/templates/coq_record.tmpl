@@ -1,6 +1,6 @@
 Record C :=
     mkC {
         << range .Fields ->>
-        <<- .Name >> : << coqType . ->><<- if isRef . ->> .C <<- end ->>;
+        <<- .Name >> : << coqType . ->><<- if isMessage . ->> .C <<- end ->>;
         << end ->>
     }.

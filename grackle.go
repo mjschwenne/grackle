@@ -110,9 +110,14 @@ func generateDescirptor(protoDir *string) *descriptorpb.FileDescriptorSet {
 func setupTemplates() *template.Template {
 	tmpl := template.New("grackle").Delims("<<", ">>")
 	funcMap := template.FuncMap{
-		"coqType":      util.GetCoqTypeName,
-		"isRef":        util.IsReferenceType,
-		"refFields":    func(fields []*field) []*field { return util.Filter(fields, util.IsReferenceType) },
+		"coqType":       util.GetCoqTypeName,
+		"isRef":         util.IsReferenceType,
+		"isMessage":     util.IsMessageType,
+		"refFields":     func(fields []*field) []*field { return util.Filter(fields, util.IsReferenceType) },
+		"messageFields": func(fields []*field) []*field { return util.Filter(fields, util.IsMessageType) },
+		"notMsgFields": func(fields []*field) []*field {
+			return util.Filter(fields, func(f *field) bool { return util.IsReferenceType(f) && !util.IsMessageType(f) })
+		},
 		"join":         func(sep string, s ...string) string { return strings.Join(s, sep) },
 		"lower":        strings.ToLower,
 		"pred":         func(i int) int { return i - 1 },
@@ -266,6 +271,7 @@ func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqP
 
 			formattedGo, err := format.Source(goBuffer.Bytes())
 			if err != nil {
+				log.Printf(goBuffer.String())
 				log.Fatalf("Error formatting go code: %v\n", err)
 			}
 

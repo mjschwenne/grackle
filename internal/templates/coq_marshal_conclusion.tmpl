@@ -3,12 +3,21 @@
   iFrame. iPureIntro.
 
   << $refs := (refFields .Fields) ->>
-  << if gt (len $refs) 0 ->>
-  unfold has_encoding. exists << range $idx, $field := $refs ->>
+  << $msgs := (messageFields .Fields) ->>
+  << if gt (len $msgs) 0 ->>
+  unfold has_encoding. exists << range $idx, $field := $msgs ->>
   <<- if $idx >>, << end ->>
   <<- .Name ->>_enc
-  <<- end ->>. << range $refs >>
-  split. { exact. }
+  <<- end ->>. << range $idx, $field := $msgs >>
+  split.
+  { << if not $idx ->>
+    << range $refs ->>
+    << if and (isRef .) (not (isMessage .)) ->>
+    rewrite Hargs_<< .Name >>_sz. rewrite w64_to_nat_id.
+    << end ->>
+    <<- end ->>
+    <<- end ->>
+    exact. }
   <<- end >> { exact. }
   <<- else >> done.
   <<- end >>

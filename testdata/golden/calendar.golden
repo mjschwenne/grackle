@@ -23,9 +23,9 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               (u64_le args.(second)).
 
 Definition own (args_ptr:loc) (args:C) (q:dfrac) : iProp Σ :=
-  "Hargs_hour" ∷ args_ptr ↦[timestamp_gk.S :: "hour"]{q} #args.(hour) ∗
-  "Hargs_minute" ∷ args_ptr ↦[timestamp_gk.S :: "minute"]{q} #args.(minute) ∗
-  "Hargs_second" ∷ args_ptr ↦[timestamp_gk.S :: "second"]{q} #args.(second).
+  "Hargs_hour" ∷ args_ptr ↦[timestamp_gk.S :: "Hour"]{q} #args.(hour) ∗
+  "Hargs_minute" ∷ args_ptr ↦[timestamp_gk.S :: "Minute"]{q} #args.(minute) ∗
+  "Hargs_second" ∷ args_ptr ↦[timestamp_gk.S :: "Second"]{q} #args.(second).
 
 Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) :
   {{{
@@ -113,18 +113,22 @@ func (t *S) approxSize() uint64 {
 
 func Marshal(t *S, prefix []byte) []byte {
 	var enc = prefix
-	enc = marshal.WriteInt32(enc, t.hour)
-	enc = marshal.WriteInt32(enc, t.minute)
-	enc = marshal.WriteInt(enc, t.second)
+	enc = marshal.WriteInt32(enc, t.Hour)
+	enc = marshal.WriteInt32(enc, t.Minute)
+	enc = marshal.WriteInt(enc, t.Second)
 	return enc
 }
 
 func Unmarshal(s []byte) (*S, []byte) {
 	t := new(S)
 	var enc = s // Needed for goose compatibility
-	t.hour, enc = marshal.ReadInt32(enc)
-	t.minute, enc = marshal.ReadInt32(enc)
-	t.second, enc = marshal.ReadInt(enc)
+
+	t.Hour, enc = marshal.ReadInt32(enc)
+
+	t.Minute, enc = marshal.ReadInt32(enc)
+
+	t.Second, enc = marshal.ReadInt(enc)
+
 	return t, enc
 }
 --- End: example/timestamp_gk/timestamp_gk.go ---
@@ -145,6 +149,7 @@ Context `{!heapGS Σ}.
 Record C :=
     mkC {
         id : u32;
+        name : list u8;
         startTime : TimeStamp.C;
         endTime : TimeStamp.C;
         }.
@@ -152,17 +157,21 @@ Record C :=
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   ∃ (startTime_enc endTime_enc : list u8), 
   encoded = (u32_le args.(id)) ++
+              (u64_le $ length $ args.(name)) ++ args.(name) ++
               startTime_enc ++
               endTime_enc
   /\ TimeStamp.has_encoding startTime_enc args.(startTime)
   /\ TimeStamp.has_encoding endTime_enc args.(endTime).
 
 Definition own (args_ptr:loc) (args:C) (q:dfrac) : iProp Σ :=
-  ∃ (startTime_l endTime_l : loc),
-  "Hargs_id" ∷ args_ptr ↦[event_gk.S :: "id"]{q} #args.(id) ∗
-  "Hargs_startTime" ∷ args_ptr ↦[event_gk.S :: "startTime"]{q} #startTime_l ∗
+  ∃ (name_l startTime_l endTime_l : loc) (name_sl : Slice.t), 
+  "Hargs_id" ∷ args_ptr ↦[event_gk.S :: "Id"]{q} #args.(id) ∗
+  "Hargs_name" ∷ args_ptr ↦[event_gk.S :: "Name"]{q} #name_l ∗
+  "Hargs_name_sl" ∷ name_l ↦[slice.T byteT]{q} (slice_val name_sl) ∗
+  "Hargs_name_enc" ∷ own_slice_small name_sl byteT q args.(name) ∗
+  "Hargs_startTime" ∷ args_ptr ↦[event_gk.S :: "StartTime"]{q} #startTime_l ∗
   "Hargs_startTime_enc" ∷ TimeStamp.own startTime_l args.(startTime) q ∗
-  "Hargs_endTime" ∷ args_ptr ↦[event_gk.S :: "endTime"]{q} #endTime_l ∗
+  "Hargs_endTime" ∷ args_ptr ↦[event_gk.S :: "EndTime"]{q} #endTime_l ∗
   "Hargs_endTime_enc" ∷ TimeStamp.own endTime_l args.(endTime) q.
 
 Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) :
@@ -185,6 +194,14 @@ Proof.
   wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
 
+  iDestruct (own_slice_small_sz with "Hargs_name_enc") as "%Hargs_name_sz".
+  wp_loadField. wp_load. wp_apply wp_slice_len. wp_load.
+  wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
+
+  wp_loadField. wp_load. wp_load.
+  wp_apply (wp_WriteBytes with "[$Hsl $Hargs_name_enc]").
+  iIntros (?) "[Hsl _]". wp_store.
+
   wp_load. wp_loadField.
   wp_apply (TimeStamp.wp_Encode with "[$Hargs_startTime_enc $Hsl]").
   iIntros (startTime_enc startTime_sl) "Hsl".
@@ -199,8 +216,11 @@ Proof.
   iFrame. iPureIntro.
 
   unfold has_encoding. exists startTime_enc, endTime_enc. 
-  split. { exact. }
-  split. { exact. } { exact. }
+  split.
+  { rewrite Hargs_name_sz. rewrite w64_to_nat_id.
+    exact. }
+  split.
+  { exact. } { exact. }
 Qed.
 
 Lemma wp_Decode enc enc_sl (args:C) (suffix:list u8) (q:dfrac):
@@ -230,13 +250,25 @@ Proof.
   wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
   wp_pures. wp_storeField. wp_store.
 
+  wp_apply wp_allocN; first done; first by val_ty.
+  iIntros (?) "HnameLen". iApply array_singleton in "HnameLen". wp_pures.
+  wp_apply wp_allocN; first done; first by val_ty.
+  iIntros (?) "Hname". iApply array_singleton in "Hname". wp_pures.
+  wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
+  iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
+
+  iDestruct (own_slice_small_sz with "Hsl") as %Hname_sz.
+  wp_apply (wp_ReadBytesCopy with "[$]").
+  { rewrite length_app in Hname_sz. word. }
+  iIntros (??) "[Hname' Hsl]". iApply own_slice_to_small in "Hname'".
+
+  wp_pures. wp_store. wp_store. wp_storeField.
+
   wp_load. wp_apply (TimeStamp.wp_Decode startTime_sl with "[Hsl]").
   { iFrame. exact. } iIntros (??) "[HstartTime Hsl]". wp_pures. wp_storeField. wp_store.
 
-
   wp_load. wp_apply (TimeStamp.wp_Decode endTime_sl with "[Hsl]").
   { iFrame. exact. } iIntros (??) "[HendTime Hsl]". wp_pures. wp_storeField. wp_store.
-
   wp_load. wp_pures. iApply "HΦ". iModIntro. iFrame.
 Qed.
 
@@ -254,6 +286,7 @@ import (
 
 type S struct {
 	Id        uint32
+	Name      *[]byte
 	StartTime *timestamp_gk.S
 	EndTime   *timestamp_gk.S
 }
@@ -264,18 +297,26 @@ func (e *S) approxSize() uint64 {
 
 func Marshal(e *S, prefix []byte) []byte {
 	var enc = prefix
-	enc = marshal.WriteInt32(enc, e.id)
-	enc = timestamp_gk.Marshal(e.startTime, enc)
-	enc = timestamp_gk.Marshal(e.endTime, enc)
+	enc = marshal.WriteInt32(enc, e.Id)
+	enc = marshal.WriteInt(enc, uint64(len(*e.Name)))
+	enc = marshal.WriteBytes(enc, *e.Name)
+	enc = timestamp_gk.Marshal(e.StartTime, enc)
+	enc = timestamp_gk.Marshal(e.EndTime, enc)
 	return enc
 }
 
 func Unmarshal(s []byte) (*S, []byte) {
 	e := new(S)
 	var enc = s // Needed for goose compatibility
-	e.id, enc = marshal.ReadInt32(enc)
-	e.startTime, enc = timestamp_gk.Unmarshal(enc)
-	e.endTime, enc = timestamp_gk.Unmarshal(enc)
+
+	e.Id, enc = marshal.ReadInt32(enc)
+	var nameLen uint64
+	var name []byte
+	nameLen, enc = marshal.ReadInt(enc)
+	name, enc = marshal.ReadBytesCopy(enc, nameLen)
+	e.Name = &name
+	e.StartTime, enc = timestamp_gk.Unmarshal(enc)
+	e.EndTime, enc = timestamp_gk.Unmarshal(enc)
 	return e, enc
 }
 --- End: example/event_gk/event_gk.go ---
