@@ -1,0 +1,8 @@
+
+  wp_loadField. wp_load. wp_load.
+  wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
+
+  wp_loadField. wp_load. wp_apply wp_StringToBytes.
+  iIntros (?) "Hargs_<< .Name >>_enc". iApply own_slice_to_small in "Hargs_<< .Name >>_enc".
+  wp_load. wp_apply (wp_WriteBytes with "[$Hsl $Hargs_<< .Name >>_enc]").
+  iIntros (?) "[Hsl _]". wp_store.

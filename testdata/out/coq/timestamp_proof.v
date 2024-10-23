@@ -86,6 +86,7 @@ Proof.
 
   wp_load. wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl".
   wp_pures. wp_storeField. wp_store.
+
   wp_load. wp_pures. iApply "HΦ". iModIntro. iFrame.
 Qed.
 

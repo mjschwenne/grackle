@@ -5,7 +5,7 @@ func Marshal(<<- param .Name >> *S, prefix []byte) []byte {
     << goType . | lower >>_gk.Marshal(<< param $.Name ->>.<< goName .Name >>, enc)
     << else if isRef . ->>
     marshal.WriteInt(enc, uint64(len(*<< param $.Name ->>.<< goName .Name >>)))
-    enc = marshal.WriteBytes(enc, *<< param $.Name ->>.<< goName .Name>>)
+    enc = marshal.WriteBytes(enc, << if isCoqType . "string" >>[]byte(<< end >>*<< param $.Name ->>.<< goName .Name>>)<< if isCoqType . "string" >>)<< end >>
     << else ->>
     marshal.Write<<- marshalType . ->>(enc, << param $.Name ->>.<< goName .Name >>)
     << end ->><<- end ->>

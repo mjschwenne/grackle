@@ -12,8 +12,10 @@
   split.
   { << if not $idx ->>
     << range $refs ->>
-    << if and (isRef .) (not (isMessage .)) ->>
+    << if isCoqType . "list u8" ->>
     rewrite Hargs_<< .Name >>_sz. rewrite w64_to_nat_id.
+    << else if isCoqType . "string" ->>
+    rewrite string_bytes_length.
     << end ->>
     <<- end ->>
     <<- end ->>

@@ -1,4 +1,5 @@
 
+
   iDestruct (own_slice_small_sz with "Hargs_<< .Name >>_enc") as "%Hargs_<< .Name >>_sz".
   wp_loadField. wp_load. wp_apply wp_slice_len. wp_load.
   wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.

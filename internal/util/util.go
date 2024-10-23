@@ -30,7 +30,7 @@ var coqTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: "u64",
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
 	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "list u8",
-	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "list u8",
+	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "string",
 }
 
 var goTypeMap = map[fieldType]string{
@@ -111,6 +111,10 @@ func IsReferenceType(field *field) bool {
 
 func IsMessageType(field *field) bool {
 	return field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE
+}
+
+func IsCoqType(field *field, typeStr string) bool {
+	return coqTypeMap[field.GetType()] == typeStr
 }
 
 // FILESYSTEM UTILITIES

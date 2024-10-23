@@ -113,10 +113,14 @@ func setupTemplates() *template.Template {
 		"coqType":       util.GetCoqTypeName,
 		"isRef":         util.IsReferenceType,
 		"isMessage":     util.IsMessageType,
+		"isCoqType":     util.IsCoqType,
 		"refFields":     func(fields []*field) []*field { return util.Filter(fields, util.IsReferenceType) },
 		"messageFields": func(fields []*field) []*field { return util.Filter(fields, util.IsMessageType) },
 		"notMsgFields": func(fields []*field) []*field {
 			return util.Filter(fields, func(f *field) bool { return util.IsReferenceType(f) && !util.IsMessageType(f) })
+		},
+		"filterByCoqType": func(fields []*field, typeStr string) []*field {
+			return util.Filter(fields, func(f *field) bool { return util.IsCoqType(f, typeStr) })
 		},
 		"join":         func(sep string, s ...string) string { return strings.Join(s, sep) },
 		"lower":        strings.ToLower,

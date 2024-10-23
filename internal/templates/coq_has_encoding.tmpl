@@ -11,7 +11,7 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               <<- if isMessage . ->>
               << $field.Name ->>_enc
               <<- else if isRef . ->>
-              (u64_le $ length $ args.(<< $field.Name >>)) ++ args.(<< $field.Name >>)
+              (u64_le $ length $ << if isCoqType . "string" >>string_to_bytes << end ->> args.(<< $field.Name >>)) ++ << if isCoqType . "string" >>string_to_bytes << end ->> args.(<< $field.Name >>)
               <<- else ->>
               (<<- coqType $field >>_le args.(<<- $field.Name ->>))
               <<- end ->><<- end ->>

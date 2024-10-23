@@ -1,16 +1,15 @@
 Definition own (args_ptr:loc) (args:C) (q:dfrac) : iProp Σ :=
   <<- $refs := (refFields .Fields) ->>
-  <<- $nmr := (notMsgFields .Fields) ->>
+  <<- $bytes := (filterByCoqType .Fields "list u8") ->>
   <<- if gt (len $refs) 0  >>
   ∃ << end ->>
   << if len $refs ->>
   (<<- range $idx, $field := $refs ->>
   <<- $field.Name ->>_l << end ->>: loc) << end ->>
-  <<- if len $nmr ->>
-  (<<- range $idx, $field := $nmr ->>
-  <<- if not (isMessage .) ->>
+  <<- if len $bytes ->>
+  (<<- range $idx, $field := $bytes ->>
   <<- $field.Name ->>_sl << end ->>: Slice.t)
-  <<- end ->><<- end ->>
+  <<- end ->>
   <<- if gt (len $refs) 0 ->>
   , << end >>
   << range $idx, $field := .Fields ->>
@@ -21,8 +20,12 @@ Definition own (args_ptr:loc) (args:C) (q:dfrac) : iProp Σ :=
   "Hargs_<<- .Name ->>_enc" ∷ << coqType . ->>.own << .Name ->>_l args.(<<- .Name ->>) q
   <<- else if isRef . ->>
   "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- lower $.Name >>_gk.S :: "<<- goName .Name ->>"]{q} #<<- .Name ->>_l ∗
+  <<- if isCoqType . "string" >>
+  "Hargs_<< .Name >>_str" ∷ << .Name >>_l ↦[stringT]{q} #(str args.(<< .Name >>))
+  <<- else >>
   "Hargs_<<- .Name ->>_sl" ∷ << .Name >>_l ↦[slice.T byteT]{q} (slice_val << .Name >>_sl) ∗
   "Hargs_<<- .Name ->>_enc" ∷ own_slice_small << .Name >>_sl byteT q args.(<< .Name >>)
+  << end >>
   <<- else ->>
   "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- lower $.Name >>_gk.S :: "<<- goName .Name ->>"]{q} #args.(<<- .Name ->>)
   <<- end ->><<- end ->>.

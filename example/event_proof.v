@@ -25,11 +25,11 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
     /\ TimeStamp.has_encoding end_enc args.(endTime).
 
 Definition own args_ptr args q : iProp Σ :=
-  ∃ (name_l start_l end_l: loc) (name_sl: Slice.t),
+  ∃ (name_l start_l end_l: loc),
   "Hargs_id" ∷ args_ptr ↦[Event :: "id"]{q} #args.(id) ∗
 
   "Hargs_name" ∷ args_ptr ↦[Event :: "name"]{q} #name_l ∗
-  "Hargs_name_sl" ∷ name_l ↦[stringT]{q} #(str args.(name)) ∗
+  "Hargs_name_str" ∷ name_l ↦[stringT]{q} #(str args.(name)) ∗
 
   "Hargs_start" ∷ args_ptr ↦[Event :: "startTime"]{q} #start_l ∗
   "Hargs_start_enc" ∷ TimeStamp.own start_l args.(startTime) q ∗
