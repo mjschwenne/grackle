@@ -4,7 +4,7 @@ import "timestamp.proto";
 
 message Event {
     int32 id = 1;
-    bytes name = 4;
+    string name = 4;
     TimeStamp startTime = 2;
     TimeStamp endTime = 3;
 }

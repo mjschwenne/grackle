@@ -6,7 +6,7 @@ import (
 
 type Event struct {
 	id        uint32
-	name      *[]byte
+	name      *string
 	startTime *TimeStamp
 	endTime   *TimeStamp
 }
@@ -20,7 +20,7 @@ func MarshalEvent(e *Event, prefix []byte) []byte {
 	enc = marshal.WriteInt32(enc, e.id)
 
 	enc = marshal.WriteInt(enc, uint64(len(*e.name)))
-	enc = marshal.WriteBytes(enc, *e.name)
+	enc = marshal.WriteBytes(enc, []byte(*e.name))
 
 	enc = MarshalTimeStamp(e.startTime, enc)
 	enc = MarshalTimeStamp(e.endTime, enc)
@@ -33,9 +33,11 @@ func UnmarshalEvent(s []byte) (*Event, []byte) {
 	e.id, enc = marshal.ReadInt32(enc)
 
 	var nameLen uint64
-	var name []byte
+	var nameBytes []byte
+	var name string
 	nameLen, enc = marshal.ReadInt(enc)
-	name, enc = marshal.ReadBytesCopy(enc, nameLen)
+	nameBytes, enc = marshal.ReadBytesCopy(enc, nameLen)
+	name = string(nameBytes)
 	e.name = &name
 
 	e.startTime, enc = UnmarshalTimeStamp(enc)
