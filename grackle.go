@@ -150,7 +150,7 @@ func setupTemplates() *template.Template {
 }
 
 // Override options with file-specific values if needed
-func getFileOptions(file *descriptorpb.FileDescriptorProto, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goModule *string, goRoot *string, goOutputPath *string, goPackage *string) *fileParams {
+func getFileOptions(file *descriptorpb.FileDescriptorProto, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, goPackage *string) *fileParams {
 	const COQ_LOGICAL_PATH_FIELD_TAG = 50621
 	const COQ_PHYSICAL_PATH_FIELD_TAG = 50622
 	const GOOSE_OUTPUT_PATH = 50623
@@ -236,60 +236,67 @@ func gooseTranslate(gooseOutput *string, goRoot string, goDirectory string) {
 func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, goPackage *string, debug io.Writer) {
 	tmpl := setupTemplates()
 	util.CreateOutputDirectories(gooseOutput, coqPhysicalPath, goOutputPath)
-	goModule, goRoot := util.FindGoModuleName(*goOutputPath)
 
 	goFiles := make([]*string, 0, 10)
 	for _, file := range generateDescirptor(protoDir).File {
-		fileOpts := getFileOptions(file, gooseOutput, coqLogicalPath, coqPhysicalPath, &goModule, &goRoot, goOutputPath, goPackage)
+		fileOpts := getFileOptions(file, gooseOutput, coqLogicalPath, coqPhysicalPath, goOutputPath, goPackage)
 		for _, message := range file.MessageType {
 			msg := getMessageOptions(message, fileOpts)
 			var coqOut io.Writer
 			var goOut io.Writer
-			if debug != nil {
-				coqOut = debug
-				goOut = debug
-				fmt.Fprintf(debug, "--- Begin: %s ---\n", *msg.CoqPhysicalPath)
-			} else {
-				coqOut = util.OpenGrackleFile(msg.CoqPhysicalPath)
-				goOut = util.OpenGrackleFile(msg.GoPhysicalPath)
-				goFiles = append(goFiles, msg.GoPhysicalPath)
+
+			if *coqPhysicalPath != "" {
+				if debug != nil {
+					coqOut = debug
+					fmt.Fprintf(debug, "--- Begin: %s ---\n", *msg.CoqPhysicalPath)
+				} else {
+					coqOut = util.OpenGrackleFile(msg.CoqPhysicalPath)
+				}
+				err := tmpl.ExecuteTemplate(coqOut, "coq_proof.tmpl", msg)
+
+				if err != nil {
+					log.Fatalf("Error generating coq code: %v\n", err)
+				}
+				if debug != nil {
+					fmt.Fprintf(debug, "--- End: %s ---\n", *msg.CoqPhysicalPath)
+				}
 			}
 
-			err := tmpl.ExecuteTemplate(coqOut, "coq_proof.tmpl", msg)
+			if *goOutputPath != "" {
+				if debug != nil {
+					goOut = debug
+					fmt.Fprintf(debug, "--- Start: %s ---\n", *msg.GoPhysicalPath)
+				} else {
+					goOut = util.OpenGrackleFile(msg.GoPhysicalPath)
+					goFiles = append(goFiles, msg.GoPhysicalPath)
+				}
+				// Write to a buffer, then format
+				// The buffer may seem large, but it is only 1 MB
+				goBuffer := bytes.NewBuffer(make([]byte, 0, 1000000))
+				err := tmpl.ExecuteTemplate(goBuffer, "go_file.tmpl", msg)
+				if err != nil {
+					log.Fatalf("Error generating go code: %v\n", err)
+				}
 
-			if err != nil {
-				log.Fatalf("Error generating coq code: %v\n", err)
-			}
-			if debug != nil {
-				fmt.Fprintf(debug, "--- End: %s ---\n", *msg.CoqPhysicalPath)
-				fmt.Fprintf(debug, "--- Start: %s ---\n", *msg.GoPhysicalPath)
+				formattedGo, err := format.Source(goBuffer.Bytes())
+				if err != nil {
+					log.Printf(goBuffer.String())
+					log.Fatalf("Error formatting go code: %v\n", err)
+				}
+
+				_, err = goOut.Write(formattedGo)
+				if err != nil {
+					log.Fatalf("Error writing go code: %v\n", err)
+				}
+
+				if debug != nil {
+					fmt.Fprintf(debug, "--- End: %s ---\n", *msg.GoPhysicalPath)
+				}
 			}
 
-			// Write to a buffer, then format
-			// The buffer may seem large, but it is only 1 MB
-			goBuffer := bytes.NewBuffer(make([]byte, 0, 1000000))
-			err = tmpl.ExecuteTemplate(goBuffer, "go_file.tmpl", msg)
-			if err != nil {
-				log.Fatalf("Error generating go code: %v\n", err)
-			}
-
-			formattedGo, err := format.Source(goBuffer.Bytes())
-			if err != nil {
-				log.Printf(goBuffer.String())
-				log.Fatalf("Error formatting go code: %v\n", err)
-			}
-
-			_, err = goOut.Write(formattedGo)
-			if err != nil {
-				log.Fatalf("Error writing go code: %v\n", err)
-			}
-
-			if debug != nil {
-				fmt.Fprintf(debug, "--- End: %s ---\n", *msg.GoPhysicalPath)
-			}
-
-			// Goose Translation, but only during actual grackle usage
-			if debug == nil {
+			// Goose Translation, but only if the user wants and we have real go output
+			if debug == nil && gooseOutput != nil && goOutputPath != nil {
+				_, goRoot := util.FindGoModuleName(*goOutputPath)
 				gooseTranslate(gooseOutput, goRoot, filepath.Dir(*msg.GoPhysicalPath))
 			}
 		}

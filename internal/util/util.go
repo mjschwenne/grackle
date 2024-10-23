@@ -175,9 +175,17 @@ func GetGooseOutputPath(gooseOutput *string, goosePackagePath string) string {
 }
 
 func CreateOutputDirectories(gooseOutput *string, coqPhysicalPath *string, goOutputPath *string) {
-	os.MkdirAll(*gooseOutput, dirPermissions)
-	os.MkdirAll(*coqPhysicalPath, dirPermissions)
-	os.MkdirAll(*goOutputPath, dirPermissions)
+	if gooseOutput != nil {
+		os.MkdirAll(*gooseOutput, dirPermissions)
+	}
+	if coqPhysicalPath != nil {
+
+		os.MkdirAll(*coqPhysicalPath, dirPermissions)
+	}
+	if goOutputPath != nil {
+
+		os.MkdirAll(*goOutputPath, dirPermissions)
+	}
 }
 
 func OpenGrackleFile(path *string) *os.File {

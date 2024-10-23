@@ -20,26 +20,23 @@ func main() {
 	var goPackage = flag.String("go-package", "", "Fully qualified root package for the output packages")
 	flag.Parse()
 
-	if len(*gooseOutputPath) < 1 {
-		fmt.Println("goose-output path must be at least 1 character long!")
-		os.Exit(1)
-	}
+	// if len(*gooseOutputPath) < 1 {
+	// 	gooseOutputPath = nil
+	// }
 
-	if len(*coqLogicalPath) < 1 {
-		fmt.Println("coq-logical-path must be at least 1 character long!")
-		os.Exit(1)
-	}
+	// if len(*coqLogicalPath) < 1 {
+	// 	coqPhysicalPath = nil
+	// }
 
-	if len(*goOutputPath) < 1 {
-		fmt.Println("go-output-path must be at least 1 character long!")
-		os.Exit(1)
-	}
+	// if len(*goOutputPath) < 1 {
+	// 	goOutputPath = nil
+	// }
 
-	if len(*goPackage) < 1 {
-		fmt.Println("go-package must be at least 1 character long!")
-		os.Exit(1)
-	}
+	// if len(*goPackage) < 1 {
+	// 	goPackage = nil
+	// } else {
 	*goPackage = strings.TrimRight(*goPackage, "/")
+	// }
 
 	var protoDir = flag.Args()
 	if len(protoDir) != 1 {
