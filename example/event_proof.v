@@ -141,8 +141,6 @@ Proof.
   { iFrame. exact. } iIntros (??) "[HendTime Hsl]". wp_pures. wp_storeField. wp_store.
 
   wp_load. wp_pures. iApply "HΦ". iModIntro. iFrame.
-  (* There /has/ to be a better way to do this... *)
-  iPureIntro. exists enc_sl. done.
 Qed.
 
 End Event.
