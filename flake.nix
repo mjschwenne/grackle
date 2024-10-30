@@ -17,10 +17,10 @@
         src = pkgs.fetchFromGitHub {
           owner = "goose-lang";
           repo = "goose";
-          rev = "6787e01cef93d900c0018ed84f44141f26d1fbb9";
-          hash = "sha256-6HywCVDZF1AVRgsLaIWiuvJcrEr75WOLXXdvgpgF2DU=";
+          rev = "585abc3cfef50dd466e112d7c535dbdfccd3c0ca";
+          hash = "sha256-M4zaZ1DdecYXeDugrL+TV7HWPMLuj1P25G6mf+fgljg=";
         };
-        vendorHash = "sha256-sI5HJmskJ+Qdf7lgbk2ztE4gfRY6YvR7wxK2g3knQko=";
+        vendorHash = "sha256-HCJ8v3TSv4UrkOsRuENWVz5Z7zQ1UsOygx0Mo7MELzY=";
       };
     in
       pkgs.mkShell {

@@ -28,8 +28,7 @@ Definition own args_ptr args q : iProp Σ :=
   ∃ (name_l start_l end_l: loc),
   "Hargs_id" ∷ args_ptr ↦[Event :: "id"]{q} #args.(id) ∗
 
-  "Hargs_name" ∷ args_ptr ↦[Event :: "name"]{q} #name_l ∗
-  "Hargs_name_str" ∷ name_l ↦[stringT]{q} #(str args.(name)) ∗
+  "Hargs_name" ∷ args_ptr ↦[Event :: "name"]{q} #(str args.(name)) ∗
 
   "Hargs_start" ∷ args_ptr ↦[Event :: "startTime"]{q} #start_l ∗
   "Hargs_start_enc" ∷ TimeStamp.own start_l args.(startTime) q ∗
@@ -57,11 +56,13 @@ Proof.
   iIntros (?) "Hsl". wp_store.
 
   (* iDestruct (own_slice_small_sz with "Hargs_name_enc") as "%Hargs_name_sz". *)
-  wp_loadField. wp_load. wp_load.
-  wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
+  wp_loadField.
+  wp_apply wp_StringToBytes. iIntros (?) "Hargs_name_enc". wp_pures.
+  wp_apply (wp_slice_len).
+  iDestruct (own_slice_sz with "Hargs_name_enc") as "%Hargs_name_sz".
+  iApply own_slice_to_small in "Hargs_name_enc".
+  wp_load. wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
 
-  wp_loadField. wp_load. wp_apply wp_StringToBytes.
-  iIntros (?) "Hargs_name_enc". iApply own_slice_to_small in "Hargs_name_enc".
   wp_load. wp_apply (wp_WriteBytes with "[$Hsl $Hargs_name_enc]").
   iIntros (?) "[Hsl _]". wp_store.
 
@@ -81,6 +82,8 @@ Proof.
   unfold has_encoding. exists start_enc, end_enc. split.
   {
     rewrite ?string_bytes_length.
+    rewrite Hargs_name_sz.
+    rewrite w64_to_nat_id.
     exact.
   }
   split. { exact. } { exact. }
@@ -114,8 +117,8 @@ Proof.
   wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
   wp_pures. wp_storeField. wp_store.
 
-  wp_apply wp_allocN; first done; first by val_ty.
-  iIntros (?) "HnameLen". iApply array_singleton in "HnameLen". wp_pures.
+  wp_alloc nameLen as "HnameLen".
+
   wp_apply wp_allocN; first done; first by val_ty.
   iIntros (?) "HnameBytes". iApply array_singleton in "HnameBytes". wp_pures.
   wp_apply wp_allocN; first done; first by val_ty.
