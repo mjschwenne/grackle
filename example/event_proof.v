@@ -117,14 +117,11 @@ Proof.
   wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
   wp_pures. wp_storeField. wp_store.
 
-  wp_alloc nameLen as "HnameLen".
+  wp_apply wp_ref_of_zero; first done. iIntros (nameLen) "HnameLen". wp_pures.
+  wp_apply wp_ref_of_zero; first done. iIntros (nameBytes) "HnameBytes". wp_pures.
 
-  wp_apply wp_allocN; first done; first by val_ty.
-  iIntros (?) "HnameBytes". iApply array_singleton in "HnameBytes". wp_pures.
-  wp_apply wp_allocN; first done; first by val_ty.
-  iIntros (?) "Hname". iApply array_singleton in "Hname". wp_pures.
-  wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
-  iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
+  wp_load. wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl". wp_pures. wp_store. wp_store.
+  wp_load. wp_load.
 
   iDestruct (own_slice_small_sz with "Hsl") as %Hsz.
   wp_apply (wp_ReadBytesCopy with "[$]").
@@ -133,7 +130,8 @@ Proof.
 
   wp_pures. wp_store. wp_store. wp_load.
   wp_apply (wp_StringFromBytes with "[$Hname']"). iIntros "_".
-  wp_store. wp_storeField. repeat rewrite string_to_bytes_to_string.
+  wp_storeField.
+
 
   wp_load.
   wp_apply (TimeStamp.wp_Decode startTime_sl with "[Hsl]").
@@ -143,7 +141,7 @@ Proof.
   wp_apply (TimeStamp.wp_Decode endTime_sl with "[Hsl]").
   { iFrame. exact. } iIntros (??) "[HendTime Hsl]". wp_pures. wp_storeField. wp_store.
 
-  wp_load. wp_pures. iApply "HΦ". iModIntro. iFrame.
+  wp_load. wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame. done.
 Qed.
 
 End Event.
