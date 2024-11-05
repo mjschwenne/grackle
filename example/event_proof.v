@@ -62,7 +62,6 @@ Proof.
   iDestruct (own_slice_sz with "Hargs_name_enc") as "%Hargs_name_sz".
   iApply own_slice_to_small in "Hargs_name_enc".
   wp_load. wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
-
   wp_load. wp_apply (wp_WriteBytes with "[$Hsl $Hargs_name_enc]").
   iIntros (?) "[Hsl _]". wp_store.
 

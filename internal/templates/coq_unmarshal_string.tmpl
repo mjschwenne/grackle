@@ -1,18 +1,14 @@
 
-  wp_apply wp_allocN; first done; first by val_ty.
-  iIntros (?) "H<< .Name >>Len". iApply array_singleton in "H<< .Name >>Len". wp_pures.
-  wp_apply wp_allocN; first done; first by val_ty.
-  iIntros (?) "H<< .Name >>Bytes". iApply array_singleton in "H<< .Name >>Bytes". wp_pures.
-  wp_apply wp_allocN; first done; first by val_ty.
-  iIntros (?) "H<< .Name >>". iApply array_singleton in "H<< .Name >>". wp_pures.
+  wp_apply wp_ref_of_zero; first done. iIntros (<< .Name >>Len) "H<< .Name >>Len". wp_pures.
+  wp_apply wp_ref_of_zero; first done. iIntros (<< .Name >>Bytes) "H<< .Name >>Bytes". wp_pures.
   wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
   iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
 
   iDestruct (own_slice_small_sz with "Hsl") as %H<< .Name >>_sz.
-  wp_apply (wp_ReadBytesCopy with "[$]").
+  wp_apply (wp_ReadBytes with "[$]").
   { rewrite length_app in H<< .Name >>_sz. word. }
-  iIntros (??) "[H<< .Name >>' Hsl]". iApply own_slice_to_small in "H<< .Name >>'".
+  iIntros (??) "[H<< .Name >>' Hsl]".
 
   wp_pures. wp_store. wp_store. wp_load.
   wp_apply (wp_StringFromBytes with "[$H<< .Name >>']"). iIntros "_".
-  wp_store. wp_storeField. repeat rewrite string_to_bytes_to_string.
+  wp_storeField.

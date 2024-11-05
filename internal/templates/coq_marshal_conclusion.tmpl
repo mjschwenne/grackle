@@ -2,7 +2,6 @@
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  << $refs := (refFields .Fields) ->>
   << $msgs := (messageFields .Fields) ->>
   << if gt (len $msgs) 0 ->>
   unfold has_encoding. exists << range $idx, $field := $msgs ->>
@@ -11,11 +10,9 @@
   <<- end ->>. << range $idx, $field := $msgs >>
   split.
   { << if not $idx ->>
-    << range $refs ->>
-    << if isCoqType . "list u8" ->>
+    << range $idx, $field := $.Fields ->>
+    << if or (isCoqType . "list u8") (isCoqType . "string") ->>
     rewrite Hargs_<< .Name >>_sz. rewrite w64_to_nat_id.
-    << else if isCoqType . "string" ->>
-    rewrite string_bytes_length.
     << end ->>
     <<- end ->>
     <<- end ->>

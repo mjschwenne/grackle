@@ -41,8 +41,8 @@ var goTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  "uint64",
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: "uint64",
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
-	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "*[]byte",
-	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "*string",
+	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "[]byte",
+	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "string",
 }
 
 var marshalTypeMap = map[fieldType]string{
@@ -65,8 +65,8 @@ var refTypeMap = map[fieldType]bool{
 	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  false,
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: false,
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: true,
-	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   true,
-	descriptorpb.FieldDescriptorProto_TYPE_STRING:  true,
+	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   false,
+	descriptorpb.FieldDescriptorProto_TYPE_STRING:  false,
 }
 
 // STRING MANIPULATION UTILITIES
@@ -115,6 +115,10 @@ func IsMessageType(field *field) bool {
 
 func IsCoqType(field *field, typeStr string) bool {
 	return coqTypeMap[field.GetType()] == typeStr
+}
+
+func IsGoType(field *field, typeStr string) bool {
+	return goTypeMap[field.GetType()] == typeStr
 }
 
 // FILESYSTEM UTILITIES

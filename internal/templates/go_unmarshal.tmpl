@@ -4,18 +4,15 @@ func Unmarshal(s []byte) (*S, []byte) {
     << range .Fields ->>
     <<- if isMessage . >>
     << param $.Name >>.<< goName .Name >>, enc = << goType . | lower >>_gk.Unmarshal(enc)
-    <<- else if isRef . ->>
+    <<- else if or (isGoType . "string") (isGoType . "[]byte") >>
     var << .Name >>Len uint64
     var << .Name >>Bytes []byte
-    <<- if isCoqType . "string" >>
-    var << .Name >>Str string<< end >>
     << .Name >>Len, enc = marshal.ReadInt(enc)
-    << .Name >>Bytes, enc = marshal.ReadBytesCopy(enc, << .Name >>Len)
-    <<- if isCoqType . "string" >>
-    << .Name >>Str = string(<< .Name >>Bytes)<< end >>
-    << param $.Name >>.<< goName .Name >> = &<< .Name >><< if isCoqType . "string" >>Str<< end >>
+    << .Name >>Bytes, enc = marshal.ReadBytes(enc, << .Name >>Len)
+    << param $.Name >>.<< goName .Name >> = << if isGoType . "string" >>string(<< end >><< .Name >>Bytes<< if isGoType . "string" >>)<< end >>
     <<- else >>
     << param $.Name >>.<< goName .Name >>, enc = marshal.Read<<- marshalType . ->>(enc)
-    << end ->> <<- end >>
+    <<- end ->> <<- end >>
+
     return << param .Name >>, enc
 }

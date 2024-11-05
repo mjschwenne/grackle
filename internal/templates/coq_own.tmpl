@@ -18,13 +18,11 @@ Definition own (args_ptr:loc) (args:C) (q:dfrac) : iProp Σ :=
   <<- if isMessage . ->>
   "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- lower $.Name >>_gk.S :: "<<- goName .Name ->>"]{q} #<<- .Name ->>_l ∗
   "Hargs_<<- .Name ->>_enc" ∷ << coqType . ->>.own << .Name ->>_l args.(<<- .Name ->>) q
-  <<- else if isRef . ->>
-  "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- lower $.Name >>_gk.S :: "<<- goName .Name ->>"]{q} #<<- .Name ->>_l ∗
-  <<- if isCoqType . "string" >>
-  "Hargs_<< .Name >>_str" ∷ << .Name >>_l ↦[stringT]{q} #(str args.(<< .Name >>))
-  <<- else >>
-  "Hargs_<<- .Name ->>_sl" ∷ << .Name >>_l ↦[slice.T byteT]{q} (slice_val << .Name >>_sl) ∗
-  "Hargs_<<- .Name ->>_enc" ∷ own_slice_small << .Name >>_sl byteT q args.(<< .Name >>)
+  <<- else if or (isCoqType . "string") (isCoqType . "list u8") ->>
+  "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- lower $.Name >>_gk.S :: "<<- goName .Name ->>"]{q}
+  <<- if isCoqType . "string" >> #(str args.(<< .Name >>))
+  <<- else >> (slice_val << .Name >>_sl) ∗
+  "Hargs_<<- .Name ->>_sl" ∷ own_slice_small << .Name >>_sl byteT q args.(<< .Name >>)
   << end >>
   <<- else ->>
   "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- lower $.Name >>_gk.S :: "<<- goName .Name ->>"]{q} #args.(<<- .Name ->>)

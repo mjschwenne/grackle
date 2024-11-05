@@ -16,9 +16,11 @@ func (t *S) approxSize() uint64 {
 
 func Marshal(t *S, prefix []byte) []byte {
 	var enc = prefix
+
 	enc = marshal.WriteInt32(enc, t.Hour)
 	enc = marshal.WriteInt32(enc, t.Minute)
 	enc = marshal.WriteInt(enc, t.Second)
+
 	return enc
 }
 
@@ -27,9 +29,7 @@ func Unmarshal(s []byte) (*S, []byte) {
 	var enc = s // Needed for goose compatibility
 
 	t.Hour, enc = marshal.ReadInt32(enc)
-
 	t.Minute, enc = marshal.ReadInt32(enc)
-
 	t.Second, enc = marshal.ReadInt(enc)
 
 	return t, enc

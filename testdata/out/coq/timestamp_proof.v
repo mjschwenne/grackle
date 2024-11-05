@@ -43,8 +43,10 @@ Proof.
   wp_rec. wp_pures.
   wp_apply (wp_ref_to); first by val_ty.
   iIntros (?) "Hptr". wp_pures.
+
   wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
+
   wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
   wp_loadField. wp_load. wp_apply (wp_WriteInt with "[$Hsl]").
@@ -87,7 +89,7 @@ Proof.
   wp_load. wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl".
   wp_pures. wp_storeField. wp_store.
 
-  wp_load. wp_pures. iApply "HΦ". iModIntro. iFrame.
+  wp_load. wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
 Qed.
 
 End TimeStamp.

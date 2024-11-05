@@ -1,13 +1,21 @@
 func Marshal(<<- param .Name >> *S, prefix []byte) []byte {
     var enc = prefix
+
     << range .Fields ->>
-    enc = << if isMessage . ->>
-    << goType . | lower >>_gk.Marshal(<< param $.Name ->>.<< goName .Name >>, enc)
-    << else if isRef . ->>
-    marshal.WriteInt(enc, uint64(len(*<< param $.Name ->>.<< goName .Name >>)))
-    enc = marshal.WriteBytes(enc, << if isCoqType . "string" >>[]byte(<< end >>*<< param $.Name ->>.<< goName .Name>>)<< if isCoqType . "string" >>)<< end >>
+    << if isRef . ->>
+    primitive.Assume(<< param $.Name >>.<< goName .Name >> != nil)
+    << end ->>
+    << if isMessage . ->>
+    enc = << goType . | lower >>_gk.Marshal(<< param $.Name ->>.<< goName .Name >>, enc)
+    << else if isGoType . "string" ->>
+    << lower .Name>>Bytes := []byte(<<- param $.Name ->>.<< goName .Name >>)
+    enc = marshal.WriteInt(enc, uint64(len(<< lower .Name >>Bytes)))
+    enc = marshal.WriteBytes(enc, << lower .Name >>Bytes)
+    << else if isGoType . "[]byte" ->>
+    enc = marshal.WriteInt(enc, uint64(len(<< param $.Name >>.<< goName .Name >>)))
+    enc = marshal.WriteBytes(enc, << param $.Name >>.<< goName .Name >>)
     << else ->>
-    marshal.Write<<- marshalType . ->>(enc, << param $.Name ->>.<< goName .Name >>)
-    << end ->><<- end ->>
+    enc = marshal.Write<<- marshalType . ->>(enc, << param $.Name ->>.<< goName .Name >>)
+    << end ->><<- end >>
     return enc
 }

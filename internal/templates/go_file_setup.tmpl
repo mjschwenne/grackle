@@ -1,6 +1,9 @@
 package << lower .Name >>_gk
 
 import (
+    <<- if len .NestedMessages >>
+	"github.com/goose-lang/primitive"
+    << end ->>
     "github.com/tchajed/marshal"
     << range .NestedMessages ->>
     "<< $.GoPackage >>/<<- lower . ->>_gk"

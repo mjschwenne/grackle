@@ -114,6 +114,7 @@ func setupTemplates() *template.Template {
 		"isRef":         util.IsReferenceType,
 		"isMessage":     util.IsMessageType,
 		"isCoqType":     util.IsCoqType,
+		"isGoType":      util.IsGoType,
 		"refFields":     func(fields []*field) []*field { return util.Filter(fields, util.IsReferenceType) },
 		"messageFields": func(fields []*field) []*field { return util.Filter(fields, util.IsMessageType) },
 		"notMsgFields": func(fields []*field) []*field {
