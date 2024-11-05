@@ -41,7 +41,9 @@ Definition MarshalEvent: val :=
     let: "nameByte" := StringToBytes (struct.loadF Event "name" "e") in
     "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len "nameByte"));;
     "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") "nameByte");;
+    control.impl.Assume ((struct.loadF Event "startTime" "e") ≠ #null);;
     "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "startTime" "e") (![slice.T byteT] "enc"));;
+    control.impl.Assume ((struct.loadF Event "endTime" "e") ≠ #null);;
     "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "endTime" "e") (![slice.T byteT] "enc"));;
     ![slice.T byteT] "enc".
 
