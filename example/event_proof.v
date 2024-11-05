@@ -65,11 +65,13 @@ Proof.
   wp_load. wp_apply (wp_WriteBytes with "[$Hsl $Hargs_name_enc]").
   iIntros (?) "[Hsl _]". wp_store.
 
+  wp_loadField. wp_apply (wp_Assume). iIntros "%HstartTime_nn".
   wp_load. wp_loadField.
   wp_apply (TimeStamp.wp_Encode with "[$Hargs_start_enc $Hsl]").
   iIntros (start_enc start_sl) "Hsl".
   iDestruct "Hsl" as (Hencoding_startTime) "Hsl". wp_store.
 
+  wp_loadField. wp_apply (wp_Assume). iIntros "%HendTime_nn".
   wp_load. wp_loadField.
   wp_apply (TimeStamp.wp_Encode with "[$Hargs_end_enc $Hsl]").
   iIntros (end_enc end_sl) "Hsl".
