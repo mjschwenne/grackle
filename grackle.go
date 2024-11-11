@@ -251,7 +251,6 @@ func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqP
 					coqOut = debug
 					fmt.Fprintf(debug, "--- Begin: %s ---\n", *msg.CoqPhysicalPath)
 				} else {
-					log.Printf("Opening Coq File: %s\n", *msg.CoqPhysicalPath)
 					coqOut = util.OpenGrackleFile(msg.CoqPhysicalPath)
 				}
 				err := tmpl.ExecuteTemplate(coqOut, "coq_proof.tmpl", msg)
@@ -269,7 +268,6 @@ func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqP
 					goOut = debug
 					fmt.Fprintf(debug, "--- Start: %s ---\n", *msg.GoPhysicalPath)
 				} else {
-					log.Printf("Opening Go File: %s\n", *msg.GoPhysicalPath)
 					goOut = util.OpenGrackleFile(msg.GoPhysicalPath)
 					goFiles = append(goFiles, msg.GoPhysicalPath)
 				}
