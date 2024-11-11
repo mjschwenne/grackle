@@ -18,8 +18,8 @@ import (
 type field = descriptorpb.FieldDescriptorProto
 type fieldType = descriptorpb.FieldDescriptorProto_Type
 
-const dirPermissions = 0755
-const filePermissions = 0644
+const DirPermissions = 0755
+const FilePermissions = 0644
 
 var coqTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_INT32:   "u32",
@@ -179,22 +179,22 @@ func GetGooseOutputPath(gooseOutput *string, goosePackagePath string) string {
 }
 
 func CreateOutputDirectories(gooseOutput *string, coqPhysicalPath *string, goOutputPath *string) {
-	if gooseOutput != nil {
-		os.MkdirAll(*gooseOutput, dirPermissions)
+	if *gooseOutput != "" {
+		os.MkdirAll(*gooseOutput, DirPermissions)
 	}
-	if coqPhysicalPath != nil {
+	if *coqPhysicalPath != "" {
 
-		os.MkdirAll(*coqPhysicalPath, dirPermissions)
+		os.MkdirAll(*coqPhysicalPath, DirPermissions)
 	}
-	if goOutputPath != nil {
+	if *goOutputPath != "" {
 
-		os.MkdirAll(*goOutputPath, dirPermissions)
+		os.MkdirAll(*goOutputPath, DirPermissions)
 	}
 }
 
 func OpenGrackleFile(path *string) *os.File {
-	os.MkdirAll(filepath.Dir(*path), dirPermissions)
-	file, err := os.OpenFile(*path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePermissions)
+	os.MkdirAll(filepath.Dir(*path), DirPermissions)
+	file, err := os.OpenFile(*path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, FilePermissions)
 	if err != nil {
 		log.Fatalf("Could not open output file: %v\n", err)
 	}
