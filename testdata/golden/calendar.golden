@@ -53,11 +53,11 @@ Proof.
   wp_loadField. wp_load. wp_apply (wp_WriteInt with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
 
+
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-   done.
-Qed.
+  Qed.
 
 Lemma wp_Decode enc enc_sl (args:C) (suffix:list u8) (q:dfrac):
   {{{
@@ -217,16 +217,18 @@ Proof.
   iIntros (endTime_enc endTime_sl) "Hsl".
   iDestruct "Hsl" as (Hencoding_endTime) "Hsl". wp_store.
 
+
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
   iFrame. iPureIntro.
 
   unfold has_encoding. exists startTime_enc, endTime_enc. 
   split.
-  { rewrite Hargs_name_sz. rewrite w64_to_nat_id.
-    exact. }
+  { rewrite ?string_bytes_length.
+  rewrite Hargs_name_sz.
+  rewrite ?w64_to_nat_id. exact.
+  }
   split.
-  { exact. } { exact. }
-Qed.
+  { exact. } { exact. }Qed.
 
 Lemma wp_Decode enc enc_sl (args:C) (suffix:list u8) (q:dfrac):
   {{{
