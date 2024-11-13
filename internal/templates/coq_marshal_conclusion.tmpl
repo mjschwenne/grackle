@@ -1,24 +1,27 @@
+<< define "string_and_bytes" ->>
+  rewrite ?string_bytes_length.
+  <<- range . >>
+  rewrite Hargs_<< .Name >>_enc.
+  <<- end >>
+  rewrite ?w64_to_nat_id. exact.
+<< end >>
 
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
   iFrame. iPureIntro.
 
   << $msgs := (messageFields .Fields) ->>
-  << if gt (len $msgs) 0 ->>
-  unfold has_encoding. exists << range $idx, $field := $msgs ->>
+  << $sob  := (filterByCoqType .Fields "list u8|string") ->>
+  << if (or (gt (len $sob) 0) (gt (len $msgs) 0)) ->>
+  unfold has_encoding. << if gt (len $msgs) 0 >>exists << range $idx, $field := $msgs ->>
   <<- if $idx >>, << end ->>
   <<- .Name ->>_enc
   <<- end ->>. << range $idx, $field := $msgs >>
   split.
-  { << if not $idx ->>
-    << range $idx, $field := $.Fields ->>
-    << if or (isCoqType . "list u8") (isCoqType . "string") ->>
-    rewrite Hargs_<< .Name >>_sz. rewrite w64_to_nat_id.
-    << end ->>
-    <<- end ->>
-    <<- end ->>
-    exact. }
+  { << if not $idx >><< template "string_and_bytes" $sob >>  << else ->>
+  exact. << end >>}
   <<- end >> { exact. }
-  <<- else if >>
+  <<- else if gt (len $sob) 0 >>
+  << template "string_and_bytes" $sob >>
   <<- else >>done.
-  <<- end >>
+  <<- end >><< end ->>
 Qed.

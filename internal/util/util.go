@@ -53,8 +53,8 @@ var marshalTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  "Int",
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: "Int",
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
-	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "BytesCopy",
-	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "BytesCopy",
+	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "Bytes",
+	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "Bytes",
 }
 
 var refTypeMap = map[fieldType]bool{
@@ -114,11 +114,25 @@ func IsMessageType(field *field) bool {
 }
 
 func IsCoqType(field *field, typeStr string) bool {
-	return coqTypeMap[field.GetType()] == typeStr
+	// Supports disjunctions via |
+	types := strings.Split(typeStr, "|")
+	for _, t := range types {
+		if coqTypeMap[field.GetType()] == t {
+			return true
+		}
+	}
+	return false
 }
 
 func IsGoType(field *field, typeStr string) bool {
-	return goTypeMap[field.GetType()] == typeStr
+	// Supports disjunctions via |
+	types := strings.Split(typeStr, "|")
+	for _, t := range types {
+		if goTypeMap[field.GetType()] == t {
+			return true
+		}
+	}
+	return false
 }
 
 // FILESYSTEM UTILITIES
