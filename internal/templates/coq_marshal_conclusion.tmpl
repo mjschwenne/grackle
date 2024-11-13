@@ -1,7 +1,7 @@
 << define "string_and_bytes" ->>
   rewrite ?string_bytes_length.
   <<- range . >>
-  rewrite Hargs_<< .Name >>_enc.
+  rewrite Hargs_<< .Name >>_sz.
   <<- end >>
   rewrite ?w64_to_nat_id. exact.
 << end >>
