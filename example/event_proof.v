@@ -25,7 +25,7 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
     /\ TimeStamp.has_encoding end_enc args.(endTime).
 
 Definition own args_ptr args q : iProp Σ :=
-  ∃ (name_l start_l end_l: loc),
+  ∃ (start_l end_l: loc),
   "Hargs_id" ∷ args_ptr ↦[Event :: "id"]{q} #args.(id) ∗
 
   "Hargs_name" ∷ args_ptr ↦[Event :: "name"]{q} #(str args.(name)) ∗
@@ -35,16 +35,17 @@ Definition own args_ptr args q : iProp Σ :=
   "Hargs_end" ∷ args_ptr ↦[Event :: "endTime"]{q} #end_l ∗
   "Hargs_end_enc" ∷ TimeStamp.own end_l args.(endTime) q.
 
-Lemma wp_Encode (args_ptr:loc) (args:C) (prefix:list u8) (pre_sl:Slice.t) :
+Lemma wp_Encode (args_ptr:loc) (args:C) (prefix:list u8) (pre_sl:Slice.t) q :
   {{{
-        own args_ptr args (DfracDiscarded) ∗
+        own args_ptr args q ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
     MarshalEvent #args_ptr (slice_val pre_sl)
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜has_encoding enc args⌝ ∗
-        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
+        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc) ∗
+        own args_ptr args q
   }}}.
 Proof.
   iIntros (?) "H HΦ". iDestruct "H" as "[Hown Hsl]". iNamed "Hown".
@@ -68,14 +69,14 @@ Proof.
   wp_loadField. wp_apply (wp_Assume). iIntros "%HstartTime_nn".
   wp_load. wp_loadField.
   wp_apply (TimeStamp.wp_Encode with "[$Hargs_start_enc $Hsl]").
-  iIntros (start_enc start_sl) "Hsl".
-  iDestruct "Hsl" as (Hencoding_startTime) "Hsl". wp_store.
+  iIntros (start_enc start_sl) "(%Hargs_start_enc & Hsl & Hargs_start_own)".
+  wp_store.
 
   wp_loadField. wp_apply (wp_Assume). iIntros "%HendTime_nn".
   wp_load. wp_loadField.
   wp_apply (TimeStamp.wp_Encode with "[$Hargs_end_enc $Hsl]").
-  iIntros (end_enc end_sl) "Hsl".
-  iDestruct "Hsl" as (Hencoding_endTime) "Hsl". wp_store.
+  iIntros (end_enc end_sl) "(%Hargs_end_enc & Hsl & Hargs_end_own)".
+  wp_store.
 
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
   iFrame. iPureIntro.

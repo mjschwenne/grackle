@@ -24,16 +24,17 @@ Definition own args_ptr args q : iProp Σ :=
   "Hargs_minute" ∷ args_ptr ↦[TimeStamp :: "minute"]{q} #args.(minute) ∗
   "Hargs_second" ∷ args_ptr ↦[TimeStamp :: "second"]{q} #args.(second).
 
-Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) :
+Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) q:
   {{{
-        own args_ptr args (DfracDiscarded) ∗
+        own args_ptr args q ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
     MarshalTimeStamp #args_ptr (slice_val pre_sl)
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜has_encoding enc args⌝ ∗
-        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
+        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc) ∗
+        own args_ptr args q
   }}}.
 
 Proof.
