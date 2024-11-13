@@ -123,6 +123,9 @@ func setupTemplates() *template.Template {
 		"filterByCoqType": func(fields []*field, typeStr string) []*field {
 			return util.Filter(fields, func(f *field) bool { return util.IsCoqType(f, typeStr) })
 		},
+		"filterByGoType": func(fields []*field, typeStr string) []*field {
+			return util.Filter(fields, func(f *field) bool { return util.IsGoType(f, typeStr) })
+		},
 		"join":         func(sep string, s ...string) string { return strings.Join(s, sep) },
 		"lower":        strings.ToLower,
 		"pred":         func(i int) int { return i - 1 },
