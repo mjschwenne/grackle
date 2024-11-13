@@ -22,6 +22,6 @@
   <<- end >> { exact. }
   <<- else if gt (len $sob) 0 >>
   << template "string_and_bytes" $sob >>
-  <<- else >>done.
-  <<- end >><< end ->>
+  <<- end >><< else >>done.
+  <<- end >>
 Qed.

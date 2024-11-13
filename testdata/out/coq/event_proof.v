@@ -28,24 +28,25 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   /\ TimeStamp.has_encoding startTime_enc args.(startTime)
   /\ TimeStamp.has_encoding endTime_enc args.(endTime).
 
-Definition own (args_ptr:loc) (args:C) (q:dfrac) : iProp Σ :=
+Definition own (args_ptr: loc) (args: C) (dq: dfrac) : iProp Σ :=
   ∃ (startTime_l endTime_l : loc) , 
-  "Hargs_id" ∷ args_ptr ↦[event_gk.S :: "Id"]{q} #args.(id) ∗
-  "Hargs_name" ∷ args_ptr ↦[event_gk.S :: "Name"]{q} #(str args.(name)) ∗
-  "Hargs_startTime" ∷ args_ptr ↦[event_gk.S :: "StartTime"]{q} #startTime_l ∗
-  "Hargs_startTime_enc" ∷ TimeStamp.own startTime_l args.(startTime) q ∗
-  "Hargs_endTime" ∷ args_ptr ↦[event_gk.S :: "EndTime"]{q} #endTime_l ∗
-  "Hargs_endTime_enc" ∷ TimeStamp.own endTime_l args.(endTime) q.
+  "Hargs_id" ∷ args_ptr ↦[event_gk.S :: "Id"]{dq} #args.(id) ∗
+  "Hargs_name" ∷ args_ptr ↦[event_gk.S :: "Name"]{dq} #(str args.(name)) ∗
+  "Hargs_startTime" ∷ args_ptr ↦[event_gk.S :: "StartTime"]{dq} #startTime_l ∗
+  "Hargs_startTime_enc" ∷ TimeStamp.own startTime_l args.(startTime) dq ∗
+  "Hargs_endTime" ∷ args_ptr ↦[event_gk.S :: "EndTime"]{dq} #endTime_l ∗
+  "Hargs_endTime_enc" ∷ TimeStamp.own endTime_l args.(endTime) dq.
 
-Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) :
+Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) (dq: dfrac):
   {{{
-        own args_ptr args (DfracDiscarded) ∗
+        own args_ptr args dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
     event_gk.Marshal #args_ptr (slice_val pre_sl)
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜has_encoding enc args⌝ ∗
+        own args_ptr args dq ∗
         own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
   }}}.
 
@@ -70,35 +71,38 @@ Proof.
   wp_loadField. wp_apply (wp_Assume). iIntros "%HstartTime_nn".
   wp_load. wp_loadField.
   wp_apply (TimeStamp.wp_Encode with "[$Hargs_startTime_enc $Hsl]").
-  iIntros (startTime_enc startTime_sl) "Hsl".
-  iDestruct "Hsl" as (Hencoding_startTime) "Hsl". wp_store.
+  iIntros (startTime_enc startTime_sl) "(%Hargs_startTime_enc & Hargs_startTime_own & Hsl)".
+  wp_store.
 
   wp_loadField. wp_apply (wp_Assume). iIntros "%HendTime_nn".
   wp_load. wp_loadField.
   wp_apply (TimeStamp.wp_Encode with "[$Hargs_endTime_enc $Hsl]").
-  iIntros (endTime_enc endTime_sl) "Hsl".
-  iDestruct "Hsl" as (Hencoding_endTime) "Hsl". wp_store.
+  iIntros (endTime_enc endTime_sl) "(%Hargs_endTime_enc & Hargs_endTime_own & Hsl)".
+  wp_store.
+
 
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
   iFrame. iPureIntro.
 
   unfold has_encoding. exists startTime_enc, endTime_enc. 
   split.
-  { rewrite Hargs_name_sz. rewrite w64_to_nat_id.
-    exact. }
+  { rewrite ?string_bytes_length.
+  rewrite Hargs_name_sz.
+  rewrite ?w64_to_nat_id. exact.
+  }
   split.
   { exact. } { exact. }
 Qed.
 
-Lemma wp_Decode enc enc_sl (args:C) (suffix:list u8) (q:dfrac):
+Lemma wp_Decode enc enc_sl (args: C) (suffix: list u8) (dq: dfrac):
   {{{
         ⌜has_encoding enc args⌝ ∗
-        own_slice_small enc_sl byteT q (enc ++ suffix)
+        own_slice_small enc_sl byteT dq (enc ++ suffix)
   }}}
     event_gk.Unmarshal (slice_val enc_sl)
   {{{
         args_ptr suff_sl, RET (#args_ptr, suff_sl); own args_ptr args (DfracOwn 1) ∗
-                                                    own_slice_small suff_sl byteT q suffix
+                                                    own_slice_small suff_sl byteT dq suffix
   }}}.
 
 Proof.
