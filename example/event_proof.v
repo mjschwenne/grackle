@@ -143,7 +143,7 @@ Proof.
   wp_apply (TimeStamp.wp_Decode endTime_sl with "[Hsl]").
   { iFrame. exact. } iIntros (??) "[HendTime Hsl]". wp_pures. wp_storeField. wp_store.
 
-  wp_load. wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame. done.
+  wp_load. wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
 Qed.
 
 End Event.
