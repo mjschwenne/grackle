@@ -2,8 +2,10 @@ package event_gk
 
 import (
 	"github.com/goose-lang/primitive"
-	"github.com/mjschwenne/grackle/testdata/out/go/timestamp_gk"
+
 	"github.com/tchajed/marshal"
+
+	"github.com/mjschwenne/grackle/testdata/out/go/timestamp_gk"
 )
 
 type S struct {
@@ -40,7 +42,7 @@ func Unmarshal(s []byte) (*S, []byte) {
 	var nameLen uint64
 	var nameBytes []byte
 	nameLen, enc = marshal.ReadInt(enc)
-	nameBytes, enc = marshal.ReadBytes(enc, nameLen)
+	nameBytes, enc = marshal.ReadBytesCopy(enc, nameLen)
 	e.Name = string(nameBytes)
 	e.StartTime, enc = timestamp_gk.Unmarshal(enc)
 	e.EndTime, enc = timestamp_gk.Unmarshal(enc)

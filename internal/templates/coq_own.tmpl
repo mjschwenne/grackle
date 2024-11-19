@@ -1,7 +1,7 @@
 Definition own (args_ptr: loc) (args: C) (dq: dfrac) : iProp Σ :=
   <<- $refs := (refFields .Fields) ->>
   <<- $bytes := (filterByCoqType .Fields "list u8") ->>
-  <<- if gt (len $refs) 0  >>
+  <<- if or (gt (len $refs) 0) (gt (len $bytes) 0)  >>
   ∃ << end ->>
   << if len $refs ->>
   (<<- range $idx, $field := $refs ->>
@@ -10,7 +10,7 @@ Definition own (args_ptr: loc) (args: C) (dq: dfrac) : iProp Σ :=
   (<<- range $idx, $field := $bytes ->>
   <<- $field.Name ->>_sl << end ->>: Slice.t)
   <<- end ->>
-  <<- if gt (len $refs) 0 ->>
+  <<- if or (gt (len $refs) 0) (gt (len $bytes) 0) ->>
   , << end >>
   << range $idx, $field := .Fields ->>
   << if $idx >> ∗

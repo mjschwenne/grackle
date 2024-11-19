@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+message completeInt {
+  int32 one = 1;
+  uint32 two = 2;
+  fixed32 three = 3;
+  int64 four = 4;
+  uint64 five = 5;
+  fixed64 six = 6;
+}
+
+message completeSlice {
+  string strg = 1;
+  bytes byte = 2;
+}
+
+message completeMessage {
+  completeInt int = 1;
+  completeSlice slc = 2;
+}

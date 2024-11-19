@@ -11,4 +11,4 @@
   { rewrite length_app in H<< .Name >>_sz. word. }
   iIntros (??) "[H<< .Name >>' Hsl]". iApply own_slice_to_small in "H<< .Name >>'".
 
-  wp_pures. wp_store. wp_store. wp_storeField.
+  wp_pures. wp_store. wp_store. wp_load. wp_storeField.

@@ -4,8 +4,10 @@ import (
     <<- if len .NestedMessages >>
 	"github.com/goose-lang/primitive"
     << end ->>
+    <<- if ne (len .NestedMessages) (len .Fields) >>
     "github.com/tchajed/marshal"
-    << range .NestedMessages ->>
+    <<- end >>
+    << range .NestedMessages >>
     "<< $.GoPackage >>/<<- lower . ->>_gk"
     <<- end >>
 )

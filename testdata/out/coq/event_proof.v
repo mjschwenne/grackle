@@ -127,11 +127,12 @@ Proof.
   iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
 
   iDestruct (own_slice_small_sz with "Hsl") as %Hname_sz.
-  wp_apply (wp_ReadBytes with "[$]").
+  wp_apply (wp_ReadBytesCopy with "[$]").
   { rewrite length_app in Hname_sz. word. }
   iIntros (??) "[Hname' Hsl]".
 
   wp_pures. wp_store. wp_store. wp_load.
+  iApply own_slice_to_small in "Hname'".
   wp_apply (wp_StringFromBytes with "[$Hname']"). iIntros "_".
   wp_storeField.
 

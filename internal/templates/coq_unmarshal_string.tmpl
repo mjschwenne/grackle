@@ -5,10 +5,11 @@
   iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
 
   iDestruct (own_slice_small_sz with "Hsl") as %H<< .Name >>_sz.
-  wp_apply (wp_ReadBytes with "[$]").
+  wp_apply (wp_ReadBytesCopy with "[$]").
   { rewrite length_app in H<< .Name >>_sz. word. }
   iIntros (??) "[H<< .Name >>' Hsl]".
 
   wp_pures. wp_store. wp_store. wp_load.
+  iApply own_slice_to_small in "H<< .Name >>'".
   wp_apply (wp_StringFromBytes with "[$H<< .Name >>']"). iIntros "_".
   wp_storeField.

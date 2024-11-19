@@ -8,7 +8,7 @@ func Unmarshal(s []byte) (*S, []byte) {
     var << .Name >>Len uint64
     var << .Name >>Bytes []byte
     << .Name >>Len, enc = marshal.ReadInt(enc)
-    << .Name >>Bytes, enc = marshal.ReadBytes(enc, << .Name >>Len)
+    << .Name >>Bytes, enc = marshal.ReadBytesCopy(enc, << .Name >>Len)
     << param $.Name >>.<< goName .Name >> = << if isGoType . "string" >>string(<< end >><< .Name >>Bytes<< if isGoType . "string" >>)<< end >>
     <<- else >>
     << param $.Name >>.<< goName .Name >>, enc = marshal.Read<<- marshalType . ->>(enc)

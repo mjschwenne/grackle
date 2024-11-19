@@ -1,9 +1,8 @@
 
-
-  iDestruct (own_slice_small_sz with "Hargs_<< .Name >>_enc") as "%Hargs_<< .Name >>_sz".
-  wp_loadField. wp_load. wp_apply wp_slice_len. wp_load.
+  iDestruct (own_slice_small_sz with "Hargs_<< .Name >>_sl") as "%Hargs_<< .Name >>_sz".
+  wp_loadField. wp_apply wp_slice_len. wp_load.
   wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
 
-  wp_loadField. wp_load. wp_load.
-  wp_apply (wp_WriteBytes with "[$Hsl $Hargs_<< .Name >>_enc]").
-  iIntros (?) "[Hsl _]". wp_store.
+  wp_loadField. wp_load.
+  wp_apply (wp_WriteBytes with "[$Hsl $Hargs_<< .Name >>_sl]").
+  iIntros (?) "[Hsl Hargs_<< .Name >>_sl]". wp_store.

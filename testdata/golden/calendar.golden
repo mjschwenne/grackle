@@ -1,7 +1,7 @@
---- Begin: example/timestamp_proof.v ---
+--- Begin: testdata/out/coq/timestamp_proof.v ---
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
-From Goose Require Import github_com.mjschwenne.grackle.example.timestamp_gk.
+From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
 
 Module TimeStamp.
 Section TimeStamp.
@@ -98,8 +98,8 @@ Qed.
 End TimeStamp.
 End TimeStamp.
 
---- End: example/timestamp_proof.v ---
---- Start: example/timestamp_gk/timestamp_gk.go ---
+--- End: testdata/out/coq/timestamp_proof.v ---
+--- Start: testdata/out/go/timestamp_gk/timestamp_gk.go ---
 package timestamp_gk
 
 import (
@@ -136,13 +136,13 @@ func Unmarshal(s []byte) (*S, []byte) {
 
 	return t, enc
 }
---- End: example/timestamp_gk/timestamp_gk.go ---
---- Begin: example/event_proof.v ---
+--- End: testdata/out/go/timestamp_gk/timestamp_gk.go ---
+--- Begin: testdata/out/coq/event_proof.v ---
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
-From Goose Require Import github_com.mjschwenne.grackle.example.event_gk.
-From Grackle.example Require Import timestamp_proof.
-From Goose Require Import github_com.mjschwenne.grackle.example.timestamp_gk.
+From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.event_gk.
+From Grackle.test Require Import timestamp_proof.
+From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
 
 Module Event.
 Section Event.
@@ -267,11 +267,12 @@ Proof.
   iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
 
   iDestruct (own_slice_small_sz with "Hsl") as %Hname_sz.
-  wp_apply (wp_ReadBytes with "[$]").
+  wp_apply (wp_ReadBytesCopy with "[$]").
   { rewrite length_app in Hname_sz. word. }
   iIntros (??) "[Hname' Hsl]".
 
   wp_pures. wp_store. wp_store. wp_load.
+  iApply own_slice_to_small in "Hname'".
   wp_apply (wp_StringFromBytes with "[$Hname']"). iIntros "_".
   wp_storeField.
 
@@ -287,14 +288,16 @@ Qed.
 End Event.
 End Event.
 
---- End: example/event_proof.v ---
---- Start: example/event_gk/event_gk.go ---
+--- End: testdata/out/coq/event_proof.v ---
+--- Start: testdata/out/go/event_gk/event_gk.go ---
 package event_gk
 
 import (
 	"github.com/goose-lang/primitive"
-	"github.com/mjschwenne/grackle/example/timestamp_gk"
+
 	"github.com/tchajed/marshal"
+
+	"github.com/mjschwenne/grackle/testdata/out/go/timestamp_gk"
 )
 
 type S struct {
@@ -331,11 +334,11 @@ func Unmarshal(s []byte) (*S, []byte) {
 	var nameLen uint64
 	var nameBytes []byte
 	nameLen, enc = marshal.ReadInt(enc)
-	nameBytes, enc = marshal.ReadBytes(enc, nameLen)
+	nameBytes, enc = marshal.ReadBytesCopy(enc, nameLen)
 	e.Name = string(nameBytes)
 	e.StartTime, enc = timestamp_gk.Unmarshal(enc)
 	e.EndTime, enc = timestamp_gk.Unmarshal(enc)
 
 	return e, enc
 }
---- End: example/event_gk/event_gk.go ---
+--- End: testdata/out/go/event_gk/event_gk.go ---
