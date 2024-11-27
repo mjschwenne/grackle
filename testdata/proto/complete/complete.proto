@@ -18,3 +18,8 @@ message completeMessage {
   completeInt int = 1;
   completeSlice slc = 2;
 }
+
+message completeWithBool {
+  completeMessage msg = 1;
+  bool success = 2;
+}

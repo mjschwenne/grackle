@@ -31,6 +31,7 @@ var coqTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
 	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "list u8",
 	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "string",
+	descriptorpb.FieldDescriptorProto_TYPE_BOOL:    "bool",
 }
 
 var goTypeMap = map[fieldType]string{
@@ -43,6 +44,7 @@ var goTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
 	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "[]byte",
 	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "string",
+	descriptorpb.FieldDescriptorProto_TYPE_BOOL:    "bool",
 }
 
 var marshalTypeMap = map[fieldType]string{
@@ -55,6 +57,7 @@ var marshalTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
 	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "Bytes",
 	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "Bytes",
+	descriptorpb.FieldDescriptorProto_TYPE_BOOL:    "Bool",
 }
 
 var refTypeMap = map[fieldType]bool{
@@ -67,6 +70,7 @@ var refTypeMap = map[fieldType]bool{
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: true,
 	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   false,
 	descriptorpb.FieldDescriptorProto_TYPE_STRING:  false,
+	descriptorpb.FieldDescriptorProto_TYPE_BOOL:    false,
 }
 
 // STRING MANIPULATION UTILITIES

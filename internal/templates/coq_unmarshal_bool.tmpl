@@ -1,0 +1,8 @@
+
+  wp_load. wp_apply (wp_ReadBool with "[Hsl]").
+  { simpl. iFrame. }
+  iIntros (<< .Name >>_b ?) "[%H<< .Name >> Hsl]".
+  assert (<< .Name >>_b = args.(<< .Name >>)) as Hargs_<< .Name >>.
+  { destruct args.(<< .Name >>); rewrite H<< .Name >>; reflexivity. }
+  rewrite Hargs_<< .Name >>.
+  wp_pures. wp_storeField. wp_store.
