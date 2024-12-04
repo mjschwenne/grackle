@@ -7,6 +7,8 @@ func Marshal(<<- param .Name >> *S, prefix []byte) []byte {
     << end ->>
     << if isMessage . ->>
     enc = << goType . | lower >>_gk.Marshal(<< param $.Name ->>.<< goName .Name >>, enc)
+    << else if isGoType . "enum" ->>
+    enc = marshal.WriteInt32(enc, uint32(<< param $.Name >>.<< goName .Name >>))
     << else if isGoType . "string" ->>
     << lower .Name>>Bytes := []byte(<<- param $.Name ->>.<< goName .Name >>)
     enc = marshal.WriteInt(enc, uint64(len(<< lower .Name >>Bytes)))
