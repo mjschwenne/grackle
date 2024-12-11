@@ -1,0 +1,31 @@
+package << lower .Name >>
+
+type E uint32
+
+const (
+    <<- range .GetValue >>
+    << .GetName >> E = << .GetNumber >>
+    <<- end >>
+)
+
+var Name = map[uint32]string{
+    <<- range .GetValue >>
+    << .GetNumber >>: "<< .GetName >>",
+    <<- end >>
+}
+
+var Value = map[string]uint32{
+    <<- range .GetValue >>
+    "<< .GetName >>": << .GetNumber >>,
+    <<- end >>
+}
+
+func (<< param .Name >> E) Enum() *E {
+    n := new(E)
+    *n = << param .Name >>
+    return n
+}
+
+func (<< param .Name >> E) String() string {
+    return Name[uint32(<< param .Name >>)]
+}

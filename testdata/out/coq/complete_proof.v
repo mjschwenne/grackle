@@ -1,11 +1,13 @@
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completewithbool_gk.
-From Grackle.test Require Import completemessage_proof.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completemessage_gk.
+From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.complete_gk.
+From Grackle.test Require Import completeint_proof.
+From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
+From Grackle.test Require Import completeslice_proof.
+From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 
-Module completeWithBool.
-Section completeWithBool.
+Module complete.
+Section complete.
 
 Typeclasses Opaque app.
 
@@ -13,28 +15,33 @@ Context `{!heapGS Σ}.
 
 Record C :=
     mkC {
-        msg : completeMessage.C;
+        int : completeInt.C;
+        slc : completeSlice.C;
         success : bool;
         }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-  ∃ (msg_enc : list u8), 
-  encoded = msg_enc ++
+  ∃ (int_enc slc_enc : list u8), 
+  encoded = int_enc ++
+              slc_enc ++
               [if args.(success) then W8 1 else W8 0]
-  /\ completeMessage.has_encoding msg_enc args.(msg).
+  /\ completeInt.has_encoding int_enc args.(int)
+  /\ completeSlice.has_encoding slc_enc args.(slc).
 
 Definition own (args_ptr: loc) (args: C) (dq: dfrac) : iProp Σ :=
-  ∃ (msg_l : loc) , 
-  "Hargs_msg" ∷ args_ptr ↦[completewithbool_gk.S :: "Msg"]{dq} #msg_l ∗
-  "Hargs_msg_enc" ∷ completeMessage.own msg_l args.(msg) dq ∗
-  "Hargs_success" ∷ args_ptr ↦[completewithbool_gk.S :: "Success"]{dq} #args.(success).
+  ∃ (int_l slc_l : loc) , 
+  "Hargs_int" ∷ args_ptr ↦[complete_gk.S :: "Int"]{dq} #int_l ∗
+  "Hargs_int_enc" ∷ completeInt.own int_l args.(int) dq ∗
+  "Hargs_slc" ∷ args_ptr ↦[complete_gk.S :: "Slc"]{dq} #slc_l ∗
+  "Hargs_slc_enc" ∷ completeSlice.own slc_l args.(slc) dq ∗
+  "Hargs_success" ∷ args_ptr ↦[complete_gk.S :: "Success"]{dq} #args.(success).
 
 Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) (dq: dfrac):
   {{{
         own args_ptr args dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    completewithbool_gk.Marshal #args_ptr (slice_val pre_sl)
+    complete_gk.Marshal #args_ptr (slice_val pre_sl)
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜has_encoding enc args⌝ ∗
@@ -48,10 +55,16 @@ Proof.
   wp_apply (wp_ref_to); first by val_ty.
   iIntros (?) "Hptr". wp_pures.
 
-  wp_loadField. wp_apply (wp_Assume). iIntros "%Hmsg_nn".
+  wp_loadField. wp_apply (wp_Assume). iIntros "%Hint_nn".
   wp_load. wp_loadField.
-  wp_apply (completeMessage.wp_Encode with "[$Hargs_msg_enc $Hsl]").
-  iIntros (msg_enc msg_sl) "(%Hargs_msg_enc & Hargs_msg_own & Hsl)".
+  wp_apply (completeInt.wp_Encode with "[$Hargs_int_enc $Hsl]").
+  iIntros (int_enc int_sl) "(%Hargs_int_enc & Hargs_int_own & Hsl)".
+  wp_store.
+
+  wp_loadField. wp_apply (wp_Assume). iIntros "%Hslc_nn".
+  wp_load. wp_loadField.
+  wp_apply (completeSlice.wp_Encode with "[$Hargs_slc_enc $Hsl]").
+  iIntros (slc_enc slc_sl) "(%Hargs_slc_enc & Hargs_slc_own & Hsl)".
   wp_store.
 
   wp_loadField. wp_load. wp_apply (wp_WriteBool with "[$Hsl]").
@@ -61,11 +74,13 @@ Proof.
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  unfold has_encoding. exists msg_enc. 
+  unfold has_encoding. exists int_enc, slc_enc. 
   split.
   { rewrite ?string_bytes_length.
   rewrite ?w64_to_nat_id. exact.
-  } { exact. }
+  }
+  split.
+  { exact. } { exact. }
 Qed.
 
 Lemma wp_Decode enc enc_sl (args: C) (suffix: list u8) (dq: dfrac):
@@ -73,7 +88,7 @@ Lemma wp_Decode enc enc_sl (args: C) (suffix: list u8) (dq: dfrac):
         ⌜has_encoding enc args⌝ ∗
         own_slice_small enc_sl byteT dq (enc ++ suffix)
   }}}
-    completewithbool_gk.Unmarshal (slice_val enc_sl)
+    complete_gk.Unmarshal (slice_val enc_sl)
   {{{
         args_ptr suff_sl, RET (#args_ptr, suff_sl); own args_ptr args (DfracOwn 1) ∗
                                                     own_slice_small suff_sl byteT dq suffix
@@ -89,11 +104,14 @@ Proof.
   iNamed "HH".
 
   unfold has_encoding in Henc.
-  destruct Henc as ( msg_sl & Henc & Hencoding_msg ).
+  destruct Henc as ( int_sl & slc_sl & Henc & Hencoding_int & Hencoding_slc ).
   rewrite Henc. rewrite -?app_assoc.
 
-  wp_load. wp_apply (completeMessage.wp_Decode msg_sl with "[Hsl]").
-  { iFrame. exact. } iIntros (??) "[Hmsg Hsl]". wp_pures. wp_storeField. wp_store.
+  wp_load. wp_apply (completeInt.wp_Decode int_sl with "[Hsl]").
+  { iFrame. exact. } iIntros (??) "[Hint Hsl]". wp_pures. wp_storeField. wp_store.
+
+  wp_load. wp_apply (completeSlice.wp_Decode slc_sl with "[Hsl]").
+  { iFrame. exact. } iIntros (??) "[Hslc Hsl]". wp_pures. wp_storeField. wp_store.
 
   wp_load. wp_apply (wp_ReadBool with "[Hsl]").
   { simpl. iFrame. }
@@ -106,6 +124,6 @@ Proof.
   wp_load. wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
 Qed.
 
-End completeWithBool.
-End completeWithBool.
+End complete.
+End complete.
 

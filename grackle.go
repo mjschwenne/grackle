@@ -244,6 +244,42 @@ func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqP
 	goFiles := make([]*string, 0, 10)
 	for _, file := range generateDescirptor(protoDir).File {
 		fileOpts := getFileOptions(file, gooseOutput, coqLogicalPath, coqPhysicalPath, goOutputPath, goPackage)
+		for _, enum := range file.EnumType {
+			log.Printf("Found enum: %s\n", enum.GetName())
+			var goOut io.Writer
+			goPhysicalPath := util.GetGoOutputPath(goOutputPath, enum.Name)
+			if *goOutputPath != "" {
+				if debug != nil {
+					goOut = debug
+					fmt.Fprintf(debug, "--- Start: %s ---\n", goPhysicalPath)
+				} else {
+					goOut = util.OpenGrackleFile(&goPhysicalPath)
+					goFiles = append(goFiles, &goPhysicalPath)
+				}
+				// Write to a buffer, then format
+				// The buffer may seem large, but it is only 1 MB
+				goBuffer := bytes.NewBuffer(make([]byte, 0, 1000000))
+				err := tmpl.ExecuteTemplate(goBuffer, "go_enum.tmpl", enum)
+				if err != nil {
+					log.Fatalf("Error generating go code: %v\n", err)
+				}
+
+				formattedGo, err := format.Source(goBuffer.Bytes())
+				if err != nil {
+					log.Printf(goBuffer.String())
+					log.Fatalf("Error formatting go code: %v\n", err)
+				}
+
+				_, err = goOut.Write(formattedGo)
+				if err != nil {
+					log.Fatalf("Error writing go code: %v\n", err)
+				}
+
+				if debug != nil {
+					fmt.Fprintf(debug, "--- End: %s ---\n", goPhysicalPath)
+				}
+			}
+		}
 		for _, message := range file.MessageType {
 			msg := getMessageOptions(message, fileOpts)
 			var coqOut io.Writer

@@ -4,6 +4,8 @@ func Unmarshal(s []byte) (*S, []byte) {
     << range .Fields ->>
     <<- if isMessage . >>
     << param $.Name >>.<< goName .Name >>, enc = << goType . | lower >>_gk.Unmarshal(enc)
+    <<- else if isGoType . "enum" >>
+    << param $.Name >>.<< goName .Name >>, enc = marshal.ReadInt32(enc)
     <<- else if or (isGoType . "string") (isGoType . "[]byte") >>
     var << .Name >>Len uint64
     var << .Name >>Bytes []byte

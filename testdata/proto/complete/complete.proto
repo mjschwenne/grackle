@@ -1,5 +1,11 @@
 syntax = "proto3";
 
+enum error {
+  eOk = 0;
+  eEndOfFile = 1;
+  eUnknown = 2;
+}
+
 message completeInt {
   int32 one = 1;
   uint32 two = 2;
@@ -14,12 +20,9 @@ message completeSlice {
   bytes byte = 2;
 }
 
-message completeMessage {
+message complete {
   completeInt int = 1;
   completeSlice slc = 2;
-}
-
-message completeWithBool {
-  completeMessage msg = 1;
-  bool success = 2;
+  bool success = 3;
+  // error err = 4;
 }

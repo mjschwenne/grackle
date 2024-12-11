@@ -32,6 +32,7 @@ var coqTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "list u8",
 	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "string",
 	descriptorpb.FieldDescriptorProto_TYPE_BOOL:    "bool",
+	descriptorpb.FieldDescriptorProto_TYPE_ENUM:    "enum",
 }
 
 var goTypeMap = map[fieldType]string{
@@ -45,6 +46,7 @@ var goTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "[]byte",
 	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "string",
 	descriptorpb.FieldDescriptorProto_TYPE_BOOL:    "bool",
+	descriptorpb.FieldDescriptorProto_TYPE_ENUM:    "enum",
 }
 
 var marshalTypeMap = map[fieldType]string{
@@ -58,6 +60,7 @@ var marshalTypeMap = map[fieldType]string{
 	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "Bytes",
 	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "Bytes",
 	descriptorpb.FieldDescriptorProto_TYPE_BOOL:    "Bool",
+	descriptorpb.FieldDescriptorProto_TYPE_ENUM:    "enum",
 }
 
 var refTypeMap = map[fieldType]bool{
@@ -71,6 +74,7 @@ var refTypeMap = map[fieldType]bool{
 	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   false,
 	descriptorpb.FieldDescriptorProto_TYPE_STRING:  false,
 	descriptorpb.FieldDescriptorProto_TYPE_BOOL:    false,
+	descriptorpb.FieldDescriptorProto_TYPE_ENUM:    false,
 }
 
 // STRING MANIPULATION UTILITIES
@@ -101,6 +105,9 @@ func GetCoqTypeName(field *field) string {
 func GetGoTypeName(field *field) string {
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		return Capitialize(field.GetTypeName())
+	}
+	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
+		return strings.ToLower(field.GetTypeName()[1:]) + "_gk.E"
 	}
 	return goTypeMap[field.GetType()]
 }
