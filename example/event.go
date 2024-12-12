@@ -1,15 +1,14 @@
 package main
 
 import (
-	"github.com/goose-lang/primitive"
 	"github.com/tchajed/marshal"
 )
 
 type Event struct {
 	id        uint32
 	name      string
-	startTime *TimeStamp
-	endTime   *TimeStamp
+	startTime TimeStamp
+	endTime   TimeStamp
 }
 
 func (e *Event) approxSize() uint64 {
@@ -24,9 +23,7 @@ func MarshalEvent(e *Event, prefix []byte) []byte {
 	enc = marshal.WriteInt(enc, uint64(len(nameByte)))
 	enc = marshal.WriteBytes(enc, nameByte)
 
-	primitive.Assume(e.startTime != nil)
 	enc = MarshalTimeStamp(e.startTime, enc)
-	primitive.Assume(e.endTime != nil)
 	enc = MarshalTimeStamp(e.endTime, enc)
 	return enc
 }

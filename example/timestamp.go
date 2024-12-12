@@ -10,11 +10,7 @@ type TimeStamp struct {
 	second uint32
 }
 
-func (t *TimeStamp) approxSize() uint64 {
-	return 12
-}
-
-func MarshalTimeStamp(t *TimeStamp, prefix []byte) []byte {
+func MarshalTimeStamp(t TimeStamp, prefix []byte) []byte {
 	var enc = prefix
 	enc = marshal.WriteInt32(enc, t.hour)
 	enc = marshal.WriteInt32(enc, t.minute)
@@ -22,11 +18,18 @@ func MarshalTimeStamp(t *TimeStamp, prefix []byte) []byte {
 	return enc
 }
 
-func UnmarshalTimeStamp(s []byte) (*TimeStamp, []byte) {
-	t := new(TimeStamp)
+func UnmarshalTimeStamp(s []byte) (TimeStamp, []byte) {
 	var enc = s // Needed for goose compatibility
-	t.hour, enc = marshal.ReadInt32(enc)
-	t.minute, enc = marshal.ReadInt32(enc)
-	t.second, enc = marshal.ReadInt32(enc)
-	return t, enc
+	var hour uint32
+	var minute uint32
+	var second uint32
+
+	hour, enc = marshal.ReadInt32(enc)
+	minute, enc = marshal.ReadInt32(enc)
+	second, enc = marshal.ReadInt32(enc)
+	return TimeStamp{
+		hour:   hour,
+		minute: minute,
+		second: second,
+	}, enc
 }

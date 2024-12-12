@@ -17,8 +17,8 @@
         src = pkgs.fetchFromGitHub {
           owner = "goose-lang";
           repo = "goose";
-          rev = "585abc3cfef50dd466e112d7c535dbdfccd3c0ca";
-          hash = "sha256-M4zaZ1DdecYXeDugrL+TV7HWPMLuj1P25G6mf+fgljg=";
+          rev = "8d13c771b9a80957089f7c5b0ee2ccf58e5eb06f";
+          sha256 = "1fbqs75ya4as3my2knkaq4m0crdh3n004grw5g5iczvb5h5k06lz";
         };
         vendorHash = "sha256-HCJ8v3TSv4UrkOsRuENWVz5Z7zQ1UsOygx0Mo7MELzY=";
       };
@@ -39,6 +39,12 @@
           protoc-gen-go
           proto-contrib
           protoscope
+
+          # nix helpers
+          # Should be able to update goose and grackle with `update-nix-fetchgit flake.nix`
+          pkgs.update-nix-fetchgit
+          pkgs.nix-prefetch-git
+          pkgs.nix-prefetch
         ];
 
         shellHook = ''
