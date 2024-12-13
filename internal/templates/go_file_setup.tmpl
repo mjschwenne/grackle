@@ -1,9 +1,6 @@
 package << lower .Name >>_gk
 
 import (
-    <<- if len .NestedMessages >>
-	"github.com/goose-lang/primitive"
-    << end ->>
     <<- if ne (len .NestedMessages) (len .Fields) >>
     "github.com/tchajed/marshal"
     <<- end >>

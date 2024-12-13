@@ -1,5 +1,5 @@
-Definition own (args_ptr: loc) (args: C) (dq: dfrac) : iProp Σ :=
-  <<- $refs := (refFields .Fields) ->>
+Definition own (args__v: loc) (args__c: C) (dq: dfrac) : iProp Σ :=
+  <<- $locs := (valFields .Fields) ->>
   <<- $bytes := (filterByCoqType .Fields "list u8") ->>
   <<- if or (gt (len $refs) 0) (gt (len $bytes) 0)  >>
   ∃ << end ->>

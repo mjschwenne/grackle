@@ -111,15 +111,17 @@ func setupTemplates() *template.Template {
 	tmpl := template.New("grackle").Delims("<<", ">>")
 	funcMap := template.FuncMap{
 		"coqType":       util.GetCoqTypeName,
-		"isRef":         util.IsReferenceType,
+		"isExtValType":  util.IsExternalValType,
 		"isMessage":     util.IsMessageType,
 		"isCoqType":     util.IsCoqType,
 		"isGoType":      util.IsGoType,
-		"refFields":     func(fields []*field) []*field { return util.Filter(fields, util.IsReferenceType) },
+		"isSliceType":   util.IsSliceType,
+		"extValFields":  func(fields []*field) []*field { return util.Filter(fields, util.IsExternalValType) },
 		"messageFields": func(fields []*field) []*field { return util.Filter(fields, util.IsMessageType) },
 		"notMsgFields": func(fields []*field) []*field {
-			return util.Filter(fields, func(f *field) bool { return util.IsReferenceType(f) && !util.IsMessageType(f) })
+			return util.Filter(fields, func(f *field) bool { return !util.IsMessageType(f) })
 		},
+		"sliceFields": func(fields []*field) []*field { return util.Filter(fields, util.IsSliceType) },
 		"filterByCoqType": func(fields []*field, typeStr string) []*field {
 			return util.Filter(fields, func(f *field) bool { return util.IsCoqType(f, typeStr) })
 		},
@@ -127,6 +129,7 @@ func setupTemplates() *template.Template {
 			return util.Filter(fields, func(f *field) bool { return util.IsGoType(f, typeStr) })
 		},
 		"join":         func(sep string, s ...string) string { return strings.Join(s, sep) },
+		"trunc":        util.Trunc,
 		"lower":        strings.ToLower,
 		"pred":         func(i int) int { return i - 1 },
 		"succ":         func(i int) int { return i + 1 },

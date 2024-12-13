@@ -1,20 +1,26 @@
-func Unmarshal(s []byte) (*S, []byte) {
-    << param .Name >> := new(S)
+func Unmarshal(s []byte) (S, []byte) {
     var enc = s // Needed for goose compatibility
     << range .Fields ->>
+    var << .Name >> << goType . >>
+    << end >>
+    << range .Fields ->>
     <<- if isMessage . >>
-    << param $.Name >>.<< goName .Name >>, enc = << goType . | lower >>_gk.Unmarshal(enc)
+    << .Name >>, enc = << goType . | lower | trunc -2 >>.Unmarshal(enc)
     <<- else if isGoType . "enum" >>
-    << param $.Name >>.<< goName .Name >>, enc = marshal.ReadInt32(enc)
+    << .Name >>, enc = marshal.ReadInt32(enc)
     <<- else if or (isGoType . "string") (isGoType . "[]byte") >>
     var << .Name >>Len uint64
     var << .Name >>Bytes []byte
     << .Name >>Len, enc = marshal.ReadInt(enc)
     << .Name >>Bytes, enc = marshal.ReadBytesCopy(enc, << .Name >>Len)
-    << param $.Name >>.<< goName .Name >> = << if isGoType . "string" >>string(<< end >><< .Name >>Bytes<< if isGoType . "string" >>)<< end >>
+    << .Name >> = << if isGoType . "string" >>string(<< end >><< .Name >>Bytes<< if isGoType . "string" >>)<< end >>
     <<- else >>
-    << param $.Name >>.<< goName .Name >>, enc = marshal.Read<<- marshalType . ->>(enc)
+    << .Name >>, enc = marshal.Read<<- marshalType . ->>(enc)
     <<- end ->> <<- end >>
 
-    return << param .Name >>, enc
+    return S{
+        << range .Fields ->>
+        << goName .Name >>: << .Name >>,
+        << end >>
+    }, enc
 }

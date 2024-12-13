@@ -22,10 +22,12 @@ const DirPermissions = 0755
 const FilePermissions = 0644
 
 type TypeData struct {
-	CoqType     string
-	GoType      string
-	MarshalType string
-	RefType     bool
+	CoqType     string // Holds the corresponding coq type
+	GoType      string // Holds the corresponding go type
+	MarshalType string // Holds the name of the function in tchajed/marshal which operates on this type
+	ValType     bool   // Holds whether this type uses an external value in the coq proof
+	SliceType   bool   // Holds whether this type is actually a list of values
+	ToValFunc   string // Holds how to take a coq type to a value, i.e. #(...) or #(str ...)
 }
 
 var TypeMap = map[fieldType]TypeData{
@@ -33,67 +35,61 @@ var TypeMap = map[fieldType]TypeData{
 		CoqType:     "u32",
 		GoType:      "uint32",
 		MarshalType: "Int32",
-		RefType:     false,
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_UINT32: {
 		CoqType:     "u32",
 		GoType:      "uint32",
 		MarshalType: "Int32",
-		RefType:     false,
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED32: {
 		CoqType:     "u32",
 		GoType:      "uint32",
 		MarshalType: "Int32",
-		RefType:     false,
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_INT64: {
 		CoqType:     "u64",
 		GoType:      "uint64",
 		MarshalType: "Int",
-		RefType:     false,
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_UINT64: {
 		CoqType:     "u64",
 		GoType:      "uint64",
 		MarshalType: "Int",
-		RefType:     false,
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: {
 		CoqType:     "u64",
 		GoType:      "uint64",
 		MarshalType: "Int",
-		RefType:     false,
-	},
-	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: {
-		CoqType:     "message",
-		GoType:      "message",
-		MarshalType: "message",
-		RefType:     true,
-	},
-	descriptorpb.FieldDescriptorProto_TYPE_BYTES: {
-		CoqType:     "list u8",
-		GoType:      "[]byte",
-		MarshalType: "Bytes",
-		RefType:     false,
-	},
-	descriptorpb.FieldDescriptorProto_TYPE_STRING: {
-		CoqType:     "string",
-		GoType:      "string",
-		MarshalType: "Bytes",
-		RefType:     false,
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_BOOL: {
 		CoqType:     "bool",
 		GoType:      "bool",
 		MarshalType: "Bool",
-		RefType:     false,
+	},
+	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: {
+		CoqType:     "message",
+		GoType:      "message",
+		MarshalType: "message",
+		ValType:     true,
+	},
+	descriptorpb.FieldDescriptorProto_TYPE_BYTES: {
+		CoqType:     "list u8",
+		GoType:      "[]byte",
+		MarshalType: "Bytes",
+		SliceType:   true,
+		ToValFunc:   "slice_val ",
+	},
+	descriptorpb.FieldDescriptorProto_TYPE_STRING: {
+		CoqType:     "string",
+		GoType:      "string",
+		MarshalType: "Bytes",
+		SliceType:   true,
+		ToValFunc:   "str ",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_ENUM: {
 		CoqType:     "enum",
 		GoType:      "enum",
 		MarshalType: "enum",
-		RefType:     false,
 	},
 }
 
@@ -113,6 +109,17 @@ var Capitialize = Compose(
 		return string(append([]rune{unicode.ToUpper(r[0])}, r[1:]...))
 	})
 
+// Takes the first (or removes the last if c is negative) characters from s
+func Trunc(c int, s string) string {
+	if c < 0 && len(s)+c > 0 {
+		return s[:len(s)+c]
+	}
+	if c >= 0 && len(s) > c {
+		return s[:c]
+	}
+	return s
+}
+
 // MAP ACCESSORS & TRANSFORMERS
 
 func GetCoqTypeName(field *field) string {
@@ -124,7 +131,7 @@ func GetCoqTypeName(field *field) string {
 
 func GetGoTypeName(field *field) string {
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		return Capitialize(field.GetTypeName())
+		return Capitialize(field.GetTypeName()) + "_gk.S"
 	}
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
 		return strings.ToLower(field.GetTypeName()[1:]) + "_gk.E"
@@ -136,8 +143,12 @@ func GetBuiltInMarshalFuncType(field *field) string {
 	return TypeMap[field.GetType()].MarshalType
 }
 
-func IsReferenceType(field *field) bool {
-	return TypeMap[field.GetType()].RefType
+func IsExternalValType(field *field) bool {
+	return TypeMap[field.GetType()].ValType
+}
+
+func IsSliceType(field *field) bool {
+	return TypeMap[field.GetType()].SliceType
 }
 
 func IsMessageType(field *field) bool {
