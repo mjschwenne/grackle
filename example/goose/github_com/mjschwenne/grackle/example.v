@@ -22,10 +22,6 @@ Definition Event := struct.decl [
   "endTime" :: struct.t TimeStamp
 ].
 
-Definition Event__approxSize: val :=
-  rec: "Event__approxSize" "e" :=
-    #0.
-
 Definition MarshalTimeStamp: val :=
   rec: "MarshalTimeStamp" "t" "prefix" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
@@ -37,12 +33,12 @@ Definition MarshalTimeStamp: val :=
 Definition MarshalEvent: val :=
   rec: "MarshalEvent" "e" "prefix" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
-    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF Event "id" "e"));;
-    let: "nameByte" := StringToBytes (struct.loadF Event "name" "e") in
+    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get Event "id" "e"));;
+    let: "nameByte" := StringToBytes (struct.get Event "name" "e") in
     "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len "nameByte"));;
     "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") "nameByte");;
-    "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "startTime" "e") (![slice.T byteT] "enc"));;
-    "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.loadF Event "endTime" "e") (![slice.T byteT] "enc"));;
+    "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.get Event "startTime" "e") (![slice.T byteT] "enc"));;
+    "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.get Event "endTime" "e") (![slice.T byteT] "enc"));;
     ![slice.T byteT] "enc".
 
 Definition UnmarshalTimeStamp: val :=
@@ -68,10 +64,13 @@ Definition UnmarshalTimeStamp: val :=
 
 Definition UnmarshalEvent: val :=
   rec: "UnmarshalEvent" "s" :=
-    let: "e" := struct.alloc Event (zero_val (struct.t Event)) in
     let: "enc" := ref_to (slice.T byteT) "s" in
+    let: "id" := ref (zero_val uint32T) in
+    let: "name" := ref (zero_val stringT) in
+    let: "startTime" := ref (zero_val (struct.t TimeStamp)) in
+    let: "endTime" := ref (zero_val (struct.t TimeStamp)) in
     let: ("0_ret", "1_ret") := marshal.ReadInt32 (![slice.T byteT] "enc") in
-    struct.storeF Event "id" "e" "0_ret";;
+    "id" <-[uint32T] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: "nameLen" := ref (zero_val uint64T) in
     let: "nameBytes" := ref (zero_val (slice.T byteT)) in
@@ -81,14 +80,19 @@ Definition UnmarshalEvent: val :=
     let: ("0_ret", "1_ret") := marshal.ReadBytesCopy (![slice.T byteT] "enc") (![uint64T] "nameLen") in
     "nameBytes" <-[slice.T byteT] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    struct.storeF Event "name" "e" (StringFromBytes (![slice.T byteT] "nameBytes"));;
+    "name" <-[stringT] (StringFromBytes (![slice.T byteT] "nameBytes"));;
     let: ("0_ret", "1_ret") := UnmarshalTimeStamp (![slice.T byteT] "enc") in
-    struct.storeF Event "startTime" "e" "0_ret";;
+    "startTime" <-[struct.t TimeStamp] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := UnmarshalTimeStamp (![slice.T byteT] "enc") in
-    struct.storeF Event "endTime" "e" "0_ret";;
+    "endTime" <-[struct.t TimeStamp] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    ("e", ![slice.T byteT] "enc").
+    (struct.mk Event [
+       "id" ::= ![uint32T] "id";
+       "name" ::= ![stringT] "name";
+       "startTime" ::= ![struct.t TimeStamp] "startTime";
+       "endTime" ::= ![struct.t TimeStamp] "endTime"
+     ], ![slice.T byteT] "enc").
 
 (* timestamp.go *)
 

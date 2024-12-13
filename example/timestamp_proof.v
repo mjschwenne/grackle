@@ -22,6 +22,39 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
 Definition own (args__v : val) (args__c : C) (dq : dfrac) : iProp Σ :=
   "%Hown_struct" ∷ ⌜ args__v = (#args__c.(hour), (#args__c.(minute), (#args__c.(second), #())))%V ⌝.
 
+Definition TimeStamp_to_val (c : C) : val :=
+  (#c.(hour), (#c.(minute), (#c.(second), #()))).
+
+Definition TimeStamp_from_val (v : val) : option C :=
+  match v with
+    | (#(LitInt32 h), (#(LitInt32 m), (#(LitInt32 s), #())))%V => Some (mkC h m s)
+    | _ => None
+    end.
+
+Instance TimeStamp_into_val : IntoVal C.
+Proof.
+  refine {|
+      to_val := TimeStamp_to_val;
+      from_val := TimeStamp_from_val;
+      IntoVal_def := (mkC (W32 0) (W32 0) (W32 0));
+    |}.
+  intros v.
+  by destruct v.
+Defined.
+
+Instance TimeStamp_into_val_for_type : IntoValForType C (uint32T * (uint32T * (uint32T * unitT))%ht).
+Proof. constructor; auto. Defined.
+
+Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
+  own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
+Proof.
+  iIntros "%Hown_struct".
+  iUnfold own.
+  iPureIntro.
+  rewrite Hown_struct.
+  split; by reflexivity.
+Qed.
+
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{
         own args__v args__c dq ∗

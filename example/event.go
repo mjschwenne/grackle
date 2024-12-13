@@ -11,11 +11,7 @@ type Event struct {
 	endTime   TimeStamp
 }
 
-func (e *Event) approxSize() uint64 {
-	return 0
-}
-
-func MarshalEvent(e *Event, prefix []byte) []byte {
+func MarshalEvent(e Event, prefix []byte) []byte {
 	var enc = prefix
 	enc = marshal.WriteInt32(enc, e.id)
 
@@ -28,18 +24,27 @@ func MarshalEvent(e *Event, prefix []byte) []byte {
 	return enc
 }
 
-func UnmarshalEvent(s []byte) (*Event, []byte) {
-	e := new(Event)
+func UnmarshalEvent(s []byte) (Event, []byte) {
 	var enc = s // Needed for goose compatibility
-	e.id, enc = marshal.ReadInt32(enc)
+	var id uint32
+	var name string
+	var startTime TimeStamp
+	var endTime TimeStamp
+
+	id, enc = marshal.ReadInt32(enc)
 
 	var nameLen uint64
 	var nameBytes []byte
 	nameLen, enc = marshal.ReadInt(enc)
 	nameBytes, enc = marshal.ReadBytesCopy(enc, nameLen)
-	e.name = string(nameBytes)
+	name = string(nameBytes)
 
-	e.startTime, enc = UnmarshalTimeStamp(enc)
-	e.endTime, enc = UnmarshalTimeStamp(enc)
-	return e, enc
+	startTime, enc = UnmarshalTimeStamp(enc)
+	endTime, enc = UnmarshalTimeStamp(enc)
+	return Event{
+		id:        id,
+		name:      name,
+		startTime: startTime,
+		endTime:   endTime,
+	}, enc
 }

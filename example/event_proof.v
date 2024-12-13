@@ -24,40 +24,33 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
     /\ TimeStamp.has_encoding start_enc args.(startTime)
     /\ TimeStamp.has_encoding end_enc args.(endTime).
 
-Definition own args_ptr args q : iProp Σ :=
-  ∃ (start_l end_l: loc),
-  "Hargs_id" ∷ args_ptr ↦[Event :: "id"]{q} #args.(id) ∗
+Definition own (args__v : val) (args__c : C) (dq : dfrac) : iProp Σ :=
+  ∃ (startTime__v endTime__v: val),
+    "%Hown_struct" ∷ ⌜ args__v = (#args__c.(id), (#(str args__c.(name)), (startTime__v, (endTime__v, #()))))%V ⌝ ∗
+    "Hown_startTime" ∷ TimeStamp.own startTime__v args__c.(startTime) dq ∗
+    "Hown_endTime" ∷ TimeStamp.own endTime__v args__c.(endTime) dq.
 
-  "Hargs_name" ∷ args_ptr ↦[Event :: "name"]{q} #(str args.(name)) ∗
-
-  "Hargs_start" ∷ args_ptr ↦[Event :: "startTime"]{q} #start_l ∗
-  "Hargs_start_enc" ∷ TimeStamp.own start_l args.(startTime) q ∗
-  "Hargs_end" ∷ args_ptr ↦[Event :: "endTime"]{q} #end_l ∗
-  "Hargs_end_enc" ∷ TimeStamp.own end_l args.(endTime) q.
-
-Lemma wp_Encode (args_ptr:loc) (args:C) (prefix:list u8) (pre_sl:Slice.t) q :
+Lemma wp_Encode (args__v : val) (args__c : C) (prefix : list u8) (pre_sl : Slice.t) (dq : dfrac) :
   {{{
-        own args_ptr args q ∗
+        own args__v args__c dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    MarshalEvent #args_ptr (slice_val pre_sl)
+    MarshalEvent args__v (slice_val pre_sl)
   {{{
         enc enc_sl, RET (slice_val enc_sl);
-        ⌜has_encoding enc args⌝ ∗
+        ⌜ has_encoding enc args__c ⌝ ∗
         own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc) ∗
-        own args_ptr args q
+        own args__v args__c dq
   }}}.
 Proof.
-  iIntros (?) "H HΦ". iDestruct "H" as "[Hown Hsl]". iNamed "Hown".
+  iIntros (?) "[Hown Hsl] HΦ". iNamed "Hown". rewrite Hown_struct.
   wp_rec. wp_pures.
   wp_apply (wp_ref_to); first by val_ty.
   iIntros (?) "Hptr". wp_pures.
 
-  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
+  wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
 
-  (* iDestruct (own_slice_small_sz with "Hargs_name_enc") as "%Hargs_name_sz". *)
-  wp_loadField.
   wp_apply wp_StringToBytes. iIntros (?) "Hargs_name_enc". wp_pures.
   wp_apply (wp_slice_len).
   iDestruct (own_slice_sz with "Hargs_name_enc") as "%Hargs_name_sz".
@@ -66,58 +59,63 @@ Proof.
   wp_load. wp_apply (wp_WriteBytes with "[$Hsl $Hargs_name_enc]").
   iIntros (?) "[Hsl _]". wp_store.
 
-  wp_loadField. wp_apply (wp_Assume). iIntros "%HstartTime_nn".
-  wp_load. wp_loadField.
-  wp_apply (TimeStamp.wp_Encode with "[$Hargs_start_enc $Hsl]").
+  wp_load. wp_apply (TimeStamp.wp_Encode with "[$Hown_startTime $Hsl]").
   iIntros (start_enc start_sl) "(%Hargs_start_enc & Hsl & Hargs_start_own)".
   wp_store.
 
-  wp_loadField. wp_apply (wp_Assume). iIntros "%HendTime_nn".
-  wp_load. wp_loadField.
-  wp_apply (TimeStamp.wp_Encode with "[$Hargs_end_enc $Hsl]").
+  wp_load. wp_apply (TimeStamp.wp_Encode with "[$Hown_endTime $Hsl]").
   iIntros (end_enc end_sl) "(%Hargs_end_enc & Hsl & Hargs_end_own)".
   wp_store.
 
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  unfold has_encoding. exists start_enc, end_enc. split.
+  unfold has_encoding. split.
   {
+    exists start_enc, end_enc.
     rewrite ?string_bytes_length.
     rewrite Hargs_name_sz.
     rewrite w64_to_nat_id.
     exact.
   }
-  split. { exact. } { exact. }
+  exact.
 Qed.
 
 Typeclasses Opaque app.
 
-Lemma wp_Decode enc enc_sl (args:C) (suffix : list u8) (q : dfrac) :
+Lemma wp_Decode enc enc_sl (args__c : C) (suffix : list u8) (dq : dfrac) :
   {{{
-        ⌜has_encoding enc args⌝ ∗
-        own_slice_small enc_sl byteT q (enc ++ suffix)
+        ⌜ has_encoding enc args__c ⌝ ∗
+        own_slice_small enc_sl byteT dq (enc ++ suffix)
   }}}
     UnmarshalEvent (slice_val enc_sl)
   {{{
-        args_ptr suff_sl, RET (#args_ptr, suff_sl); own args_ptr args (DfracOwn 1) ∗
-                                                    own_slice_small suff_sl byteT q suffix
+        args__v suff_sl, RET (args__v, suff_sl); own args__v args__c (DfracOwn 1) ∗
+                                                    own_slice_small suff_sl byteT dq suffix
   }}}.
 Proof.
   iIntros (?) "[%Henc Hsl] HΦ". wp_rec.
-  wp_apply wp_allocStruct; first by val_ty.
-  iIntros (?) "Hs". wp_pures.
   wp_apply wp_ref_to; first done.
   iIntros (?) "Hptr". wp_pures.
-  iDestruct (struct_fields_split with "Hs") as "HH".
-  iNamed "HH".
 
   unfold has_encoding in Henc.
   destruct Henc as (startTime_sl & endTime_sl & Henc & Hencoding_startTime & Hencoding_endTime).
   rewrite Henc. rewrite -?app_assoc.
 
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__id) "Hid". wp_pures.
+
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__name) "Hname". wp_pures.
+
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__startTime) "HstartTime". wp_pures.
+
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__endTime) "HendTime". wp_pures.
+
   wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
-  wp_pures. wp_storeField. wp_store.
+  wp_pures. wp_store. wp_store.
 
   wp_apply wp_ref_of_zero; first done. iIntros (nameLen) "HnameLen". wp_pures.
   wp_apply wp_ref_of_zero; first done. iIntros (nameBytes) "HnameBytes". wp_pures.
@@ -132,18 +130,27 @@ Proof.
 
   wp_pures. wp_store. wp_store. wp_load.
   wp_apply (wp_StringFromBytes with "[$Hname']"). iIntros "_".
-  wp_storeField.
-
+  wp_store.
 
   wp_load.
   wp_apply (TimeStamp.wp_Decode startTime_sl with "[Hsl]").
-  { iFrame. exact. } iIntros (??) "[HstartTime Hsl]". wp_pures. wp_storeField. wp_store.
+  { iFrame. exact. } iIntros (startTime__v ?) "[Hown_startTime Hsl]".
+  iApply (TimeStamp.own_to_val) in "Hown_startTime".
+  iDestruct "Hown_startTime" as "[Hown_startTime %Hval_startTime]".
+  rewrite Hval_startTime.
+  wp_pures. wp_store. wp_store.
 
   wp_load.
   wp_apply (TimeStamp.wp_Decode endTime_sl with "[Hsl]").
-  { iFrame. exact. } iIntros (??) "[HendTime Hsl]". wp_pures. wp_storeField. wp_store.
+  { iFrame. exact. } iIntros (endTime__v ?) "[Hown_endTime Hsl]".
+  iApply (TimeStamp.own_to_val) in "Hown_endTime".
+  iDestruct "Hown_endTime" as "[Hown_endTime %Hval_endTime]".
+  rewrite Hval_endTime.
+  wp_pures. wp_store. wp_store.
 
-  wp_load. wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
+  wp_load. wp_load. wp_load. wp_load. wp_load.
+  wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
+  iPureIntro. reflexivity.
 Qed.
 
 End Event.
