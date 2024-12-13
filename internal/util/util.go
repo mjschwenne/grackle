@@ -21,60 +21,80 @@ type fieldType = descriptorpb.FieldDescriptorProto_Type
 const DirPermissions = 0755
 const FilePermissions = 0644
 
-var coqTypeMap = map[fieldType]string{
-	descriptorpb.FieldDescriptorProto_TYPE_INT32:   "u32",
-	descriptorpb.FieldDescriptorProto_TYPE_UINT32:  "u32",
-	descriptorpb.FieldDescriptorProto_TYPE_FIXED32: "u32",
-	descriptorpb.FieldDescriptorProto_TYPE_INT64:   "u64",
-	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  "u64",
-	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: "u64",
-	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
-	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "list u8",
-	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "string",
-	descriptorpb.FieldDescriptorProto_TYPE_BOOL:    "bool",
-	descriptorpb.FieldDescriptorProto_TYPE_ENUM:    "enum",
+type TypeData struct {
+	CoqType     string
+	GoType      string
+	MarshalType string
+	RefType     bool
 }
 
-var goTypeMap = map[fieldType]string{
-	descriptorpb.FieldDescriptorProto_TYPE_INT32:   "uint32",
-	descriptorpb.FieldDescriptorProto_TYPE_UINT32:  "uint32",
-	descriptorpb.FieldDescriptorProto_TYPE_FIXED32: "uint32",
-	descriptorpb.FieldDescriptorProto_TYPE_INT64:   "uint64",
-	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  "uint64",
-	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: "uint64",
-	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
-	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "[]byte",
-	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "string",
-	descriptorpb.FieldDescriptorProto_TYPE_BOOL:    "bool",
-	descriptorpb.FieldDescriptorProto_TYPE_ENUM:    "enum",
-}
-
-var marshalTypeMap = map[fieldType]string{
-	descriptorpb.FieldDescriptorProto_TYPE_INT32:   "Int32",
-	descriptorpb.FieldDescriptorProto_TYPE_UINT32:  "Int32",
-	descriptorpb.FieldDescriptorProto_TYPE_FIXED32: "Int32",
-	descriptorpb.FieldDescriptorProto_TYPE_INT64:   "Int",
-	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  "Int",
-	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: "Int",
-	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: "message",
-	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   "Bytes",
-	descriptorpb.FieldDescriptorProto_TYPE_STRING:  "Bytes",
-	descriptorpb.FieldDescriptorProto_TYPE_BOOL:    "Bool",
-	descriptorpb.FieldDescriptorProto_TYPE_ENUM:    "enum",
-}
-
-var refTypeMap = map[fieldType]bool{
-	descriptorpb.FieldDescriptorProto_TYPE_INT32:   false,
-	descriptorpb.FieldDescriptorProto_TYPE_UINT32:  false,
-	descriptorpb.FieldDescriptorProto_TYPE_FIXED32: false,
-	descriptorpb.FieldDescriptorProto_TYPE_INT64:   false,
-	descriptorpb.FieldDescriptorProto_TYPE_UINT64:  false,
-	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: false,
-	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: true,
-	descriptorpb.FieldDescriptorProto_TYPE_BYTES:   false,
-	descriptorpb.FieldDescriptorProto_TYPE_STRING:  false,
-	descriptorpb.FieldDescriptorProto_TYPE_BOOL:    false,
-	descriptorpb.FieldDescriptorProto_TYPE_ENUM:    false,
+var TypeMap = map[fieldType]TypeData{
+	descriptorpb.FieldDescriptorProto_TYPE_INT32: {
+		CoqType:     "u32",
+		GoType:      "uint32",
+		MarshalType: "Int32",
+		RefType:     false,
+	},
+	descriptorpb.FieldDescriptorProto_TYPE_UINT32: {
+		CoqType:     "u32",
+		GoType:      "uint32",
+		MarshalType: "Int32",
+		RefType:     false,
+	},
+	descriptorpb.FieldDescriptorProto_TYPE_FIXED32: {
+		CoqType:     "u32",
+		GoType:      "uint32",
+		MarshalType: "Int32",
+		RefType:     false,
+	},
+	descriptorpb.FieldDescriptorProto_TYPE_INT64: {
+		CoqType:     "u64",
+		GoType:      "uint64",
+		MarshalType: "Int",
+		RefType:     false,
+	},
+	descriptorpb.FieldDescriptorProto_TYPE_UINT64: {
+		CoqType:     "u64",
+		GoType:      "uint64",
+		MarshalType: "Int",
+		RefType:     false,
+	},
+	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: {
+		CoqType:     "u64",
+		GoType:      "uint64",
+		MarshalType: "Int",
+		RefType:     false,
+	},
+	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: {
+		CoqType:     "message",
+		GoType:      "message",
+		MarshalType: "message",
+		RefType:     true,
+	},
+	descriptorpb.FieldDescriptorProto_TYPE_BYTES: {
+		CoqType:     "list u8",
+		GoType:      "[]byte",
+		MarshalType: "Bytes",
+		RefType:     false,
+	},
+	descriptorpb.FieldDescriptorProto_TYPE_STRING: {
+		CoqType:     "string",
+		GoType:      "string",
+		MarshalType: "Bytes",
+		RefType:     false,
+	},
+	descriptorpb.FieldDescriptorProto_TYPE_BOOL: {
+		CoqType:     "bool",
+		GoType:      "bool",
+		MarshalType: "Bool",
+		RefType:     false,
+	},
+	descriptorpb.FieldDescriptorProto_TYPE_ENUM: {
+		CoqType:     "enum",
+		GoType:      "enum",
+		MarshalType: "enum",
+		RefType:     false,
+	},
 }
 
 // STRING MANIPULATION UTILITIES
@@ -99,7 +119,7 @@ func GetCoqTypeName(field *field) string {
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		return field.GetTypeName()
 	}
-	return coqTypeMap[field.GetType()]
+	return TypeMap[field.GetType()].CoqType
 }
 
 func GetGoTypeName(field *field) string {
@@ -109,15 +129,15 @@ func GetGoTypeName(field *field) string {
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
 		return strings.ToLower(field.GetTypeName()[1:]) + "_gk.E"
 	}
-	return goTypeMap[field.GetType()]
+	return TypeMap[field.GetType()].GoType
 }
 
 func GetBuiltInMarshalFuncType(field *field) string {
-	return marshalTypeMap[field.GetType()]
+	return TypeMap[field.GetType()].MarshalType
 }
 
 func IsReferenceType(field *field) bool {
-	return refTypeMap[field.GetType()]
+	return TypeMap[field.GetType()].RefType
 }
 
 func IsMessageType(field *field) bool {
@@ -128,7 +148,7 @@ func IsCoqType(field *field, typeStr string) bool {
 	// Supports disjunctions via |
 	types := strings.Split(typeStr, "|")
 	for _, t := range types {
-		if coqTypeMap[field.GetType()] == t {
+		if TypeMap[field.GetType()].CoqType == t {
 			return true
 		}
 	}
@@ -139,7 +159,7 @@ func IsGoType(field *field, typeStr string) bool {
 	// Supports disjunctions via |
 	types := strings.Split(typeStr, "|")
 	for _, t := range types {
-		if goTypeMap[field.GetType()] == t {
+		if TypeMap[field.GetType()].GoType == t {
 			return true
 		}
 	}
