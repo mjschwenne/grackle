@@ -31,6 +31,7 @@ Definition TimeStamp_from_val (v : val) : option C :=
     | _ => None
     end.
 
+#[global]
 Instance TimeStamp_into_val : IntoVal C.
 Proof.
   refine {|
@@ -42,7 +43,9 @@ Proof.
   by destruct v.
 Defined.
 
-Instance TimeStamp_into_val_for_type : IntoValForType C (uint32T * (uint32T * (uint32T * unitT))%ht).
+#[global]
+(* Instance TimeStamp_into_val_for_type : IntoValForType C (uint32T * (uint32T * (uint32T * unitT))%ht). *)
+Instance TimeStamp_into_val_for_type : IntoValForType C (struct.t TimeStamp).
 Proof. constructor; auto. Defined.
 
 Lemma own_to_val (v : val) (c : C) (dq : dfrac) :

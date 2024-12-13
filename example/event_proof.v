@@ -30,6 +30,57 @@ Definition own (args__v : val) (args__c : C) (dq : dfrac) : iProp Σ :=
     "Hown_startTime" ∷ TimeStamp.own startTime__v args__c.(startTime) dq ∗
     "Hown_endTime" ∷ TimeStamp.own endTime__v args__c.(endTime) dq.
 
+Definition to_val' (c : C) : val :=
+  (#c.(id), (#(str c.(name)), (TimeStamp.TimeStamp_to_val c.(startTime), (TimeStamp.TimeStamp_to_val c.(endTime), #())))).
+
+Definition from_val' (v : val) : option C :=
+  match v with
+  | (#(LitInt32 i), (#(LitString n), (s, (e, #()))))%V =>
+      match TimeStamp.TimeStamp_from_val s with
+      | Some s' =>
+          match TimeStamp.TimeStamp_from_val e with
+          | Some e' => Some (mkC i n s' e')
+          | None => None
+          end
+      | None => None
+      end
+  | _ => None
+  end.
+
+#[global]
+Instance Event_into_val : IntoVal C.
+Proof.
+  refine {|
+      to_val := to_val';
+      from_val := from_val';
+      IntoVal_def := (mkC (W32 0) "" (IntoVal_def TimeStamp.C) (IntoVal_def TimeStamp.C))
+    |}.
+  intros v.
+  destruct v as [i n [sh sm ss] [eh em es]]; done.
+Defined.
+
+#[global]
+Instance Event_into_val_for_type : IntoValForType C (struct.t Event).
+Proof. constructor; auto 10. Defined.
+
+Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
+  own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
+Proof.
+  iIntros "Hown".
+  iNamed "Hown".
+  iApply (TimeStamp.own_to_val) in "Hown_startTime".
+  iDestruct "Hown_startTime" as "[Hown_startTime %Hval_startTime]".
+  iApply (TimeStamp.own_to_val) in "Hown_endTime".
+  iDestruct "Hown_endTime" as "[Hown_endTime %Hval_endTime]".
+  iUnfold own.
+  iSplitL.
+  + iExists startTime__v, endTime__v. iFrame. iPureIntro. done.
+  + rewrite Hown_struct.
+    rewrite Hval_startTime.
+    rewrite Hval_endTime.
+    iPureIntro. reflexivity.
+Qed.
+
 Lemma wp_Encode (args__v : val) (args__c : C) (prefix : list u8) (pre_sl : Slice.t) (dq : dfrac) :
   {{{
         own args__v args__c dq ∗
