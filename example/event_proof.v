@@ -31,14 +31,14 @@ Definition own (args__v : val) (args__c : C) (dq : dfrac) : iProp Σ :=
     "Hown_endTime" ∷ TimeStamp.own endTime__v args__c.(endTime) dq.
 
 Definition to_val' (c : C) : val :=
-  (#c.(id), (#(str c.(name)), (TimeStamp.TimeStamp_to_val c.(startTime), (TimeStamp.TimeStamp_to_val c.(endTime), #())))).
+  (#c.(id), (#(str c.(name)), (TimeStamp.to_val' c.(startTime), (TimeStamp.to_val' c.(endTime), #())))).
 
 Definition from_val' (v : val) : option C :=
   match v with
   | (#(LitInt32 i), (#(LitString n), (s, (e, #()))))%V =>
-      match TimeStamp.TimeStamp_from_val s with
+      match TimeStamp.from_val' s with
       | Some s' =>
-          match TimeStamp.TimeStamp_from_val e with
+          match TimeStamp.from_val' e with
           | Some e' => Some (mkC i n s' e')
           | None => None
           end
