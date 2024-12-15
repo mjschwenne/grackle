@@ -11,31 +11,33 @@ Definition S := struct.decl [
   "Second" :: uint64T
 ].
 
-Definition S__approxSize: val :=
-  rec: "S__approxSize" "t" :=
-    #0.
-
 Definition Marshal: val :=
   rec: "Marshal" "t" "prefix" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
-    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF S "Hour" "t"));;
-    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF S "Minute" "t"));;
-    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (struct.loadF S "Second" "t"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get S "Hour" "t"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get S "Minute" "t"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (struct.get S "Second" "t"));;
     ![slice.T byteT] "enc".
 
 Definition Unmarshal: val :=
   rec: "Unmarshal" "s" :=
-    let: "t" := struct.alloc S (zero_val (struct.t S)) in
     let: "enc" := ref_to (slice.T byteT) "s" in
+    let: "hour" := ref (zero_val uint32T) in
+    let: "minute" := ref (zero_val uint32T) in
+    let: "second" := ref (zero_val uint64T) in
     let: ("0_ret", "1_ret") := marshal.ReadInt32 (![slice.T byteT] "enc") in
-    struct.storeF S "Hour" "t" "0_ret";;
+    "hour" <-[uint32T] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := marshal.ReadInt32 (![slice.T byteT] "enc") in
-    struct.storeF S "Minute" "t" "0_ret";;
+    "minute" <-[uint32T] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := marshal.ReadInt (![slice.T byteT] "enc") in
-    struct.storeF S "Second" "t" "0_ret";;
+    "second" <-[uint64T] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    ("t", ![slice.T byteT] "enc").
+    (struct.mk S [
+       "Hour" ::= ![uint32T] "hour";
+       "Minute" ::= ![uint32T] "minute";
+       "Second" ::= ![uint64T] "second"
+     ], ![slice.T byteT] "enc").
 
 End code.

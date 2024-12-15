@@ -9,33 +9,30 @@ Context `{ext_ty: ext_types}.
 Definition S := struct.decl [
   "Id" :: uint32T;
   "Name" :: stringT;
-  "StartTime" :: ptrT;
-  "EndTime" :: ptrT
+  "StartTime" :: struct.t timestamp_gk.S;
+  "EndTime" :: struct.t timestamp_gk.S
 ].
-
-Definition S__approxSize: val :=
-  rec: "S__approxSize" "e" :=
-    #0.
 
 Definition Marshal: val :=
   rec: "Marshal" "e" "prefix" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
-    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF S "Id" "e"));;
-    let: "nameBytes" := StringToBytes (struct.loadF S "Name" "e") in
+    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get S "Id" "e"));;
+    let: "nameBytes" := StringToBytes (struct.get S "Name" "e") in
     "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len "nameBytes"));;
     "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") "nameBytes");;
-    control.impl.Assume ((struct.loadF S "StartTime" "e") ≠ #null);;
-    "enc" <-[slice.T byteT] (timestamp_gk.Marshal (struct.loadF S "StartTime" "e") (![slice.T byteT] "enc"));;
-    control.impl.Assume ((struct.loadF S "EndTime" "e") ≠ #null);;
-    "enc" <-[slice.T byteT] (timestamp_gk.Marshal (struct.loadF S "EndTime" "e") (![slice.T byteT] "enc"));;
+    "enc" <-[slice.T byteT] (timestamp_gk.Marshal (struct.get S "StartTime" "e") (![slice.T byteT] "enc"));;
+    "enc" <-[slice.T byteT] (timestamp_gk.Marshal (struct.get S "EndTime" "e") (![slice.T byteT] "enc"));;
     ![slice.T byteT] "enc".
 
 Definition Unmarshal: val :=
   rec: "Unmarshal" "s" :=
-    let: "e" := struct.alloc S (zero_val (struct.t S)) in
     let: "enc" := ref_to (slice.T byteT) "s" in
+    let: "id" := ref (zero_val uint32T) in
+    let: "name" := ref (zero_val stringT) in
+    let: "startTime" := ref (zero_val (struct.t timestamp_gk.S)) in
+    let: "endTime" := ref (zero_val (struct.t timestamp_gk.S)) in
     let: ("0_ret", "1_ret") := marshal.ReadInt32 (![slice.T byteT] "enc") in
-    struct.storeF S "Id" "e" "0_ret";;
+    "id" <-[uint32T] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: "nameLen" := ref (zero_val uint64T) in
     let: "nameBytes" := ref (zero_val (slice.T byteT)) in
@@ -45,13 +42,18 @@ Definition Unmarshal: val :=
     let: ("0_ret", "1_ret") := marshal.ReadBytesCopy (![slice.T byteT] "enc") (![uint64T] "nameLen") in
     "nameBytes" <-[slice.T byteT] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    struct.storeF S "Name" "e" (StringFromBytes (![slice.T byteT] "nameBytes"));;
+    "name" <-[stringT] (StringFromBytes (![slice.T byteT] "nameBytes"));;
     let: ("0_ret", "1_ret") := timestamp_gk.Unmarshal (![slice.T byteT] "enc") in
-    struct.storeF S "StartTime" "e" "0_ret";;
+    "startTime" <-[struct.t timestamp_gk.S] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := timestamp_gk.Unmarshal (![slice.T byteT] "enc") in
-    struct.storeF S "EndTime" "e" "0_ret";;
+    "endTime" <-[struct.t timestamp_gk.S] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    ("e", ![slice.T byteT] "enc").
+    (struct.mk S [
+       "Id" ::= ![uint32T] "id";
+       "Name" ::= ![stringT] "name";
+       "StartTime" ::= ![struct.t timestamp_gk.S] "startTime";
+       "EndTime" ::= ![struct.t timestamp_gk.S] "endTime"
+     ], ![slice.T byteT] "enc").
 
 End code.

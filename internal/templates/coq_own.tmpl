@@ -1,29 +1,27 @@
-Definition own (args__v: loc) (args__c: C) (dq: dfrac) : iProp Σ :=
-  <<- $locs := (valFields .Fields) ->>
-  <<- $bytes := (filterByCoqType .Fields "list u8") ->>
-  <<- if or (gt (len $refs) 0) (gt (len $bytes) 0)  >>
-  ∃ << end ->>
-  << if len $refs ->>
-  (<<- range $idx, $field := $refs ->>
-  <<- $field.Name ->>_l << end ->>: loc) << end ->>
-  <<- if len $bytes ->>
-  (<<- range $idx, $field := $bytes ->>
+<<- define "coq_own_struct" ->>
+  <<- if eq (len .) 0 ->>
+  #()
+  <<- else ->>
+  (#<<- with $valF := index . 0 ->><< if valFunc $valF >>(<< valFunc $valF >> << end >>args__c.(<<- $valF.Name ->>)<< if valFunc $valF >>)<< end >>, << end ->>
+  << template "coq_own_struct" (slice . 1) ->>)
+  <<- end ->>
+<<- end ->>
+Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
+  <<- $extval := (extValFields .Fields) ->>
+  <<- $lists := (sliceFields .Fields) ->>
+  <<- if or (gt (len $extval) 0) (gt (len $lists) 0)  >>
+  ∃ << if len $extval ->>
+  (<<- range $idx, $field := $extval ->>
+  <<- $field.Name ->>__v << end ->>: val) << end ->>
+  <<- if len $lists ->>
+  (<<- range $idx, $field := $lists ->>
   <<- $field.Name ->>_sl << end ->>: Slice.t)
   <<- end ->>
-  <<- if or (gt (len $refs) 0) (gt (len $bytes) 0) ->>
   , << end >>
-  << range $idx, $field := .Fields ->>
-  << if $idx >> ∗
-  << end ->>
-  <<- if isMessage . ->>
-  "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- lower $.Name >>_gk.S :: "<<- goName .Name ->>"]{dq} #<<- .Name ->>_l ∗
-  "Hargs_<<- .Name ->>_enc" ∷ << coqType . ->>.own << .Name ->>_l args.(<<- .Name ->>) dq
-  <<- else if or (isCoqType . "string") (isCoqType . "list u8") ->>
-  "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- lower $.Name >>_gk.S :: "<<- goName .Name ->>"]{dq}
-  <<- if isCoqType . "string" >> #(str args.(<< .Name >>))
-  <<- else >> (slice_val << .Name >>_sl) ∗
-  "Hargs_<<- .Name ->>_sl" ∷ own_slice_small << .Name >>_sl byteT dq args.(<< .Name >>)
-  << end >>
-  <<- else ->>
-  "Hargs_<<- .Name ->>" ∷ args_ptr ↦[<<- lower $.Name >>_gk.S :: "<<- goName .Name ->>"]{dq} #args.(<<- .Name ->>)
-  <<- end ->><<- end ->>.
+  "%Hown_struct" ∷ ⌜ args__v = << template "coq_own_struct" .Fields >>%V ⌝
+  <<- range $lists >> ∗
+  "Hown_<< .Name >>" ∷ own_slice_small << .Name >>_sl << goType . >>T dq args__c.(<< .Name >>)
+  <<- end >>
+  <<- range $extval >> ∗
+  "Hown_<< .Name >>" ∷ << .TypeName >>.own << .Name >>__v args__c.(<< .Name >>) dq
+  <<- end >>.

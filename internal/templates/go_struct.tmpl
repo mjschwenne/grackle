@@ -1,5 +1,5 @@
 type S struct {
     << range .Fields ->>
-    <<- goName .Name >> << if isRef . >>*<< goType . | lower >><< else >><< goType . >><< end >>
+    <<- goName .Name >> << if isSliceType . >>[]<< end >><< goType . >>
     << end ->>
 }

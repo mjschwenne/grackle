@@ -5,7 +5,7 @@ func Unmarshal(s []byte) (S, []byte) {
     << end >>
     << range .Fields ->>
     <<- if isMessage . >>
-    << .Name >>, enc = << goType . | lower | trunc -2 >>.Unmarshal(enc)
+    << .Name >>, enc = << goModuleName . >>.Unmarshal(enc)
     <<- else if isGoType . "enum" >>
     << .Name >>, enc = marshal.ReadInt32(enc)
     <<- else if or (isGoType . "string") (isGoType . "[]byte") >>

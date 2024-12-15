@@ -1,6 +1,4 @@
 
-  wp_loadField. wp_apply (wp_Assume). iIntros "%H<< .Name >>_nn".
-  wp_load. wp_loadField.
-  wp_apply (<<- .TypeName ->>.wp_Encode with "[$Hargs_<<- .Name ->>_enc $Hsl]").
-  iIntros (<<- .Name ->>_enc << .Name ->>_sl) "(%Hargs_<< .Name >>_enc & Hargs_<< .Name >>_own & Hsl)".
+  wp_load. wp_apply (<<- .TypeName ->>.wp_Encode with "[$Hargs_<<- .Name ->>_enc $Hsl]").
+  iIntros (<<- .Name ->>_enc << .Name ->>_sl) "(%Hargs_<< .Name >>_enc & Hsl & Hargs_<< .Name >>_own)".
   wp_store.

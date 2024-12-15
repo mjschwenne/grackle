@@ -128,16 +128,19 @@ func setupTemplates() *template.Template {
 		"filterByGoType": func(fields []*field, typeStr string) []*field {
 			return util.Filter(fields, func(f *field) bool { return util.IsGoType(f, typeStr) })
 		},
-		"join":         func(sep string, s ...string) string { return strings.Join(s, sep) },
-		"trunc":        util.Trunc,
-		"lower":        strings.ToLower,
-		"pred":         func(i int) int { return i - 1 },
-		"succ":         func(i int) int { return i + 1 },
-		"goType":       util.GetGoTypeName,
-		"param":        func(s string) string { return strings.ToLower(string(s[0])) },
-		"marshalType":  util.GetBuiltInMarshalFuncType,
-		"cleanCoqName": util.CleanCoqName,
-		"goName":       util.Capitialize,
+		"join":          func(sep string, s ...string) string { return strings.Join(s, sep) },
+		"trunc":         util.Trunc,
+		"lower":         strings.ToLower,
+		"pred":          func(i int) int { return i - 1 },
+		"succ":          func(i int) int { return i + 1 },
+		"goType":        util.GetGoTypeName,
+		"param":         func(s string) string { return strings.ToLower(string(s[0])) },
+		"marshalType":   util.GetBuiltInMarshalFuncType,
+		"goModuleName":  util.GetGoModuleName,
+		"coqModuleName": util.GetCoqModuleName,
+		"valFunc":       util.GetValFunc,
+		"cleanCoqName":  util.CleanCoqName,
+		"goName":        util.Capitialize,
 		// This is a bit of a hack to let me call templates with dynamic names
 		// It requires tmpl in the closure of the function, so the inline definition
 		// makes the most sense

@@ -1,3 +1,7 @@
 
-  wp_load. wp_apply (<< coqType . >>.wp_Decode << .Name >>_sl with "[Hsl]").
-  { iFrame. exact. } iIntros (??) "[H<< .Name >> Hsl]". wp_pures. wp_storeField. wp_store.
+  wp_load. wp_apply (<< coqModuleName . >>.wp_Decode << .Name >>_sl with "[$Hsl //]").
+  iIntros (<< .Name >>__v ?) "[Hown_<< .Name >> Hsl]".
+  iApply (<< coqModuleName . >>.own_to_val) in "Hown_<< .Name >>".
+  iDestruct "Hown_<< .Name >>" as "[Hown_<< .Name >> %Hval_<< .Name >>]".
+  rewrite Hval_<< .Name >>.
+  wp_pures. wp_store. wp_store.

@@ -26,36 +26,36 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               (u32_le args.(minute)) ++
               (u64_le args.(second)).
 
-Definition own (args_ptr: loc) (args: C) (dq: dfrac) : iProp Σ :=
-  "Hargs_hour" ∷ args_ptr ↦[timestamp_gk.S :: "Hour"]{dq} #args.(hour) ∗
-  "Hargs_minute" ∷ args_ptr ↦[timestamp_gk.S :: "Minute"]{dq} #args.(minute) ∗
-  "Hargs_second" ∷ args_ptr ↦[timestamp_gk.S :: "Second"]{dq} #args.(second).
+Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
+  "%Hown_struct" ∷ ⌜ args__v = (#args__c.(hour), (#args__c.(minute), (#args__c.(second), #())))%V ⌝.
 
-Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) (dq: dfrac):
+Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{
-        own args_ptr args dq ∗
+        own args__v args__c dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    timestamp_gk.Marshal #args_ptr (slice_val pre_sl)
+    timestamp_gk.Marshal args__v (slice_val pre_sl)
   {{{
         enc enc_sl, RET (slice_val enc_sl);
-        ⌜has_encoding enc args⌝ ∗
-        own args_ptr args dq ∗
+        ⌜ has_encoding enc args__c ⌝ ∗
+        own args__v args__c dq ∗
         own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
   }}}.
 
 Proof.
-  iIntros (?) "H HΦ". iDestruct "H" as "[Hown Hsl]". iNamed "Hown".
+  iIntros (?) "[Hown Hsl] HΦ".
   wp_rec. wp_pures.
+  iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
   wp_apply (wp_ref_to); first by val_ty.
   iIntros (?) "Hptr". wp_pures.
 
-  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
+  wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
 
-  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
+  wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
-  wp_loadField. wp_load. wp_apply (wp_WriteInt with "[$Hsl]").
+
+  wp_load. wp_apply (wp_WriteInt with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
 
 
@@ -65,38 +65,46 @@ Proof.
   done.
 Qed.
 
-Lemma wp_Decode enc enc_sl (args: C) (suffix: list u8) (dq: dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
   {{{
-        ⌜has_encoding enc args⌝ ∗
+        ⌜ has_encoding enc args__c ⌝ ∗
         own_slice_small enc_sl byteT dq (enc ++ suffix)
   }}}
     timestamp_gk.Unmarshal (slice_val enc_sl)
   {{{
-        args_ptr suff_sl, RET (#args_ptr, suff_sl); own args_ptr args (DfracOwn 1) ∗
-                                                    own_slice_small suff_sl byteT dq suffix
+        args__v suff_sl, RET (args__v, suff_sl);
+        own args__v args__c (DfracOwn 1) ∗
+        own_slice_small suff_sl byteT dq suffix
   }}}.
 
 Proof.
   iIntros (?) "[%Henc Hsl] HΦ". wp_rec.
-  wp_apply wp_allocStruct; first by val_ty.
-  iIntros (?) "Hstruct". wp_pures.
   wp_apply wp_ref_to; first done.
-  iIntros (?) "Hptr". wp_pures.
-  iDestruct (struct_fields_split with "Hstruct") as "HH".
-  iNamed "HH".
-
+  iIntros (l__s) "Hs". wp_pures.
+  
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__hour) "Hhour". wp_pures.
+  
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__minute) "Hminute". wp_pures.
+  
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__second) "Hsecond". wp_pures.
+  
   rewrite Henc. rewrite -?app_assoc.
 
   wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
-  wp_pures. wp_storeField. wp_store.
+  wp_pures. wp_store. wp_store.
 
   wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
-  wp_pures. wp_storeField. wp_store.
+  wp_pures. wp_store. wp_store.
 
   wp_load. wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl".
-  wp_pures. wp_storeField. wp_store.
+  wp_pures. wp_store. wp_store.
 
-  wp_load. wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
+  wp_load. wp_load. wp_load. wp_load.
+  wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
+  iPureIntro. reflexivity.
 Qed.
 
 End TimeStamp.

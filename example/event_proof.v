@@ -129,7 +129,7 @@ Proof.
     rewrite w64_to_nat_id.
     exact.
   }
-  exact.
+  done.
 Qed.
 
 Typeclasses Opaque app.
@@ -149,10 +149,6 @@ Proof.
   wp_apply wp_ref_to; first done.
   iIntros (?) "Hptr". wp_pures.
 
-  unfold has_encoding in Henc.
-  destruct Henc as (startTime_sl & endTime_sl & Henc & Hencoding_startTime & Hencoding_endTime).
-  rewrite Henc. rewrite -?app_assoc.
-
   wp_apply wp_ref_of_zero; first done.
   iIntros (l__id) "Hid". wp_pures.
 
@@ -164,6 +160,10 @@ Proof.
 
   wp_apply wp_ref_of_zero; first done.
   iIntros (l__endTime) "HendTime". wp_pures.
+
+  unfold has_encoding in Henc.
+  destruct Henc as (startTime_sl & endTime_sl & Henc & Hencoding_startTime & Hencoding_endTime).
+  rewrite Henc. rewrite -?app_assoc.
 
   wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
   wp_pures. wp_store. wp_store.
@@ -184,8 +184,8 @@ Proof.
   wp_store.
 
   wp_load.
-  wp_apply (TimeStamp.wp_Decode startTime_sl with "[Hsl]").
-  { iFrame. exact. } iIntros (startTime__v ?) "[Hown_startTime Hsl]".
+  wp_apply (TimeStamp.wp_Decode startTime_sl with "[$Hsl //]").
+  iIntros (startTime__v ?) "[Hown_startTime Hsl]".
   iApply (TimeStamp.own_to_val) in "Hown_startTime".
   iDestruct "Hown_startTime" as "[Hown_startTime %Hval_startTime]".
   rewrite Hval_startTime.

@@ -1,5 +1,6 @@
 Proof.
-  iIntros (?) "H HΦ". iDestruct "H" as "[Hown Hsl]". iNamed "Hown".
+  iIntros (?) "[Hown Hsl] HΦ".
   wp_rec. wp_pures.
+  iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
   wp_apply (wp_ref_to); first by val_ty.
   iIntros (?) "Hptr". wp_pures.

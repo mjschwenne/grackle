@@ -71,8 +71,9 @@ Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list 
         own args__v args__c dq
   }}}.
 Proof.
-  iIntros (?) "H HΦ". iDestruct "H" as "[Hown Hsl]". iNamed "Hown".
-  wp_rec. wp_pures. iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
+  iIntros (?) "H HΦ". iDestruct "H" as "[Hown Hsl]".
+  wp_rec. wp_pures.
+  iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
   wp_apply (wp_ref_to); first by val_ty.
   iIntros (?) "Hptr".
   wp_pures.
@@ -127,7 +128,7 @@ Proof.
   wp_pures. wp_store. wp_store.
 
   wp_load. wp_load. wp_load. wp_load. wp_pures. iApply "HΦ". iModIntro. iFrame.
-  unfold own. iPureIntro. reflexivity.
+  iPureIntro. reflexivity.
 Qed.
 
 End TimeStamp.

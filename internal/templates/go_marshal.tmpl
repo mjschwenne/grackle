@@ -2,11 +2,8 @@ func Marshal(<<- param .Name >> S, prefix []byte) []byte {
     var enc = prefix
 
     << range .Fields ->>
-    << if isRef . ->>
-    primitive.Assume(<< param $.Name >>.<< goName .Name >> != nil)
-    << end ->>
     << if isMessage . ->>
-    enc = << goType . | lower >>_gk.Marshal(<< param $.Name ->>.<< goName .Name >>, enc)
+    enc = << goModuleName . >>.Marshal(<< param $.Name ->>.<< goName .Name >>, enc)
     << else if isGoType . "enum" ->>
     enc = marshal.WriteInt32(enc, uint32(<< param $.Name >>.<< goName .Name >>))
     << else if isGoType . "string" ->>

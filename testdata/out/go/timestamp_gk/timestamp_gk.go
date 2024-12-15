@@ -15,11 +15,7 @@ type S struct {
 	Second uint64
 }
 
-func (t *S) approxSize() uint64 {
-	return 0
-}
-
-func Marshal(t *S, prefix []byte) []byte {
+func Marshal(t S, prefix []byte) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt32(enc, t.Hour)
@@ -29,13 +25,19 @@ func Marshal(t *S, prefix []byte) []byte {
 	return enc
 }
 
-func Unmarshal(s []byte) (*S, []byte) {
-	t := new(S)
+func Unmarshal(s []byte) (S, []byte) {
 	var enc = s // Needed for goose compatibility
+	var hour uint32
+	var minute uint32
+	var second uint64
 
-	t.Hour, enc = marshal.ReadInt32(enc)
-	t.Minute, enc = marshal.ReadInt32(enc)
-	t.Second, enc = marshal.ReadInt(enc)
+	hour, enc = marshal.ReadInt32(enc)
+	minute, enc = marshal.ReadInt32(enc)
+	second, enc = marshal.ReadInt(enc)
 
-	return t, enc
+	return S{
+		Hour:   hour,
+		Minute: minute,
+		Second: second,
+	}, enc
 }

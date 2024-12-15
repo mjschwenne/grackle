@@ -1,13 +1,12 @@
 Proof.
   iIntros (?) "[%Henc Hsl] HΦ". wp_rec.
-  wp_apply wp_allocStruct; first by val_ty.
-  iIntros (?) "Hstruct". wp_pures.
   wp_apply wp_ref_to; first done.
-  iIntros (?) "Hptr". wp_pures.
-  iDestruct (struct_fields_split with "Hstruct") as "HH".
-  iNamed "HH".
-
-  << $refs := (refFields .Fields) ->>
+  iIntros (l__s) "Hs". wp_pures.
+  << range .Fields >>
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__<< .Name >>) "H<< .Name >>". wp_pures.
+  << end >>
+  << $refs := (extValFields .Fields) ->>
   << $msgs := (messageFields $refs) ->>
   << if gt (len $refs) 0 ->>
   unfold has_encoding in Henc.

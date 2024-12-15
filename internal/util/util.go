@@ -74,17 +74,17 @@ var TypeMap = map[fieldType]TypeData{
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_BYTES: {
 		CoqType:     "list u8",
-		GoType:      "[]byte",
+		GoType:      "byte",
 		MarshalType: "Bytes",
 		SliceType:   true,
-		ToValFunc:   "slice_val ",
+		ToValFunc:   "slice_val",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_STRING: {
 		CoqType:     "string",
 		GoType:      "string",
 		MarshalType: "Bytes",
-		SliceType:   true,
-		ToValFunc:   "str ",
+		SliceType:   false, // Not really true, but it all works out.
+		ToValFunc:   "str",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_ENUM: {
 		CoqType:     "enum",
@@ -124,14 +124,14 @@ func Trunc(c int, s string) string {
 
 func GetCoqTypeName(field *field) string {
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		return field.GetTypeName()
+		return field.GetTypeName() + ".C"
 	}
 	return TypeMap[field.GetType()].CoqType
 }
 
 func GetGoTypeName(field *field) string {
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		return Capitialize(field.GetTypeName()) + "_gk.S"
+		return strings.ToLower(field.GetTypeName()) + "_gk.S"
 	}
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
 		return strings.ToLower(field.GetTypeName()[1:]) + "_gk.E"
@@ -139,8 +139,28 @@ func GetGoTypeName(field *field) string {
 	return TypeMap[field.GetType()].GoType
 }
 
+func GetGoModuleName(field *field) string {
+	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		return strings.ToLower(field.GetTypeName()) + "_gk"
+	}
+
+	return ""
+}
+
+func GetCoqModuleName(field *field) string {
+	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		return field.GetTypeName()
+	}
+
+	return ""
+}
+
 func GetBuiltInMarshalFuncType(field *field) string {
 	return TypeMap[field.GetType()].MarshalType
+}
+
+func GetValFunc(field *field) string {
+	return TypeMap[field.GetType()].ToValFunc
 }
 
 func IsExternalValType(field *field) bool {
