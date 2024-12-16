@@ -384,20 +384,58 @@ is much more complex.
 
 For a top-level message, grackle will generate a proof file with the lower-cased
 message name plus the =_gk= suffix. That file will contain:
-- A coq record corresponding to the go struct and the proto message.
-- A definition of what it means for a byte slice (or list of bytes in coq) to
-  encode the record.
-- A separation logic proposition about what it means to own a struct.
-- A function to convert a record into a goose lang value.
-- A function to convert a goose lang value into a record.
+- A coq record =C= corresponding to the go struct and the proto message.
+- A definition =has_encoding= of what it means for a byte slice (or list of bytes
+  in coq) to encode the record.
+- A separation logic proposition =own= about what it means to own a struct.
+- A function =to_val'= to convert a record into a goose lang value.
+- A function =from_val'= to convert a goose lang value into a record.
 - Proof that the into value and from value functions define what it means to
-  have a record as a value.
+  have a record as a value, =<message name>_into_val=.
 - Proof that having the value form of the record correctly encodes the goose
-  lang struct definition.
-- An encoding lemma which describes the behavior of calling the =Marhsal=
-  function, as well as a proof of correctness.
-- A decoding lemma which describes the behavior of calling the =Unmarshal=
-  function, as well as a proof of correctness.
+  lang struct definition, =<message name>_into_val_for_type=.
+- An encoding lemma =wp_Encode= which describes the behavior of calling the
+  =Marhsal= function, as well as a proof of correctness.
+- A decoding lemma =wp_Decode= which describes the behavior of calling the
+  =Unmarshal= function, as well as a proof of correctness.
+
+Just like with the Go code, grackle starts by outputing a Coq record. For the
+running =Event= example, that looks like this:
+
+#+begin_src coq
+Record C :=
+  mkC {
+      id : u32 ;
+      name : string ;
+      startTime : TimeStamp.C ;
+      endTime : TimeStamp.C ;
+    }.
+#+end_src
+
+The structure of the records is intentionally similar to that of the go struct
+=S= and of course the proto message.
+
+Next grackle produces a =has_encoding= definition which relates the record =C= to
+the wire format. In cases where the field is an integer or similar stand-alone
+field, it is directly converted into a sequence of bytes and appended together.
+Nested messages are a bit different though. The definition is designed to be
+compositional, so =Event.has_encoding= asserts that there exists some sequence of
+bytes which faithfully encodes the =startTime= and =endTime= time stamps using the
+=TimeStamp.has_encoding= definition.
+
+#+begin_src coq
+Definition has_encoding (encoded:list u8) (args:C) : Prop :=
+  ∃ start_enc end_enc,
+    encoded = (u32_le args.(id)) ++
+              (u64_le $ length $ string_to_bytes args.(name)) ++ string_to_bytes args.(name) ++
+              start_enc ++ end_enc
+    /\ TimeStamp.has_encoding start_enc args.(startTime)
+    /\ TimeStamp.has_encoding end_enc args.(endTime).
+#+end_src
+
+Some extra flexibility here is that grackle can allow the =TimeStamp= encoding to
+change without (hopefully) requiring regeneration of the =Event= code, although a
+recompile will be required according to coq consistency requirements.
 
 ** Technical Considerations
 
