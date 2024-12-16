@@ -1,20 +1,433 @@
 #+title: Grackle
 
 Grackle is a project to automate the marshaling and unmarshaling code for [[https://github.com/mit-pdos/grove][grove]].
-Effectively, it aims to replace the old marshaling code found [[https://github.com/tchajed/marshal][here]] by creating a
-compiler capable of taking a subset of the [[https://protobuf.dev/][Protobuf]] specification (=.proto= file)
-and emitting the Go code which can perform the marshaling and unmarshaling of
-the described buffers and a Gallina script which enables reasoning about the
-marshaling process.
+Effectively, it aims to build on top of the old marshaling code found [[https://github.com/tchajed/marshal][here]] by
+creating a compiler capable of taking a subset of the [[https://protobuf.dev/][Protobuf]] specification
+(=.proto= file) and emitting the Go code which can perform the marshaling and
+unmarshaling of the described buffers and a Gallia script which enables
+reasoning about the marshaling process.
+
+** Table of Contents :toc_3_gh:
+  - [[#usage][Usage]]
+  - [[#why-grackle][Why "Grackle"]]
+  - [[#compatibility-with-protoc][Compatibility with =protoc=]]
+  - [[#supported-protobuf-features][Supported Protobuf Features]]
+    - [[#supported][Supported]]
+    - [[#planned-support][Planned Support]]
+    - [[#unsupported][Unsupported]]
+  - [[#grackle-wire-format][Grackle Wire Format]]
+  - [[#generated-code-guide][Generated Code Guide]]
+    - [[#go][Go]]
+    - [[#coq][Coq]]
+  - [[#technical-considerations][Technical Considerations]]
+    - [[#stateless-design][Stateless Design]]
+    - [[#non-local-proof-constructs][Non-local Proof Constructs]]
+    - [[#go-templates][Go Templates]]
+  - [[#development][Development]]
 
 ** Usage
 
-Re-run goose: ~goose -out example/goose ./example~
+Grackle is capable of generating three outputs for an input directory of proto
+files:
+1. Go code which marshals and unmarshals the messages.
+2. [[https://github.com/goose-lang/goose][Goose]] output, a representation of the generated go code in goose lang.
+3. Coq proofs using [[https://github.com/mit-pdos/perennial][perennial]] that the generated go code is correct.
 
-Run test: ~go run ./example~
+Grackle can generate just the go code, just the coq code, go and goose code, coq
+and go or all three. Basically, the go and coq code generation can happen
+separately, but goose code can only be generated when go code it.
+
+#+begin_src
+Usage of grackle [-options] <proto file directory>:
+  -coq-logical-path string
+        Logical path to import the marshal proofs from
+  -coq-physical-path string
+        Physical output path for coq proofs
+  -debug
+        Output all generated code to stdout
+  -go-output-path string
+        Physical path to output go code into
+  -go-package string
+        Fully qualified root package for the output packages
+  -goose-output string
+        Directory to write the goose output
+#+end_src
+
+To use grackle, the tool needs at least three pieces of information, a directory
+with the =.proto= files and either
+
+- the two =coq= flags
+- the two =go= flags
+
+The other flags are optional. A full invocation of grackle would be
+
+#+begin_src
+grackle -coq-logical-path Grackle.test -coq-physical-path testdata/out/coq/
+-go-output-path testdata/out/go -go-package github.com/mjschwenne/grackle/testdata/out/go
+-goose-output testdata/out/goose/ testdata/proto/calendar
+#+end_src
+
+A more detailed description of the flags and ideas is given below
+
+- =coq-logical-path= : The Coq import systems works by mapping physical
+  directories on disk into /logical directories/ which are referenced in the
+  proofs to perform the imports. This flag provides the logical path where the
+  output coq proofs will be written. For any message with nested messages, this
+  is the logical path where the proofs of the other messages will be imported
+  from. The proofs will always import the corresponding =goose= output from a
+  logical directory named =Goose=. This is a standard assumption for perennial and
+  related projects.
+- =coq-physical-path= : This is where on disk to write the coq proofs. There is no
+  strict relation between the coq physical path and the corresponding coq
+  logical path. The two should be linked via a =-Q= flag in the =_CoqProject= file.
+  Grackle will create this directory if it doesn't exist.
+- =debug= : Causes the generated go and coq code to be written to standard output.
+  The format for this output is
+  #+begin_src
+  --- Begin: < file output path > ---
+
+  < file contents >
+
+  --- End: < file output path > ---
+  --- Begin: < next file output path > ---
+
+  < next file contents >
+
+  --- End: < next file output path > ---
+  #+end_src
+- =go-output-path= : The path on disk to write the go output from grackle. As
+  explained later, each message in the proto files of the input directories will
+  get it's own go package, so grackle will create a nested directory within the
+  provided one.
+- =go-package= : The full path name for the go package that would correspond to
+  the =go-output-path=. Unlike the coq logical and physical paths, there is an
+  expected (but not required) correspondence between the package name and the
+  output path. For projected hosted on GitHub, go convention expects the package
+  name to start with =github.com/<user name>/<repo name>=, for example importing
+  something from grackle as a library would start with
+  =github.com/mjschwenne/grackle=. From this base, go convention expects the
+  package name to be basically the relative path to the repository root to the
+  directory the package lives in, =go-output-path=. As with the coq logical path,
+  the generated go code will import from the go code for any message containing
+  enumerations or nested messages from this package.
+- =goose-output= : If this flag is set, call =goose= programmatically on the output
+  =go= files, writing the output to this directory. The output will follow the
+  standard =goose= practice of writing the output into subdirectories that follow
+  the full go package name.
 
 ** Why "Grackle"
 
 A [[https://en.wikipedia.org/wiki/Common_grackle][grackle]] is a bird capable of mimicking other birds and even human speech if it
 wants to, and it's also a bird whose name starts with 'g' to complement [[https://github.com/goose-lang/goose][goose]], a
-project which converts a subset of Go to Coq.
+project which converts a subset of Go to Coq and is used as part of grackle.
+
+** Compatibility with =protoc=
+
+Grackle is *not* compatible with =protoc=. Neither the wire format grackle uses nor
+the generated go API is compatible. Some major differences are highlighted
+below.
+
+- The =int32= and =int64= fields are treated as unsigned, rather than signed.
+- The wire format is markedly different, see [[#grackle-wire-format][Grackle Wire Format]] for more
+  information. Probably the most notable two differences is that the grackle
+  wire format does not use variable width integer encodings and fields are not
+  tagged with the field number, but rather serialized in order as they appear in
+  the proto file.
+- Go code generation is structured differently. The =protoc= compiler outputs one
+  file per proto file while grackle outputs one go package per message (and
+  enum).
+- Recursive messages, naturally including mutually recursive message, are not
+  supported by grackle despite being supported by =protoc=.
+- Grackle appends a =_gk= suffix to generated go packages and proof file names. On
+  the Coq side, output modules do not include the suffix and are referenced
+  directly by the name of the proto messages.
+
+** Supported Protobuf Features
+
+The [[https://protobuf.dev/programming-guides/proto3/][proto language]] is used by Google's protocol buffers to describe the layout
+of binary messages in a language agnostic manner (which is a bit ironic since
+proto is itself a language). Below is a list of supported and unsupported
+features as well as any commentary on them.
+
+*** Supported
+
+- Messages, including nested messages. (Mutually) recursive use of messages is
+  not supported, regardless of if it is supported by =protoc=.
+- Integer fields, although all of the integers are mapped to unsigned integers
+  in both go and coq. This is mostly due to limited support for signed integers
+  within perennial. Should support improve, support for signed integers may be
+  added.
+  - =int32=
+  - =uint32=
+  - =fixed32=
+  - =int64=
+  - =uint64=
+  - =fixed64=
+- Boolean fields, =bool=.
+- String fields, =string=.
+- Byte fields, =bytes=.
+- Imports between proto files in the input proto directory or a subdirectory of
+  the input proto directory.
+
+*** Planned Support
+
+- Slices of fields. These are represented with the =repeated= label, i.e.
+  =repeated uint32=. Slices will support types that do not have pointers in them
+  due to coq proof limitations rather than go code generation.
+- Enumerations. Go code generation is nearly complete, but the coq proofs cannot
+  handle the use of enumerations in the proofs /yet/.
+- Maps. After slices, map support is important and used in several places in the
+  perennial ecosystem.
+
+*** Unsupported
+
+- Signed integer fields =sint32=, =sfixed32=, =sint64= and =sfixed64=. This is mostly
+  due to limited support for signed integers within perennial. According to the
+  proto language, regular =int32= and =int64= should also be signed even though
+  grackle treats them as unsigned. It is unclear at this point if support for
+  signed integers would change the interpretation of these fields, which would
+  be a breaking change.
+- Recursive messages. This issue seems particularly challenging on the coq side,
+  although go code generation is unlikely to be significant issue.
+- Nested messages declaration. Referencing other top-level messages for a field
+  is supported. However, protobuf supports declaring nested messages within a
+  message, like this example from the [[https://protobuf.dev/programming-guides/proto3/#nested][protobuf documentation]]:
+
+   #+begin_src protobuf
+   message SearchResponse {
+     message Result {
+       string url = 1;
+       string title = 2;
+       repeated string snippets = 3;
+     }
+     repeated Result results = 1;
+   }
+   #+end_src
+
+- =any= and =oneof= labels. These labels operate as a wildcard type and sum type.
+  They are ignored by grackle and unsupported. Moreover, support for these
+  labels is not planned.
+
+** Grackle Wire Format
+
+The grackle wire format is must simpler than the protobuf wire format. The two
+most notable differences are:
+
+1. Grackle does not use a variable width encoding for integers. All integers are
+   fixed width and embedded in the serialized message in little-endian byte
+   order.
+2. Grackle fields are not tagged with the field number defined in the proto
+   file. Fields are serialized and deserialized in the order they appear in the
+   proto file.
+
+As an example, consider the following =event= message. The complete proto file for
+this message can be found [[file:testdata/proto/calendar/event.proto][here]].
+
+#+begin_src protobuf
+message Event {
+    int32 id = 1;
+    string name = 4;
+    TimeStamp startTime = 2;
+    TimeStamp endTime = 3;
+}
+#+end_src
+
+The wire format for the message would start with the four bytes needed for =id=,
+then the length of the =name= string as a 64 bit number followed by the bytes
+composing the string itself. The null byte is not included since casting a
+string to a byte slice (=[]byte=) does not include the null byte. Finally, the
+marshaled message includes the 12 bytes needed to marshal a =TimeStamp=. In the
+below diagram, the number after each field is the length of the field. Note that
+the nested structures don't have to be of a fixed size, but are in this example.
+
+#+begin_src
+[        |                  |                 |                |              ]
+[ id (4) | length(name) (8) | name (variable) | startTime (12) | endTime (12) ]
+[        |                  |                 |                |              ]
+#+end_src
+
+** Generated Code Guide
+
+Below is an overview of what type of code is generated by grackle. Full examples
+can be found in the [[file:testdata/out/][testdata/out]] subdirectories.
+
+The generated code guide will use the calendar example, which features the =Event=
+message from above and a =TimeStamp= message containing three integers for the
+hour, minute and second. All example output snippets will reference the =Event=
+message since it's a bit more interesting. Note that the examples in this README
+may not be kept up to date, but the files in [[file:testdata/out/][testdata/out]] will be.
+
+For this example, grackle might be invoked as
+
+#+begin_src
+grackle -coq-logical-path Grackle.test -coq-physical-path testdata/out/coq/
+-go-output-path testdata/out/go -go-package github.com/mjschwenne/grackle/testdata/out/go
+-goose-output testdata/out/goose/ testdata/proto/calendar
+#+end_src
+
+Which would generate these files (which can be accessed in the [[file:testdata/out/][testdata/out]]
+directory of this repository, along with the other test files):
+
+#+begin_src
+testdata/out
+├── coq
+│   ├── event_proof.v
+│   └── timestamp_proof.v
+├── go
+│   ├── event_gk
+│   │   └── event_gk.go
+│   └── timestamp_gk
+│       └── timestamp_gk.go
+└── goose
+    └── github_com
+        └── mjschwenne
+            └── grackle
+                └── testdata
+                    └── out
+                        └── go
+                            ├── event_gk.v
+                            └── timestamp_gk.v
+#+end_src
+
+*** Go
+
+For a top-level message, grackle will output:
+- A go package with the name of the message, all lowercase, and the =_gk= suffix,
+  such as =event_gk=. Inside the package is one file with the same name.
+- That file contains
+  - A struct definition =S=. Since go access patterns always use the package name,
+    every message will have =S= as the struct name. It can be accessed from
+    outside the package as, e.g. =event_gk.S= which will differentiate between
+    separate messages.
+  - A =Marshal= function which takes an =S= and a byte slice =prefix= and returns
+    =prefix= with the encoding of =S= appended to it.
+  - An =Unmarshal= function which takes a byte slice and returns an =S= struct and
+    the unused =suffix=.
+
+The use of =prefix= and =suffix= enable a stateless marshaling design which is
+easier to reason about and more compositional. More information can be found in
+the [[#technical-consideration][Technical Considerations]] section.
+
+Here is an example of the generated =struct= definition for the =Event= message:
+
+#+begin_src go
+type S struct {
+	Id        uint32
+	Name      string
+	StartTime timestamp_gk.S
+	EndTime   timestamp_gk.S
+}
+#+end_src
+
+Now we have the =Marshal= function. As a common pattern in grackle, this function
+can be broken into three parts:
+- Setup : Including the function signature and first line of the function, which
+  is needed for goose compatibility.
+- Fields : Loop over the fields of the message, performing the same action on
+  each one of them. In this case, serializing each field and appending it to =enc=.
+- Conclusion : Return the byte slice containing =prefix= and the newly encoded =Event=.
+
+#+begin_src go
+func Marshal(e S, prefix []byte) []byte {
+	var enc = prefix
+
+	enc = marshal.WriteInt32(enc, e.Id)
+	nameBytes := []byte(e.Name)
+	enc = marshal.WriteInt(enc, uint64(len(nameBytes)))
+	enc = marshal.WriteBytes(enc, nameBytes)
+	enc = timestamp_gk.Marshal(e.StartTime, enc)
+	enc = timestamp_gk.Marshal(e.EndTime, enc)
+
+	return enc
+}
+#+end_src
+
+Finally we have the =Unmarshal= function. This function follows the same three
+steps, although the setup is more complex than one line. Goose does not support
+mixed variable assignment and initialization using the =:== operator when a
+function returns multiple return values, so grackle creates the variables
+beforehand. Then iterates through the fields of the struct, deserializing them
+one at a time. In the function conclusion the values read from the serialized
+byte slice are packed into a struct and returned, along with the remaining bytes
+in the input byte slice.
+
+#+begin_src go
+func Unmarshal(s []byte) (S, []byte) {
+	var enc = s // Needed for goose compatibility
+	var id uint32
+	var name string
+	var startTime timestamp_gk.S
+	var endTime timestamp_gk.S
+
+	id, enc = marshal.ReadInt32(enc)
+	var nameLen uint64
+	var nameBytes []byte
+	nameLen, enc = marshal.ReadInt(enc)
+	nameBytes, enc = marshal.ReadBytesCopy(enc, nameLen)
+	name = string(nameBytes)
+	startTime, enc = timestamp_gk.Unmarshal(enc)
+	endTime, enc = timestamp_gk.Unmarshal(enc)
+
+	return S{
+		Id:        id,
+		Name:      name,
+		StartTime: startTime,
+		EndTime:   endTime,
+	}, enc
+}
+#+end_src
+
+The go code generation is the simple part, while the Coq +code+ proof generation
+is much more complex.
+
+*** Coq
+
+For a top-level message, grackle will generate a proof file with the lower-cased
+message name plus the =_gk= suffix. That file will contain:
+- A coq record corresponding to the go struct and the proto message.
+- A definition of what it means for a byte slice (or list of bytes in coq) to
+  encode the record.
+- A separation logic proposition about what it means to own a struct.
+- A function to convert a record into a goose lang value.
+- A function to convert a goose lang value into a record.
+- Proof that the into value and from value functions define what it means to
+  have a record as a value.
+- Proof that having the value form of the record correctly encodes the goose
+  lang struct definition.
+- An encoding lemma which describes the behavior of calling the =Marhsal=
+  function, as well as a proof of correctness.
+- A decoding lemma which describes the behavior of calling the =Unmarshal=
+  function, as well as a proof of correctness.
+
+** Technical Considerations
+
+*** Stateless Design
+
+*** Non-local Proof Constructs
+
+*** Go Templates
+
+** Development
+
+Grackle development makes use of several tools selected solely for my own
+convenience, however they aren't required to use or development the software.
+The only hard requirement is to have =go= and =protoc= installed (although I'd
+highly recommend having Coq installed to so that you can compile the output
+proofs). Notably, no code generation plugin is needed for =protoc=. Grackle uses
+it to generate a descriptor set which can be parsed by the go protobuf libraries
+to interpret the structure of the input proto files.
+
+Other things to be aware of in the grackle repository:
+
+- =direnv= is setup to use a =nix= flake. This is because I use nixos as my primary
+  operating system. The flake notably installs go, coq, protoc and [[https://github.com/goose-lang/goose][goose]]. Goose
+  is invoked by grackle via a go package, so it does not need to be installed on
+  your system, but I've found it helpful to have around.
+- The =run_tests.fish= script runs grackle over the example proto files, then
+  checks that all the output code compiles. Finally it runs the go test suite,
+  which is admittedly limited since it's easy to generate code that looks
+  correct but doesn't compile. Running this script provides a higher level of
+  confidence than the go test suite itself.
+
+#  LocalWords:  Protobuf proto coq encodings deserialized struct deserializing
+#  LocalWords:  nixos
