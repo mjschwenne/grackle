@@ -1,0 +1,30 @@
+<<- define "coq_from_val_val" ->>
+  <<- if eq (len .) 0 ->>
+  #()
+  <<- else ->>
+  (<<- with $f := index . 0 ->>
+  <<- if not (isMessage $f) ->>
+  #(Lit<< marshalType $f >> << $f.Name >>)
+  <<- else ->>
+  << $f.Name >>
+  <<- end >><< end >>, << template "coq_from_val_val" (slice . 1) ->>)
+  <<- end ->>
+<<- end ->>
+<<- define "coq_from_val_matches" ->>
+ <<- if eq (len .msgs) 0 ->>
+ Some (mkC << range $idx, $f := .fields >><< if $idx>> << end >><< $f.Name >><< end >>)
+ <<- else >>
+ <<- with $f := index .msgs 0 >>match << coqModuleName $f >>.from_val' << $f.Name >> with
+    | Some << $f.Name >> =><< end >>
+    << callTemplate "coq_from_val_matches" (dict "fields" .fields "msgs" (slice .msgs 1)) | indent 4 >>
+    | None => None
+    end
+ <<- end >>
+<<- end ->>
+
+Definition from_val' (v : val) : option C :=
+  match v with
+  | << template "coq_from_val_val" .Fields >>%V =>
+    << template "coq_from_val_matches" dict "fields" .Fields "msgs" (messageFields .Fields) >>
+  | _ => None
+  end.

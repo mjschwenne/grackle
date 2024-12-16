@@ -29,6 +29,16 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   "%Hown_struct" ∷ ⌜ args__v = (#args__c.(hour), (#args__c.(minute), (#args__c.(second), #())))%V ⌝.
 
+Definition to_val' (c : C) : val :=
+  (#c.(hour), (#c.(minute), (#c.(second), #()))).
+
+Definition from_val' (v : val) : option C :=
+  match v with
+  | (#(LitInt32 hour), (#(LitInt32 minute), (#(LitInt second), #())))%V =>
+    Some (mkC hour minute second)
+  | _ => None
+  end.
+
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{
         own args__v args__c dq ∗

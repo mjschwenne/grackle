@@ -1,0 +1,14 @@
+<<- define "coq_to_val_val" ->>
+  <<- if eq (len .) 0 ->>
+  #()
+  <<- else ->>
+  (<<- with $valF := index . 0 ->>
+  <<- if valFunc $valF ->>
+  <<- if not (isExtValType .) >>#(<< end >><< valFunc $valF >> << else >>#<< end >>c.(<<- $valF.Name ->>)
+  <<- if and (not (isExtValType .)) (valFunc $valF) >>)<< end >>, << end ->>
+  << template "coq_to_val_val" (slice . 1) ->>)
+  <<- end ->>
+<<- end ->>
+
+Definition to_val' (c : C) : val :=
+  << template "coq_to_val_val" .Fields >>.

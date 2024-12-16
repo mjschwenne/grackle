@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"unicode"
@@ -82,8 +83,8 @@ var TypeMap = map[fieldType]TypeData{
 	descriptorpb.FieldDescriptorProto_TYPE_STRING: {
 		CoqType:     "string",
 		GoType:      "string",
-		MarshalType: "Bytes",
-		SliceType:   false, // Not really true, but it all works out.
+		MarshalType: "String", // Not technically true, but it helps on the coq side
+		SliceType:   false,    // Not really true, but it all works out.
 		ToValFunc:   "str",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_ENUM: {
@@ -118,6 +119,13 @@ func Trunc(c int, s string) string {
 		return s[:c]
 	}
 	return s
+}
+
+// Replace the beginning of each line with n spaces
+func Indent(n int, s string) string {
+	spacer := strings.Repeat(" ", n)
+	regex := regexp.MustCompile(`(?m)^`)
+	return regex.ReplaceAllString(s, spacer)
 }
 
 // MAP ACCESSORS & TRANSFORMERS
@@ -160,6 +168,9 @@ func GetBuiltInMarshalFuncType(field *field) string {
 }
 
 func GetValFunc(field *field) string {
+	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		return field.GetTypeName() + ".to_val'"
+	}
 	return TypeMap[field.GetType()].ToValFunc
 }
 

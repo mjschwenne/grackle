@@ -35,9 +35,27 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
 
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   ∃ (startTime__v endTime__v : val) , 
-  "%Hown_struct" ∷ ⌜ args__v = (#args__c.(id), (#(str args__c.(name)), (#args__c.(startTime), (#args__c.(endTime), #()))))%V ⌝ ∗
+  "%Hown_struct" ∷ ⌜ args__v = (#args__c.(id), (#(str args__c.(name)), (#(TimeStamp.to_val' args__c.(startTime)), (#(TimeStamp.to_val' args__c.(endTime)), #()))))%V ⌝ ∗
   "Hown_startTime" ∷ TimeStamp.own startTime__v args__c.(startTime) dq ∗
   "Hown_endTime" ∷ TimeStamp.own endTime__v args__c.(endTime) dq.
+
+Definition to_val' (c : C) : val :=
+  (#c.(id), (#(str c.(name)), (TimeStamp.to_val' c.(startTime), (TimeStamp.to_val' c.(endTime), #())))).
+
+Definition from_val' (v : val) : option C :=
+  match v with
+  | (#(LitInt32 id), (#(LitString name), (startTime, (endTime, #()))))%V =>
+    match TimeStamp.from_val' startTime with
+    | Some startTime =>
+        match TimeStamp.from_val' endTime with
+        | Some endTime =>
+            Some (mkC id name startTime endTime)
+        | None => None
+        end
+    | None => None
+    end
+  | _ => None
+  end.
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{

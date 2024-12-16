@@ -3,6 +3,7 @@ package grackle
 import (
 	"bytes"
 	"embed"
+	"errors"
 	"fmt"
 	"go/format"
 	"io"
@@ -129,6 +130,7 @@ func setupTemplates() *template.Template {
 			return util.Filter(fields, func(f *field) bool { return util.IsGoType(f, typeStr) })
 		},
 		"join":          func(sep string, s ...string) string { return strings.Join(s, sep) },
+		"indent":        util.Indent,
 		"trunc":         util.Trunc,
 		"lower":         strings.ToLower,
 		"pred":          func(i int) int { return i - 1 },
@@ -149,6 +151,20 @@ func setupTemplates() *template.Template {
 			err = tmpl.ExecuteTemplate(buf, name, data)
 			ret = buf.String()
 			return
+		},
+		"dict": func(values ...interface{}) (map[string]interface{}, error) {
+			if len(values)%2 != 0 {
+				return nil, errors.New("invalid dict call")
+			}
+			dict := make(map[string]interface{}, len(values)/2)
+			for i := 0; i < len(values); i += 2 {
+				key, ok := values[i].(string)
+				if !ok {
+					return nil, errors.New("dict keys must be strings")
+				}
+				dict[key] = values[i+1]
+			}
+			return dict, nil
 		},
 	}
 	tmpl, err := tmpl.Funcs(funcMap).ParseFS(tmplFS, "internal/templates/*.tmpl")
