@@ -1,0 +1,29 @@
+<<- define "coq_into_val_def" ->>
+  mkC << range $idx, $f := . >><< if $idx >> << end >>
+  <<- if isCoqType . "u32" ->>
+  (W32 0)
+  <<- else if isCoqType . "u64" ->>
+  (W64 0)
+  <<- else if isCoqType . "bool" ->>
+  false
+  <<- else if isCoqType . "string" ->>
+  ""
+  <<- else if isCoqType . "message" ->>
+  (IntoVal_def << coqType . >>)
+  <<- end >><< end >>
+<<- end ->>
+<<- define "coq_into_val_destruct" ->>
+  [<< range $idx, $f := .msg.Field >><< if $idx >> << end >><< if isMessage $f >><< template "coq_into_val_destruct" (dict "msg" (fetchMsg $f.TypeName) "prefix" (join "" $f.Name "_")) >><< else >><< $.prefix >><< $f.Name >><< end >><< end >>]
+<<- end ->>
+
+#[global]
+Instance << .Name >>_into_val : IntoVal C.
+Proof.
+  refine {|
+    to_val := to_val';
+    from_val := from_val';
+    IntoVal_def := (<< template "coq_into_val_def" .Fields >>)
+  |}.
+  intros v. <</* Had to get a bit creative here since I need to recursively destruct the message and the other message structures aren't avaiable by default */>>
+  destruct v as << template "coq_into_val_destruct" (dict "msg" (fetchMsg .Name) "prefix" "") >>; done.
+Defined.

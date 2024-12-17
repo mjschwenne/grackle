@@ -108,7 +108,15 @@ func generateDescirptor(protoDir *string) *descriptorpb.FileDescriptorSet {
 	return &fileDescriptorSet
 }
 
-func setupTemplates() *template.Template {
+func setupTemplates(files *descriptorpb.FileDescriptorSet) *template.Template {
+	msgDict := map[string]*descriptorpb.DescriptorProto{}
+
+	for _, file := range files.GetFile() {
+		for _, msg := range file.GetMessageType() {
+			msgDict[msg.GetName()] = msg
+		}
+	}
+
 	tmpl := template.New("grackle").Delims("<<", ">>")
 	funcMap := template.FuncMap{
 		"coqType":       util.GetCoqTypeName,
@@ -166,6 +174,7 @@ func setupTemplates() *template.Template {
 			}
 			return dict, nil
 		},
+		"fetchMsg": func(s string) *descriptorpb.DescriptorProto { return msgDict[s] },
 	}
 	tmpl, err := tmpl.Funcs(funcMap).ParseFS(tmplFS, "internal/templates/*.tmpl")
 	if err != nil {
@@ -260,11 +269,12 @@ func gooseTranslate(gooseOutput *string, goRoot string, goDirectory string) {
 }
 
 func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, goPackage *string, debug io.Writer) {
-	tmpl := setupTemplates()
+	descriptorSet := generateDescirptor(protoDir)
+	tmpl := setupTemplates(descriptorSet)
 	util.CreateOutputDirectories(gooseOutput, coqPhysicalPath, goOutputPath)
 
 	goFiles := make([]*string, 0, 10)
-	for _, file := range generateDescirptor(protoDir).File {
+	for _, file := range descriptorSet.File {
 		fileOpts := getFileOptions(file, gooseOutput, coqLogicalPath, coqPhysicalPath, goOutputPath, goPackage)
 		for _, enum := range file.EnumType {
 			log.Printf("Found enum: %s\n", enum.GetName())

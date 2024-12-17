@@ -40,22 +40,22 @@ Proof.
       IntoVal_def := (mkC (W32 0) (W32 0) (W32 0));
     |}.
   intros v.
-  by destruct v.
+  destruct v as [h m s]; done.
 Defined.
 
 #[global]
 (* Instance TimeStamp_into_val_for_type : IntoValForType C (uint32T * (uint32T * (uint32T * unitT))%ht). *)
 Instance TimeStamp_into_val_for_type : IntoValForType C (struct.t TimeStamp).
-Proof. constructor; auto. Defined.
+Proof. constructor; auto 10. Defined.
 
 Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
   own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
 Proof.
   iIntros "%Hown_struct".
   iUnfold own.
-  iPureIntro.
-  rewrite Hown_struct.
-  split; by reflexivity.
+  iSplitL.
+  + iPureIntro. done.
+  + iPureIntro. done.
 Qed.
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):

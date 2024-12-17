@@ -1,0 +1,22 @@
+Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
+  own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
+Proof.
+  <<- if (len .NestedMessages) >>
+  iIntros "Hown". iNamed "Hown".
+  <<- else >>
+  iIntros "%Hown_struct".
+  <<- end >>
+  << range (messageFields .Fields) >>
+  iApply (<< coqModuleName . >>.own_to_val) in "Hown_<< .Name >>".
+  iDestruct "Hown_<< .Name >>" as "[Hown_<< .Name >> %Hval_<< .Name >>]".
+  << end >>
+  iUnfold own.
+  iSplitL.
+  + << if (len .NestedMessages) ->>
+    iExists << range $idx, $f := (messageFields .Fields) >><< if $idx >>, << end >><< .Name >>__v<< end >>. iFrame.
+    << end >>iPureIntro. done.
+  + << if (len .NestedMessages) ->>
+    rewrite Hown_struct.
+    << range (messageFields .Fields) >>rewrite Hval_<< .Name >>.
+    << end >><< end >>iPureIntro. done.
+Qed.
