@@ -1,7 +1,8 @@
 <<- define "coq_into_val_def" ->>
   mkC << range $idx, $f := . >><< if $idx >> << end >>
   <<- if isSliceType . ->>
-  (IntoVal_def slice.t)
+  []
+  <<- end ->>
   <<- if isCoqType . "u32" ->>
   (W32 0)
   <<- else if isCoqType . "u64" ->>

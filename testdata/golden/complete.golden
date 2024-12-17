@@ -323,7 +323,7 @@ Proof.
   refine {|
     to_val := to_val';
     from_val := from_val';
-    IntoVal_def := (mkC "" )
+    IntoVal_def := (mkC "" [])
   |}.
   intros v. 
   destruct v as [strg bytes]; done.

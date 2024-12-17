@@ -3,7 +3,6 @@
 (*    DO NOT MANUALLY EDIT THIS FILE     *)
 (*****************************************)
 
-From Perennial.goose_lang.lib.list Require Import list.
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
@@ -66,7 +65,7 @@ Proof.
   refine {|
     to_val := to_val';
     from_val := from_val';
-    IntoVal_def := (mkC "" [])
+    IntoVal_def := (mkC "" (IntoVal_def slice.t))
   |}.
   intros v. 
   destruct v as [strg bytes]; done.
