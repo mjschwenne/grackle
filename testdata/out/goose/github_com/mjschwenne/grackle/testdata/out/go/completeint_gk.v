@@ -14,43 +14,51 @@ Definition S := struct.decl [
   "Six" :: uint64T
 ].
 
-Definition S__approxSize: val :=
-  rec: "S__approxSize" "c" :=
-    #0.
-
 Definition Marshal: val :=
   rec: "Marshal" "c" "prefix" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
-    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF S "One" "c"));;
-    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF S "Two" "c"));;
-    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.loadF S "Three" "c"));;
-    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (struct.loadF S "Four" "c"));;
-    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (struct.loadF S "Five" "c"));;
-    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (struct.loadF S "Six" "c"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get S "One" "c"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get S "Two" "c"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get S "Three" "c"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (struct.get S "Four" "c"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (struct.get S "Five" "c"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (struct.get S "Six" "c"));;
     ![slice.T byteT] "enc".
 
 Definition Unmarshal: val :=
   rec: "Unmarshal" "s" :=
-    let: "c" := struct.alloc S (zero_val (struct.t S)) in
     let: "enc" := ref_to (slice.T byteT) "s" in
+    let: "one" := ref (zero_val uint32T) in
+    let: "two" := ref (zero_val uint32T) in
+    let: "three" := ref (zero_val uint32T) in
+    let: "four" := ref (zero_val uint64T) in
+    let: "five" := ref (zero_val uint64T) in
+    let: "six" := ref (zero_val uint64T) in
     let: ("0_ret", "1_ret") := marshal.ReadInt32 (![slice.T byteT] "enc") in
-    struct.storeF S "One" "c" "0_ret";;
+    "one" <-[uint32T] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := marshal.ReadInt32 (![slice.T byteT] "enc") in
-    struct.storeF S "Two" "c" "0_ret";;
+    "two" <-[uint32T] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := marshal.ReadInt32 (![slice.T byteT] "enc") in
-    struct.storeF S "Three" "c" "0_ret";;
+    "three" <-[uint32T] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := marshal.ReadInt (![slice.T byteT] "enc") in
-    struct.storeF S "Four" "c" "0_ret";;
+    "four" <-[uint64T] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := marshal.ReadInt (![slice.T byteT] "enc") in
-    struct.storeF S "Five" "c" "0_ret";;
+    "five" <-[uint64T] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := marshal.ReadInt (![slice.T byteT] "enc") in
-    struct.storeF S "Six" "c" "0_ret";;
+    "six" <-[uint64T] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    ("c", ![slice.T byteT] "enc").
+    (struct.mk S [
+       "One" ::= ![uint32T] "one";
+       "Two" ::= ![uint32T] "two";
+       "Three" ::= ![uint32T] "three";
+       "Four" ::= ![uint64T] "four";
+       "Five" ::= ![uint64T] "five";
+       "Six" ::= ![uint64T] "six"
+     ], ![slice.T byteT] "enc").
 
 End code.

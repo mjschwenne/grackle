@@ -1,14 +1,14 @@
 func Unmarshal(s []byte) (S, []byte) {
     var enc = s // Needed for goose compatibility
     << range .Fields ->>
-    var << .Name >> << goType . >>
+    var << .Name >> << if isSliceType . >>[]<< end >><< goType . >>
     << end >>
     << range .Fields ->>
     <<- if isMessage . >>
     << .Name >>, enc = << goModuleName . >>.Unmarshal(enc)
     <<- else if isGoType . "enum" >>
     << .Name >>, enc = marshal.ReadInt32(enc)
-    <<- else if or (isGoType . "string") (isGoType . "[]byte") >>
+    <<- else if or (isGoType . "string") (and (isSliceType . ) (isGoType . "byte")) >>
     var << .Name >>Len uint64
     var << .Name >>Bytes []byte
     << .Name >>Len, enc = marshal.ReadInt(enc)

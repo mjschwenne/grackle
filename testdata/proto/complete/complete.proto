@@ -17,7 +17,7 @@ message completeInt {
 
 message completeSlice {
   string strg = 1;
-  bytes byte = 2;
+  bytes bytes = 2;
 }
 
 message complete {

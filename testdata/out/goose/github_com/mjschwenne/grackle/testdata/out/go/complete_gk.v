@@ -8,38 +8,38 @@ Section code.
 Context `{ext_ty: ext_types}.
 
 Definition S := struct.decl [
-  "Int" :: ptrT;
-  "Slc" :: ptrT;
+  "Int" :: struct.t completeint_gk.S;
+  "Slc" :: struct.t completeslice_gk.S;
   "Success" :: boolT
 ].
-
-Definition S__approxSize: val :=
-  rec: "S__approxSize" "c" :=
-    #0.
 
 Definition Marshal: val :=
   rec: "Marshal" "c" "prefix" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
-    control.impl.Assume ((struct.loadF S "Int" "c") ≠ #null);;
-    "enc" <-[slice.T byteT] (completeint_gk.Marshal (struct.loadF S "Int" "c") (![slice.T byteT] "enc"));;
-    control.impl.Assume ((struct.loadF S "Slc" "c") ≠ #null);;
-    "enc" <-[slice.T byteT] (completeslice_gk.Marshal (struct.loadF S "Slc" "c") (![slice.T byteT] "enc"));;
-    "enc" <-[slice.T byteT] (marshal.WriteBool (![slice.T byteT] "enc") (struct.loadF S "Success" "c"));;
+    "enc" <-[slice.T byteT] (completeint_gk.Marshal (struct.get S "Int" "c") (![slice.T byteT] "enc"));;
+    "enc" <-[slice.T byteT] (completeslice_gk.Marshal (struct.get S "Slc" "c") (![slice.T byteT] "enc"));;
+    "enc" <-[slice.T byteT] (marshal.WriteBool (![slice.T byteT] "enc") (struct.get S "Success" "c"));;
     ![slice.T byteT] "enc".
 
 Definition Unmarshal: val :=
   rec: "Unmarshal" "s" :=
-    let: "c" := struct.alloc S (zero_val (struct.t S)) in
     let: "enc" := ref_to (slice.T byteT) "s" in
+    let: "int" := ref (zero_val (struct.t completeint_gk.S)) in
+    let: "slc" := ref (zero_val (struct.t completeslice_gk.S)) in
+    let: "success" := ref (zero_val boolT) in
     let: ("0_ret", "1_ret") := completeint_gk.Unmarshal (![slice.T byteT] "enc") in
-    struct.storeF S "Int" "c" "0_ret";;
+    "int" <-[struct.t completeint_gk.S] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := completeslice_gk.Unmarshal (![slice.T byteT] "enc") in
-    struct.storeF S "Slc" "c" "0_ret";;
+    "slc" <-[struct.t completeslice_gk.S] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     let: ("0_ret", "1_ret") := marshal.ReadBool (![slice.T byteT] "enc") in
-    struct.storeF S "Success" "c" "0_ret";;
+    "success" <-[boolT] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    ("c", ![slice.T byteT] "enc").
+    (struct.mk S [
+       "Int" ::= ![struct.t completeint_gk.S] "int";
+       "Slc" ::= ![struct.t completeslice_gk.S] "slc";
+       "Success" ::= ![boolT] "success"
+     ], ![slice.T byteT] "enc").
 
 End code.

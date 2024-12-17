@@ -7,27 +7,23 @@ Context `{ext_ty: ext_types}.
 
 Definition S := struct.decl [
   "Strg" :: stringT;
-  "Byte" :: slice.T byteT
+  "Bytes" :: slice.T byteT
 ].
-
-Definition S__approxSize: val :=
-  rec: "S__approxSize" "c" :=
-    #0.
 
 Definition Marshal: val :=
   rec: "Marshal" "c" "prefix" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
-    let: "strgBytes" := StringToBytes (struct.loadF S "Strg" "c") in
+    let: "strgBytes" := StringToBytes (struct.get S "Strg" "c") in
     "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len "strgBytes"));;
     "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") "strgBytes");;
-    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len (struct.loadF S "Byte" "c")));;
-    "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") (struct.loadF S "Byte" "c"));;
+    "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") (struct.get S "Bytes" "c"));;
     ![slice.T byteT] "enc".
 
 Definition Unmarshal: val :=
   rec: "Unmarshal" "s" :=
-    let: "c" := struct.alloc S (zero_val (struct.t S)) in
     let: "enc" := ref_to (slice.T byteT) "s" in
+    let: "strg" := ref (zero_val stringT) in
+    let: "bytes" := ref (zero_val (slice.T byteT)) in
     let: "strgLen" := ref (zero_val uint64T) in
     let: "strgBytes" := ref (zero_val (slice.T byteT)) in
     let: ("0_ret", "1_ret") := marshal.ReadInt (![slice.T byteT] "enc") in
@@ -36,16 +32,19 @@ Definition Unmarshal: val :=
     let: ("0_ret", "1_ret") := marshal.ReadBytesCopy (![slice.T byteT] "enc") (![uint64T] "strgLen") in
     "strgBytes" <-[slice.T byteT] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    struct.storeF S "Strg" "c" (StringFromBytes (![slice.T byteT] "strgBytes"));;
-    let: "byteLen" := ref (zero_val uint64T) in
-    let: "byteBytes" := ref (zero_val (slice.T byteT)) in
+    "strg" <-[stringT] (StringFromBytes (![slice.T byteT] "strgBytes"));;
+    let: "bytesLen" := ref (zero_val uint64T) in
+    let: "bytesBytes" := ref (zero_val (slice.T byteT)) in
     let: ("0_ret", "1_ret") := marshal.ReadInt (![slice.T byteT] "enc") in
-    "byteLen" <-[uint64T] "0_ret";;
+    "bytesLen" <-[uint64T] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    let: ("0_ret", "1_ret") := marshal.ReadBytesCopy (![slice.T byteT] "enc") (![uint64T] "byteLen") in
-    "byteBytes" <-[slice.T byteT] "0_ret";;
+    let: ("0_ret", "1_ret") := marshal.ReadBytesCopy (![slice.T byteT] "enc") (![uint64T] "bytesLen") in
+    "bytesBytes" <-[slice.T byteT] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
-    struct.storeF S "Byte" "c" (![slice.T byteT] "byteBytes");;
-    ("c", ![slice.T byteT] "enc").
+    "bytes" <-[slice.T byteT] (![slice.T byteT] "bytesBytes");;
+    (struct.mk S [
+       "Strg" ::= ![stringT] "strg";
+       "Bytes" ::= ![slice.T byteT] "bytes"
+     ], ![slice.T byteT] "enc").
 
 End code.

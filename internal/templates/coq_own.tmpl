@@ -2,7 +2,10 @@
   <<- if eq (len .) 0 ->>
   #()
   <<- else ->>
-  (#<<- with $valF := index . 0 ->><< if valFunc $valF >>(<< valFunc $valF >> << end >>args__c.(<<- $valF.Name ->>)<< if valFunc $valF >>)<< end >>, << end ->>
+  (<<- with $valF := index . 0 ->>
+  <<- if valFunc $valF ->>
+  <<- if not (or (isExtValType .) (isSliceType .)) >>#(<< end >><< valFunc $valF >> << else >>#<< end >><< if isSliceType . >><< .Name >>_sl<< else >>args__c.(<<- $valF.Name ->>)<< end >>
+  <<- if and (not (or (isExtValType .) (isSliceType .))) (valFunc $valF) >>)<< end >>, << end ->>
   << template "coq_own_struct" (slice . 1) ->>)
   <<- end ->>
 <<- end ->>

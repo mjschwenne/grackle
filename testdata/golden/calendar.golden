@@ -27,36 +27,73 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               (u32_le args.(minute)) ++
               (u64_le args.(second)).
 
-Definition own (args_ptr: loc) (args: C) (dq: dfrac) : iProp Σ :=
-  "Hargs_hour" ∷ args_ptr ↦[timestamp_gk.S :: "Hour"]{dq} #args.(hour) ∗
-  "Hargs_minute" ∷ args_ptr ↦[timestamp_gk.S :: "Minute"]{dq} #args.(minute) ∗
-  "Hargs_second" ∷ args_ptr ↦[timestamp_gk.S :: "Second"]{dq} #args.(second).
+Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
+  "%Hown_struct" ∷ ⌜ args__v = (#args__c.(hour), (#args__c.(minute), (#args__c.(second), #())))%V ⌝.
 
-Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) (dq: dfrac):
+Definition to_val' (c : C) : val :=
+  (#c.(hour), (#c.(minute), (#c.(second), #()))).
+
+Definition from_val' (v : val) : option C :=
+  match v with
+  | (#(LitInt32 hour), (#(LitInt32 minute), (#(LitInt second), #())))%V =>
+    Some (mkC hour minute second)
+  | _ => None
+  end.
+
+#[global]
+Instance TimeStamp_into_val : IntoVal C.
+Proof.
+  refine {|
+    to_val := to_val';
+    from_val := from_val';
+    IntoVal_def := (mkC (W32 0) (W32 0) (W64 0))
+  |}.
+  intros v. 
+  destruct v as [hour minute second]; done.
+Defined.
+
+#[global]
+Instance TimeStamp_into_val_for_type : IntoValForType C (struct.t S).
+Proof. constructor; auto 10. Defined.
+
+Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
+  own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
+Proof.
+  iIntros "%Hown_struct".
+  
+  iUnfold own.
+  iSplitL.
+  + iPureIntro. done.
+  + iPureIntro. done.
+Qed.
+
+Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{
-        own args_ptr args dq ∗
+        own args__v args__c dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    timestamp_gk.Marshal #args_ptr (slice_val pre_sl)
+    timestamp_gk.Marshal args__v (slice_val pre_sl)
   {{{
         enc enc_sl, RET (slice_val enc_sl);
-        ⌜has_encoding enc args⌝ ∗
-        own args_ptr args dq ∗
+        ⌜ has_encoding enc args__c ⌝ ∗
+        own args__v args__c dq ∗
         own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
   }}}.
 
 Proof.
-  iIntros (?) "H HΦ". iDestruct "H" as "[Hown Hsl]". iNamed "Hown".
+  iIntros (?) "[Hown Hsl] HΦ".
   wp_rec. wp_pures.
+  iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
   wp_apply (wp_ref_to); first by val_ty.
   iIntros (?) "Hptr". wp_pures.
 
-  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
+  wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
 
-  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
+  wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
-  wp_loadField. wp_load. wp_apply (wp_WriteInt with "[$Hsl]").
+
+  wp_load. wp_apply (wp_WriteInt with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
 
 
@@ -66,38 +103,46 @@ Proof.
   done.
 Qed.
 
-Lemma wp_Decode enc enc_sl (args: C) (suffix: list u8) (dq: dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
   {{{
-        ⌜has_encoding enc args⌝ ∗
+        ⌜ has_encoding enc args__c ⌝ ∗
         own_slice_small enc_sl byteT dq (enc ++ suffix)
   }}}
     timestamp_gk.Unmarshal (slice_val enc_sl)
   {{{
-        args_ptr suff_sl, RET (#args_ptr, suff_sl); own args_ptr args (DfracOwn 1) ∗
-                                                    own_slice_small suff_sl byteT dq suffix
+        args__v suff_sl, RET (args__v, suff_sl);
+        own args__v args__c (DfracOwn 1) ∗
+        own_slice_small suff_sl byteT dq suffix
   }}}.
 
 Proof.
   iIntros (?) "[%Henc Hsl] HΦ". wp_rec.
-  wp_apply wp_allocStruct; first by val_ty.
-  iIntros (?) "Hstruct". wp_pures.
   wp_apply wp_ref_to; first done.
-  iIntros (?) "Hptr". wp_pures.
-  iDestruct (struct_fields_split with "Hstruct") as "HH".
-  iNamed "HH".
-
+  iIntros (l__s) "Hs". wp_pures.
+  
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__hour) "Hhour". wp_pures.
+  
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__minute) "Hminute". wp_pures.
+  
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__second) "Hsecond". wp_pures.
+  
   rewrite Henc. rewrite -?app_assoc.
 
   wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
-  wp_pures. wp_storeField. wp_store.
+  wp_pures. wp_store. wp_store.
 
   wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
-  wp_pures. wp_storeField. wp_store.
+  wp_pures. wp_store. wp_store.
 
   wp_load. wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl".
-  wp_pures. wp_storeField. wp_store.
+  wp_pures. wp_store. wp_store.
 
-  wp_load. wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
+  wp_load. wp_load. wp_load. wp_load.
+  wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
+  iPureIntro. reflexivity.
 Qed.
 
 End TimeStamp.
@@ -122,11 +167,7 @@ type S struct {
 	Second uint64
 }
 
-func (t *S) approxSize() uint64 {
-	return 0
-}
-
-func Marshal(t *S, prefix []byte) []byte {
+func Marshal(t S, prefix []byte) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt32(enc, t.Hour)
@@ -136,15 +177,21 @@ func Marshal(t *S, prefix []byte) []byte {
 	return enc
 }
 
-func Unmarshal(s []byte) (*S, []byte) {
-	t := new(S)
+func Unmarshal(s []byte) (S, []byte) {
 	var enc = s // Needed for goose compatibility
+	var hour uint32
+	var minute uint32
+	var second uint64
 
-	t.Hour, enc = marshal.ReadInt32(enc)
-	t.Minute, enc = marshal.ReadInt32(enc)
-	t.Second, enc = marshal.ReadInt(enc)
+	hour, enc = marshal.ReadInt32(enc)
+	minute, enc = marshal.ReadInt32(enc)
+	second, enc = marshal.ReadInt(enc)
 
-	return t, enc
+	return S{
+		Hour:   hour,
+		Minute: minute,
+		Second: second,
+	}, enc
 }
 --- End: testdata/out/go/timestamp_gk/timestamp_gk.go ---
 --- Begin: testdata/out/coq/event_proof.v ---
@@ -183,38 +230,90 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   /\ TimeStamp.has_encoding startTime_enc args.(startTime)
   /\ TimeStamp.has_encoding endTime_enc args.(endTime).
 
-Definition own (args_ptr: loc) (args: C) (dq: dfrac) : iProp Σ :=
-  ∃ (startTime_l endTime_l : loc) , 
-  "Hargs_id" ∷ args_ptr ↦[event_gk.S :: "Id"]{dq} #args.(id) ∗
-  "Hargs_name" ∷ args_ptr ↦[event_gk.S :: "Name"]{dq} #(str args.(name)) ∗
-  "Hargs_startTime" ∷ args_ptr ↦[event_gk.S :: "StartTime"]{dq} #startTime_l ∗
-  "Hargs_startTime_enc" ∷ TimeStamp.own startTime_l args.(startTime) dq ∗
-  "Hargs_endTime" ∷ args_ptr ↦[event_gk.S :: "EndTime"]{dq} #endTime_l ∗
-  "Hargs_endTime_enc" ∷ TimeStamp.own endTime_l args.(endTime) dq.
+Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
+  ∃ (startTime__v endTime__v : val) , 
+  "%Hown_struct" ∷ ⌜ args__v = (#args__c.(id), (#(str args__c.(name)), (TimeStamp.to_val' args__c.(startTime), (TimeStamp.to_val' args__c.(endTime), #()))))%V ⌝ ∗
+  "Hown_startTime" ∷ TimeStamp.own startTime__v args__c.(startTime) dq ∗
+  "Hown_endTime" ∷ TimeStamp.own endTime__v args__c.(endTime) dq.
 
-Lemma wp_Encode (args_ptr:loc) (args:C) (pre_sl:Slice.t) (prefix:list u8) (dq: dfrac):
+Definition to_val' (c : C) : val :=
+  (#c.(id), (#(str c.(name)), (TimeStamp.to_val' c.(startTime), (TimeStamp.to_val' c.(endTime), #())))).
+
+Definition from_val' (v : val) : option C :=
+  match v with
+  | (#(LitInt32 id), (#(LitString name), (startTime, (endTime, #()))))%V =>
+    match TimeStamp.from_val' startTime with
+    | Some startTime =>
+        match TimeStamp.from_val' endTime with
+        | Some endTime =>
+            Some (mkC id name startTime endTime)
+        | None => None
+        end
+    | None => None
+    end
+  | _ => None
+  end.
+
+#[global]
+Instance Event_into_val : IntoVal C.
+Proof.
+  refine {|
+    to_val := to_val';
+    from_val := from_val';
+    IntoVal_def := (mkC (W32 0) "" (IntoVal_def TimeStamp.C) (IntoVal_def TimeStamp.C))
+  |}.
+  intros v. 
+  destruct v as [id name [startTime_hour startTime_minute startTime_second] [endTime_hour endTime_minute endTime_second]]; done.
+Defined.
+
+#[global]
+Instance Event_into_val_for_type : IntoValForType C (struct.t S).
+Proof. constructor; auto 10. Defined.
+
+Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
+  own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
+Proof.
+  iIntros "Hown". iNamed "Hown".
+  
+  iApply (TimeStamp.own_to_val) in "Hown_startTime".
+  iDestruct "Hown_startTime" as "[Hown_startTime %Hval_startTime]".
+  
+  iApply (TimeStamp.own_to_val) in "Hown_endTime".
+  iDestruct "Hown_endTime" as "[Hown_endTime %Hval_endTime]".
+  
+  iUnfold own.
+  iSplitL.
+  + iExists startTime__v, endTime__v. iFrame.
+    iPureIntro. done.
+  + rewrite Hown_struct.
+    rewrite Hval_startTime.
+    rewrite Hval_endTime.
+    iPureIntro. done.
+Qed.
+
+Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{
-        own args_ptr args dq ∗
+        own args__v args__c dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    event_gk.Marshal #args_ptr (slice_val pre_sl)
+    event_gk.Marshal args__v (slice_val pre_sl)
   {{{
         enc enc_sl, RET (slice_val enc_sl);
-        ⌜has_encoding enc args⌝ ∗
-        own args_ptr args dq ∗
+        ⌜ has_encoding enc args__c ⌝ ∗
+        own args__v args__c dq ∗
         own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
   }}}.
 
 Proof.
-  iIntros (?) "H HΦ". iDestruct "H" as "[Hown Hsl]". iNamed "Hown".
+  iIntros (?) "[Hown Hsl] HΦ".
   wp_rec. wp_pures.
+  iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
   wp_apply (wp_ref_to); first by val_ty.
   iIntros (?) "Hptr". wp_pures.
 
-  wp_loadField. wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
+  wp_load. wp_apply (wp_WriteInt32 with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
 
-  wp_loadField.
   wp_apply wp_StringToBytes. iIntros (?) "Hargs_name_enc". wp_pures.
   wp_apply (wp_slice_len).
   iDestruct (own_slice_sz with "Hargs_name_enc") as "%Hargs_name_sz".
@@ -223,58 +322,63 @@ Proof.
   wp_load. wp_apply (wp_WriteBytes with "[$Hsl $Hargs_name_enc]").
   iIntros (?) "[Hsl _]". wp_store.
 
-  wp_loadField. wp_apply (wp_Assume). iIntros "%HstartTime_nn".
-  wp_load. wp_loadField.
-  wp_apply (TimeStamp.wp_Encode with "[$Hargs_startTime_enc $Hsl]").
-  iIntros (startTime_enc startTime_sl) "(%Hargs_startTime_enc & Hargs_startTime_own & Hsl)".
+  wp_load. wp_apply (TimeStamp.wp_Encode with "[$Hargs_startTime_enc $Hsl]").
+  iIntros (startTime_enc startTime_sl) "(%Hargs_startTime_enc & Hsl & Hargs_startTime_own)".
   wp_store.
 
-  wp_loadField. wp_apply (wp_Assume). iIntros "%HendTime_nn".
-  wp_load. wp_loadField.
-  wp_apply (TimeStamp.wp_Encode with "[$Hargs_endTime_enc $Hsl]").
-  iIntros (endTime_enc endTime_sl) "(%Hargs_endTime_enc & Hargs_endTime_own & Hsl)".
+  wp_load. wp_apply (TimeStamp.wp_Encode with "[$Hargs_endTime_enc $Hsl]").
+  iIntros (endTime_enc endTime_sl) "(%Hargs_endTime_enc & Hsl & Hargs_endTime_own)".
   wp_store.
 
 
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  unfold has_encoding. exists startTime_enc, endTime_enc. 
-  split.
-  { rewrite ?string_bytes_length.
+  unfold has_encoding. split.
+  {
+  exists startTime_enc, endTime_enc. 
+  rewrite ?string_bytes_length.
   rewrite Hargs_name_sz.
   rewrite ?w64_to_nat_id. exact.
-  }
-  split.
-  { exact. } { exact. }
+  
+  } done.
 Qed.
 
-Lemma wp_Decode enc enc_sl (args: C) (suffix: list u8) (dq: dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
   {{{
-        ⌜has_encoding enc args⌝ ∗
+        ⌜ has_encoding enc args__c ⌝ ∗
         own_slice_small enc_sl byteT dq (enc ++ suffix)
   }}}
     event_gk.Unmarshal (slice_val enc_sl)
   {{{
-        args_ptr suff_sl, RET (#args_ptr, suff_sl); own args_ptr args (DfracOwn 1) ∗
-                                                    own_slice_small suff_sl byteT dq suffix
+        args__v suff_sl, RET (args__v, suff_sl);
+        own args__v args__c (DfracOwn 1) ∗
+        own_slice_small suff_sl byteT dq suffix
   }}}.
 
 Proof.
   iIntros (?) "[%Henc Hsl] HΦ". wp_rec.
-  wp_apply wp_allocStruct; first by val_ty.
-  iIntros (?) "Hstruct". wp_pures.
   wp_apply wp_ref_to; first done.
-  iIntros (?) "Hptr". wp_pures.
-  iDestruct (struct_fields_split with "Hstruct") as "HH".
-  iNamed "HH".
-
+  iIntros (l__s) "Hs". wp_pures.
+  
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__id) "Hid". wp_pures.
+  
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__name) "Hname". wp_pures.
+  
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__startTime) "HstartTime". wp_pures.
+  
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__endTime) "HendTime". wp_pures.
+  
   unfold has_encoding in Henc.
   destruct Henc as ( startTime_sl & endTime_sl & Henc & Hencoding_startTime & Hencoding_endTime ).
   rewrite Henc. rewrite -?app_assoc.
 
   wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
-  wp_pures. wp_storeField. wp_store.
+  wp_pures. wp_store. wp_store.
 
   wp_apply wp_ref_of_zero; first done. iIntros (nameLen) "HnameLen". wp_pures.
   wp_apply wp_ref_of_zero; first done. iIntros (nameBytes) "HnameBytes". wp_pures.
@@ -289,15 +393,25 @@ Proof.
   wp_pures. wp_store. wp_store. wp_load.
   iApply own_slice_to_small in "Hname'".
   wp_apply (wp_StringFromBytes with "[$Hname']"). iIntros "_".
-  wp_storeField.
+  wp_store.
 
-  wp_load. wp_apply (TimeStamp.wp_Decode startTime_sl with "[Hsl]").
-  { iFrame. exact. } iIntros (??) "[HstartTime Hsl]". wp_pures. wp_storeField. wp_store.
+  wp_load. wp_apply (TimeStamp.wp_Decode startTime_sl with "[$Hsl //]").
+  iIntros (startTime__v ?) "[Hown_startTime Hsl]".
+  iApply (TimeStamp.own_to_val) in "Hown_startTime".
+  iDestruct "Hown_startTime" as "[Hown_startTime %Hval_startTime]".
+  rewrite Hval_startTime.
+  wp_pures. wp_store. wp_store.
 
-  wp_load. wp_apply (TimeStamp.wp_Decode endTime_sl with "[Hsl]").
-  { iFrame. exact. } iIntros (??) "[HendTime Hsl]". wp_pures. wp_storeField. wp_store.
+  wp_load. wp_apply (TimeStamp.wp_Decode endTime_sl with "[$Hsl //]").
+  iIntros (endTime__v ?) "[Hown_endTime Hsl]".
+  iApply (TimeStamp.own_to_val) in "Hown_endTime".
+  iDestruct "Hown_endTime" as "[Hown_endTime %Hval_endTime]".
+  rewrite Hval_endTime.
+  wp_pures. wp_store. wp_store.
 
-  wp_load. wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
+  wp_load. wp_load. wp_load. wp_load. wp_load.
+  wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
+  iPureIntro. reflexivity.
 Qed.
 
 End Event.
@@ -313,8 +427,6 @@ End Event.
 package event_gk
 
 import (
-	"github.com/goose-lang/primitive"
-
 	"github.com/tchajed/marshal"
 
 	"github.com/mjschwenne/grackle/testdata/out/go/timestamp_gk"
@@ -323,42 +435,44 @@ import (
 type S struct {
 	Id        uint32
 	Name      string
-	StartTime *timestamp_gk.S
-	EndTime   *timestamp_gk.S
+	StartTime timestamp_gk.S
+	EndTime   timestamp_gk.S
 }
 
-func (e *S) approxSize() uint64 {
-	return 0
-}
-
-func Marshal(e *S, prefix []byte) []byte {
+func Marshal(e S, prefix []byte) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt32(enc, e.Id)
 	nameBytes := []byte(e.Name)
 	enc = marshal.WriteInt(enc, uint64(len(nameBytes)))
 	enc = marshal.WriteBytes(enc, nameBytes)
-	primitive.Assume(e.StartTime != nil)
 	enc = timestamp_gk.Marshal(e.StartTime, enc)
-	primitive.Assume(e.EndTime != nil)
 	enc = timestamp_gk.Marshal(e.EndTime, enc)
 
 	return enc
 }
 
-func Unmarshal(s []byte) (*S, []byte) {
-	e := new(S)
+func Unmarshal(s []byte) (S, []byte) {
 	var enc = s // Needed for goose compatibility
+	var id uint32
+	var name string
+	var startTime timestamp_gk.S
+	var endTime timestamp_gk.S
 
-	e.Id, enc = marshal.ReadInt32(enc)
+	id, enc = marshal.ReadInt32(enc)
 	var nameLen uint64
 	var nameBytes []byte
 	nameLen, enc = marshal.ReadInt(enc)
 	nameBytes, enc = marshal.ReadBytesCopy(enc, nameLen)
-	e.Name = string(nameBytes)
-	e.StartTime, enc = timestamp_gk.Unmarshal(enc)
-	e.EndTime, enc = timestamp_gk.Unmarshal(enc)
+	name = string(nameBytes)
+	startTime, enc = timestamp_gk.Unmarshal(enc)
+	endTime, enc = timestamp_gk.Unmarshal(enc)
 
-	return e, enc
+	return S{
+		Id:        id,
+		Name:      name,
+		StartTime: startTime,
+		EndTime:   endTime,
+	}, enc
 }
 --- End: testdata/out/go/event_gk/event_gk.go ---

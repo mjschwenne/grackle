@@ -20,8 +20,8 @@ Record C :=
     mkC {
         id : u32;
         name : string;
-        startTime : TimeStamp.C.C;
-        endTime : TimeStamp.C.C;
+        startTime : TimeStamp.C;
+        endTime : TimeStamp.C;
         }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
@@ -35,7 +35,7 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
 
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   ∃ (startTime__v endTime__v : val) , 
-  "%Hown_struct" ∷ ⌜ args__v = (#args__c.(id), (#(str args__c.(name)), (#(TimeStamp.to_val' args__c.(startTime)), (#(TimeStamp.to_val' args__c.(endTime)), #()))))%V ⌝ ∗
+  "%Hown_struct" ∷ ⌜ args__v = (#args__c.(id), (#(str args__c.(name)), (TimeStamp.to_val' args__c.(startTime), (TimeStamp.to_val' args__c.(endTime), #()))))%V ⌝ ∗
   "Hown_startTime" ∷ TimeStamp.own startTime__v args__c.(startTime) dq ∗
   "Hown_endTime" ∷ TimeStamp.own endTime__v args__c.(endTime) dq.
 
@@ -56,6 +56,43 @@ Definition from_val' (v : val) : option C :=
     end
   | _ => None
   end.
+
+#[global]
+Instance Event_into_val : IntoVal C.
+Proof.
+  refine {|
+    to_val := to_val';
+    from_val := from_val';
+    IntoVal_def := (mkC (W32 0) "" (IntoVal_def TimeStamp.C) (IntoVal_def TimeStamp.C))
+  |}.
+  intros v. 
+  destruct v as [id name [startTime_hour startTime_minute startTime_second] [endTime_hour endTime_minute endTime_second]]; done.
+Defined.
+
+#[global]
+Instance Event_into_val_for_type : IntoValForType C (struct.t S).
+Proof. constructor; auto 10. Defined.
+
+Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
+  own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
+Proof.
+  iIntros "Hown". iNamed "Hown".
+  
+  iApply (TimeStamp.own_to_val) in "Hown_startTime".
+  iDestruct "Hown_startTime" as "[Hown_startTime %Hval_startTime]".
+  
+  iApply (TimeStamp.own_to_val) in "Hown_endTime".
+  iDestruct "Hown_endTime" as "[Hown_endTime %Hval_endTime]".
+  
+  iUnfold own.
+  iSplitL.
+  + iExists startTime__v, endTime__v. iFrame.
+    iPureIntro. done.
+  + rewrite Hown_struct.
+    rewrite Hval_startTime.
+    rewrite Hval_endTime.
+    iPureIntro. done.
+Qed.
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{

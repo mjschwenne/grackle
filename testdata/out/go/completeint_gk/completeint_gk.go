@@ -18,11 +18,7 @@ type S struct {
 	Six   uint64
 }
 
-func (c *S) approxSize() uint64 {
-	return 0
-}
-
-func Marshal(c *S, prefix []byte) []byte {
+func Marshal(c S, prefix []byte) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt32(enc, c.One)
@@ -35,16 +31,28 @@ func Marshal(c *S, prefix []byte) []byte {
 	return enc
 }
 
-func Unmarshal(s []byte) (*S, []byte) {
-	c := new(S)
+func Unmarshal(s []byte) (S, []byte) {
 	var enc = s // Needed for goose compatibility
+	var one uint32
+	var two uint32
+	var three uint32
+	var four uint64
+	var five uint64
+	var six uint64
 
-	c.One, enc = marshal.ReadInt32(enc)
-	c.Two, enc = marshal.ReadInt32(enc)
-	c.Three, enc = marshal.ReadInt32(enc)
-	c.Four, enc = marshal.ReadInt(enc)
-	c.Five, enc = marshal.ReadInt(enc)
-	c.Six, enc = marshal.ReadInt(enc)
+	one, enc = marshal.ReadInt32(enc)
+	two, enc = marshal.ReadInt32(enc)
+	three, enc = marshal.ReadInt32(enc)
+	four, enc = marshal.ReadInt(enc)
+	five, enc = marshal.ReadInt(enc)
+	six, enc = marshal.ReadInt(enc)
 
-	return c, enc
+	return S{
+		One:   one,
+		Two:   two,
+		Three: three,
+		Four:  four,
+		Five:  five,
+		Six:   six,
+	}, enc
 }

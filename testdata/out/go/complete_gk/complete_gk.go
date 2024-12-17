@@ -6,8 +6,6 @@
 package complete_gk
 
 import (
-	"github.com/goose-lang/primitive"
-
 	"github.com/tchajed/marshal"
 
 	"github.com/mjschwenne/grackle/testdata/out/go/completeint_gk"
@@ -15,34 +13,34 @@ import (
 )
 
 type S struct {
-	Int     *completeint_gk.S
-	Slc     *completeslice_gk.S
+	Int     completeint_gk.S
+	Slc     completeslice_gk.S
 	Success bool
 }
 
-func (c *S) approxSize() uint64 {
-	return 0
-}
-
-func Marshal(c *S, prefix []byte) []byte {
+func Marshal(c S, prefix []byte) []byte {
 	var enc = prefix
 
-	primitive.Assume(c.Int != nil)
 	enc = completeint_gk.Marshal(c.Int, enc)
-	primitive.Assume(c.Slc != nil)
 	enc = completeslice_gk.Marshal(c.Slc, enc)
 	enc = marshal.WriteBool(enc, c.Success)
 
 	return enc
 }
 
-func Unmarshal(s []byte) (*S, []byte) {
-	c := new(S)
+func Unmarshal(s []byte) (S, []byte) {
 	var enc = s // Needed for goose compatibility
+	var int completeint_gk.S
+	var slc completeslice_gk.S
+	var success bool
 
-	c.Int, enc = completeint_gk.Unmarshal(enc)
-	c.Slc, enc = completeslice_gk.Unmarshal(enc)
-	c.Success, enc = marshal.ReadBool(enc)
+	int, enc = completeint_gk.Unmarshal(enc)
+	slc, enc = completeslice_gk.Unmarshal(enc)
+	success, enc = marshal.ReadBool(enc)
 
-	return c, enc
+	return S{
+		Int:     int,
+		Slc:     slc,
+		Success: success,
+	}, enc
 }

@@ -39,6 +39,33 @@ Definition from_val' (v : val) : option C :=
   | _ => None
   end.
 
+#[global]
+Instance TimeStamp_into_val : IntoVal C.
+Proof.
+  refine {|
+    to_val := to_val';
+    from_val := from_val';
+    IntoVal_def := (mkC (W32 0) (W32 0) (W64 0))
+  |}.
+  intros v. 
+  destruct v as [hour minute second]; done.
+Defined.
+
+#[global]
+Instance TimeStamp_into_val_for_type : IntoValForType C (struct.t S).
+Proof. constructor; auto 10. Defined.
+
+Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
+  own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
+Proof.
+  iIntros "%Hown_struct".
+  
+  iUnfold own.
+  iSplitL.
+  + iPureIntro. done.
+  + iPureIntro. done.
+Qed.
+
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{
         own args__v args__c dq ∗
