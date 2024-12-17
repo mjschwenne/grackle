@@ -21,7 +21,7 @@ reasoning about the marshaling process.
     - [[#coq][Coq]]
   - [[#technical-considerations][Technical Considerations]]
     - [[#stateless-design][Stateless Design]]
-    - [[#non-local-proof-constructs][Non-local Proof Constructs]]
+    - [[#proof-structure][Proof Structure]]
     - [[#go-templates][Go Templates]]
   - [[#development][Development]]
 
@@ -308,6 +308,8 @@ The use of =prefix= and =suffix= enable a stateless marshaling design which is
 easier to reason about and more compositional. More information can be found in
 the [[#technical-consideration][Technical Considerations]] section.
 
+**** Go Struct
+
 Here is an example of the generated =struct= definition for the =Event= message:
 
 #+begin_src go
@@ -318,6 +320,8 @@ type S struct {
 	EndTime   timestamp_gk.S
 }
 #+end_src
+
+**** Marshal Function
 
 Now we have the =Marshal= function. As a common pattern in grackle, this function
 can be broken into three parts:
@@ -341,6 +345,8 @@ func Marshal(e S, prefix []byte) []byte {
 	return enc
 }
 #+end_src
+
+**** Unmarshal Function
 
 Finally we have the =Unmarshal= function. This function follows the same three
 steps, although the setup is more complex than one line. Goose does not support
@@ -399,6 +405,8 @@ message name plus the =_gk= suffix. That file will contain:
 - A decoding lemma =wp_Decode= which describes the behavior of calling the
   =Unmarshal= function, as well as a proof of correctness.
 
+**** Coq Record
+
 Just like with the Go code, grackle starts by outputing a Coq record. For the
 running =Event= example, that looks like this:
 
@@ -414,6 +422,8 @@ Record C :=
 
 The structure of the records is intentionally similar to that of the go struct
 =S= and of course the proto message.
+
+**** Has Encoding
 
 Next grackle produces a =has_encoding= definition which relates the record =C= to
 the wire format. In cases where the field is an integer or similar stand-alone
@@ -437,13 +447,395 @@ Some extra flexibility here is that grackle can allow the =TimeStamp= encoding t
 change without (hopefully) requiring regeneration of the =Event= code, although a
 recompile will be required according to coq consistency requirements.
 
+**** Own
+
+After =has_encoding=, which related the record to the wire format, we need a way
+to represent owning an instance of the record, which will be used in the pre and
+post conditions for the serialization lemmas.
+
+#+begin_src coq
+Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
+  ∃ (startTime__v endTime__v : val) ,
+  "%Hown_struct" ∷ ⌜ args__v = (#args__c.(id), (#(str args__c.(name)), (TimeStamp.to_val' args__c.(startTime), (TimeStamp.to_val' args__c.(endTime), #()))))%V ⌝ ∗
+  "Hown_startTime" ∷ TimeStamp.own startTime__v args__c.(startTime) dq ∗
+  "Hown_endTime" ∷ TimeStamp.own endTime__v args__c.(endTime) dq.
+#+end_src
+
+The =own= proposition relates the coq record to struct representation in goose
+lang. All values in goose lang have the =val= type at the meta level, but we can
+decompose them into a struct with the correct values in the correct order. Like
+with =has_encoding=, most of the simple fields like integers can be embedded
+directly. For nested messages, grackle asserts that the values in the goose lang
+=val= correspond to the nested messages using the next definition, =to_val'=. Since
+owning a nested struct may entail using some other piece of state (if there is a
+slice in the nested message, for instance), grackle also needs to assert
+ownership over that, which is accomplished by adding a call to the nested =own=
+predicate.
+
+**** To Value
+
+As briefly mentioned above, all values in goose lang are represented as a =val= at
+the Coq level. To enable this message to be nested within another message,
+grackle needs to know what value a given record will have. To do this, it
+generates a function from =C= to =val=, named =to_val'=. The apostrophe is required to
+conflicting with perennial names. This function is identical to the pure fact
+="%Hown_struct"= which is generated in the =own= predicate.
+
+#+begin_src coq
+Definition to_val' (c : C) : val :=
+  (#c.(id), (#(str c.(name)), (TimeStamp.to_val' c.(startTime), (TimeStamp.to_val' c.(endTime), #())))).
+#+end_src
+
+**** From Value
+
+Grackle produces a corresponding function which takes arbitrary goose lang values
+and attempts to convert them to the grackle coq record. The return type of this
+function is =option C= since a =val= can have algebraic structures ranging form a
+single literal to arbitrary structs, most of which will not be compatible with
+the layout of this specific struct.
+
+#+begin_src coq
+Definition from_val' (v : val) : option C :=
+  match v with
+  | (#(LitInt32 id), (#(LitString name), (startTime, (endTime, #()))))%V =>
+    match TimeStamp.from_val' startTime with
+    | Some startTime =>
+        match TimeStamp.from_val' endTime with
+        | Some endTime =>
+            Some (mkC id name startTime endTime)
+        | None => None
+        end
+    | None => None
+    end
+  | _ => None
+  end.
+#+end_src
+
+Most of the simple fields like integers can be interpreted at the pattern match
+level, nested messages cannot since the type of the message isn't a constructor
+for a =val=. Thus, a nested =match= structure is generated which requires all nested
+messages to parse correctly to produce a record from a =val=.
+
+**** IntoVal
+
+While we've already seen instances where converting back and forth between =C='s
+and =val='s are important, most of the time we want proofs involving grackle
+messages to handle these conversions using standard perennial relations and
+functions. In order for that to happen, grackle has to show that =to_val'= and
+=from_val'= refine =IntoVal= for =C=. This means that grackle can convert a =C= into a
+=val= when needed.
+
+#+begin_quote
+*Disclaimer:* The below code snippet isn't automatically generated /yet/ but should
+ be by the end of the week.
+#+end_quote
+
+#+begin_src coq
+#[global]
+Instance Event_into_val : IntoVal C.
+Proof.
+  refine {|
+      to_val := to_val';
+      from_val := from_val';
+      IntoVal_def := (mkC (W32 0) "" (IntoVal_def TimeStamp.C) (IntoVal_def TimeStamp.C))
+    |}.
+  intros v.
+  destruct v as [i n [sh sm ss] [eh em es]]; done.
+Defined.
+#+end_src
+
+To show the =C= can be converted into a value, grackle provides the =to_val'= and
+=from_val'= functions as well as an initial value for a newly allocated instance
+of the record. These values match the default values =go= uses if you encountered
+something like =Event{}= since all types in =go= have default values. Since the
+structures of =C= and =S= match so closely, the proof is simple, requiring mostly a
+large =destruct= and calling =done= on all the new goals.
+
+**** IntoValForType
+
+While it's true that grackle can convert a =C= to a =val= and vice versa, it knows
+more than just that. Specifically, the =val= is an instance of the goose lang
+representation of the go struct. To ascribe a type to the returned =val=, grackle
+generates an instance of =IntoValForType C (struct.t <message name>)=.
+
+#+begin_quote
+*Disclaimer:* The below code snippet isn't automatically generated /yet/ but should
+ be by the end of the week.
+#+end_quote
+
+#+begin_src coq
+#[global]
+Instance Event_into_val_for_type : IntoValForType C (struct.t Event).
+Proof. constructor; auto 10. Defined.
+#+end_src
+
+This proof is extremely simple, requiring only a single tactic.
+
+**** Own to Val
+
+Recall the observation that the ="%Hown_struct"= proposition in =own= is identical
+to =to_val'=​. For some field types, such as nested messages and slices, grackle
+needs to know that having ownership over a record =C= implies something about the
+shape of the corresponding =val=. To accomplish this goal, grackle generates
+=own_to_val=,
+
+#+begin_quote
+*Disclaimer:* The below code snippet isn't automatically generated /yet/ but should
+ be by the end of the week.
+#+end_quote
+
+#+begin_src coq
+Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
+  own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
+Proof.
+  (* Generated, but omitted from this README *)
+Qed.
+#+end_src
+
+This lemma allows grackle and later us to extract this correspondence between
+the two. Note that this lemma uses the goose standard way to convert types to
+values, =to_val= (missing the ='=). The lemma returns ownership of the coq record
+since otherwise perennial would consume it and the proof could only learn the
+pure fact while losing access to =own= since the program logic is affine.
+
+**** Encoding
+
+All of the above coq definitions exist to enable grackle to actually verify the
+=Marshal= and =Unmarshal= function generated on the Go side. The =wp_Encode= lemma
+describes the behavior of the =Marshal= function.
+
+#+begin_src coq
+Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
+  {{{
+        own args__v args__c dq ∗
+        own_slice pre_sl byteT (DfracOwn 1) prefix
+  }}}
+    event_gk.Marshal args__v (slice_val pre_sl)
+  {{{
+        enc enc_sl, RET (slice_val enc_sl);
+        ⌜ has_encoding enc args__c ⌝ ∗
+        own args__v args__c dq ∗
+        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
+  }}}.
+
+Proof.
+  (* Generated, but omitted from this README *)
+Qed.
+#+end_src
+
+The encoding lemma requires some level of ownership over an instance of the
+generated message, using =args__v= as the goose lang value and =args__c= as the coq
+level representation. Here, =dq= quantifies the discardable [[https://tchajed.github.io/sys-verif-fa24/notes/program-proofs/fractions.html][fractional ownership]]
+over any heap values in the =own= definition. Since only read access is needed to
+marshal, the value of =dq= is unbounded with respect to a =dfrac=. The =Marshal=
+function also needs ownership of the =prefix= slice that the serialized =args__v=
+will be appended to. Since =Marshal= writes to this slice, full ownership
+(=DfracOwn 1=) is required.
+
+After marshaling, ownership of =args__v= is returned to the caller (the third
+piece of the post condition, =own args__v args__c dq=​) at the same level of
+ownership =Marshal= was called with. Additionally, the caller learns that the
+returned slice encodes =prefix ++ enc= (the second part of the postcondition),
+with =enc= being some list of bytes which correctly has an encoding for =args__c=
+(using =has_encoding=, the first part of the post condition).
+
+**** Decoding
+
+The mirror image of =wp_Encode= is naturally =wp_Decode=, which specifies the
+behavior of calling =Unmarshal=.
+
+#+begin_src coq
+Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
+  {{{
+        ⌜ has_encoding enc args__c ⌝ ∗
+        own_slice_small enc_sl byteT dq (enc ++ suffix)
+  }}}
+    event_gk.Unmarshal (slice_val enc_sl)
+  {{{
+        args__v suff_sl, RET (args__v, suff_sl);
+        own args__v args__c (DfracOwn 1) ∗
+        own_slice_small suff_sl byteT dq suffix
+  }}}.
+
+Proof.
+  (* Generated, but omitted from this README *)
+Qed.
+#+end_src
+
+The conditions for this Texan triple are basically the inverse of =wp_Encode=.
+Calling =Unmarshal= requires some level of access to a byte slice (the serialized
+struct with a potentially empty suffix) and the pure fact that the beginning of
+the byte slice encodes some coq level record =args__c=.
+
+After =Unmarshal= returns, the caller learns that they have full ownership of the
+newly created struct and ownership at the same level of just the =suffix= slice.
+Note that =dq= is only bound by being a valid discardable fractional permission.
+Removing =enc= from the beginning of the slice isn't a write (which would require
+full ownership), but rather returns a new pointer to an existing location in the
+same potentially read only slice used to call =Unmarshal=.
+
 ** Technical Considerations
+
+There are several technical considerations for a piece of software like grackle,
+relating to API design, proof generation and the underlying tool-chain. While
+the below discussion is non-exhaustive, they are some points I have additional
+comments on.
 
 *** Stateless Design
 
-*** Non-local Proof Constructs
+Grackle builds on top of the existing [[https://github.com/tchajed/marshal][marshal]] library for perennial, which
+provides a set of "primitives" for reading integers, byte slices and other go
+types. This library provides two APIs, a stateful and stateless one. The
+stateful version requires the programmer to create an object which internal
+tracks pervious write calls before expelling a binary blob when marshaling is
+complete (not unlike a java =StringBuilder=). The nice feature about this design
+is that it removes the requirement that the programmer track the =prefix= /
+=suffix= slices.
+
+Grackle uses the stateless API which always return the =prefix= / =suffix= slices
+and adopts that style itself. The reason for this is mostly that this style is
+easier to reason about within perennial and enables stronger compositionality
+between messages. While grackle is technically a simple compiler, it doesn't
+employ standard compiler techniques like generating then transforming an
+abstract syntax tree, instead using go's template package (see [[#go-templates][go templates]] for
+more information). It's ability to track complex and contextual information like
+managing state is limited, particularly on the coq side (I think I could generate
+stateful go code, but it would make the coq proofs much more challenging).
+Ultimately the stateless design is a way to reduce complexity for an already
+complex piece of software.
+
+*** Proof Structure
+
+The body of the main =wp_Encode= and =wp_Decode= lemmas aren't given in this README,
+but there are some interesting things I have to say about their structure. These
+proofs can be found in the [[file:testdata/out/coq/event_proof.v][event_proof.v]] file.
+
+As first described during go code generation, the proofs for these important
+lemmas can be thought of as a proof setup, followed by a series of proof
+snippets, one for each field in the proto message and then a conclusion.
+Visually, that might look something like this:
+
+#+begin_src
+Proof.
+ +----------------------------------------------------------------------------+
+ |                                                                            |
+ |                                 Proof Setup                                |
+ |                                                                            |
+ +----------------------------------------------------------------------------+
+
+ +----------------------------------------------------------------------------+
+ |                                                                            |
+ |                               Field Snippets                               |
+ |                                                                            |
+ | +------------------------------------------------------------------------+ |
+ | |                                                                        | |
+ | |                               First Field                              | |
+ | |                                                                        | |
+ | +------------------------------------------------------------------------+ |
+ |                                                                            |
+ | +------------------------------------------------------------------------+ |
+ | |                                                                        | |
+ | |                              Second Field                              | |
+ | |                                                                        | |
+ | +------------------------------------------------------------------------+ |
+ |                                                                            |
+ |                                     .                                      |
+ |                                     .                                      |
+ |                                     .                                      |
+ |                                                                            |
+ | +------------------------------------------------------------------------+ |
+ | |                                                                        | |
+ | |                               Last Field                               | |
+ | |                                                                        | |
+ | +------------------------------------------------------------------------+ |
+ |                                                                            |
+ +----------------------------------------------------------------------------+
+
+ +----------------------------------------------------------------------------+
+ |                                                                            |
+ |                                 Conclusion                                 |
+ |                                                                            |
+ +----------------------------------------------------------------------------+
+Qed.
+#+end_src
+
+At first pass, it seems difficult to find proof snippets which can be
+arbitrarily ordered and instantiated. Fortunately, we can effectively break the
+task of marshaling or unmarshaling a struct down to operating on the head or end
+of a slice at a field level. Each snippet requires the same set of hypotheses,
+such as =Hsl= which tracks the =prefix= / =suffix= slices. Thus, it's the job of the
+proof setup to create the initial hypotheses needed to process each field. Since
+perennial employs an affine logic, each snippet then has to reintroduce the next
+version of any common hypotheses it consumes. The snippets also leak information
+about each field further down the chain of fields until the proof conclusion is
+reached. The conclusion's role is to show that the post condition as been
+satisfied, and to do this it assumes that all of the needed hypotheses have been
+created with a well-known name by the corresponding snippet.
+
+This type of proof design incentivizes compact, highly local proof snippets
+which ignore everything that isn't related to the field at hand. However in the
+conclusion, grackle needs to tie everything together. Consider the conclusion
+from the =Event= =Marshal= proof:
+
+#+begin_src coq
+  wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
+  iFrame. iPureIntro.
+
+  unfold has_encoding. split.
+  {
+  exists startTime_enc, endTime_enc.
+  rewrite ?string_bytes_length.
+  rewrite Hargs_name_sz.
+  rewrite ?w64_to_nat_id. exact.
+
+  } done.
+#+end_src
+
+The part in the braces needs to know that =startTime_enc=, =endTime_enc= and
+=Hargs_name_sz= all exist, since those are variables and propositions generated
+over the course of the proof. The existence of these non-local proof constructs
+mandates the usage of well-know names for everything that needs to referenced
+later. Maintaining these types of structures are required but more challenging
+than individual proof snippets. I like to believe that this requirement also
+enables grackle proofs to be highly readable and understanding by the proof
+engineer.
 
 *** Go Templates
+
+Grackle makes extensive use of the [[https://pkg.go.dev/text/template][text/template]] templating package in the go
+standard library. The templates them selves can be found in [[file:internal/templates/][internal/templates]].
+Note that grackle uses =<​<= and =>​>= as template delimiters to avoid conflicts with
+Texan triples. This library is surprisingly expressive and powerful, but does
+have limitations.
+
+- I'm realizing as I write this README that the templates /do/ support comments
+  using =<​</*= and =*/>​>=, so adding some comments would improve readability.
+- The templates are all handcrafted. This is a boon as much as a con, since I
+  can finely control things like indentation in the Coq output, but it often
+  leads to hard to read templates that may do the same thing in multiple
+  different ways.
+- The templates struggle to track state between templates, which influenced the
+  choice to use the stateless API for grackle.
+
+However I don't really want to be excessively negative here. The templating
+library did include several features I was surprised by, including:
+
+- Recursive templates. Generating things like the =to_val'= function and
+  ="%Hown_struct"= require carefully balancing nested and skewed parentheses.
+  While these could be tracked via a =range= construct, I find that a recursive
+  template is more effective.
+- Exposing custom =go= functions to the templates. In the =setupTemplates= function
+  in [[file:grackle.go][grackle.go]], lots of custom helper functions are exposed to the templates. A
+  lot of these are basic string manipulation functions, but several extend the
+  functionality of the templates themselves such as
+  - =callTemplate= which enabled support for dynamically building the name of the
+    template to call.
+  - =dict= which I use to bundle multiple "arguments" into one template call since
+    the templates only support taking one argument by default.
+- Extremely fine-grained control over the style of the output code. This is
+  particularly relevant for the coq code since the go code passes through
+  =gofmt= before becoming output. This enables me to pursue /readable/ automatically
+  generated coq which helps with debugging the proof snippets themselves.
 
 ** Development
 
@@ -468,4 +860,4 @@ Other things to be aware of in the grackle repository:
   confidence than the go test suite itself.
 
 #  LocalWords:  Protobuf proto coq encodings deserialized struct deserializing
-#  LocalWords:  nixos
+#  LocalWords:  nixos compositionality templating
