@@ -34,10 +34,10 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   /\ TimeStamp.has_encoding endTime_enc args.(endTime).
 
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  ∃ (startTime__v endTime__v : val) , 
   "%Hown_struct" ∷ ⌜ args__v = (#args__c.(id), (#(str args__c.(name)), (TimeStamp.to_val' args__c.(startTime), (TimeStamp.to_val' args__c.(endTime), #()))))%V ⌝ ∗
-  "Hown_startTime" ∷ TimeStamp.own startTime__v args__c.(startTime) dq ∗
-  "Hown_endTime" ∷ TimeStamp.own endTime__v args__c.(endTime) dq.
+  "Hown_startTime" ∷ TimeStamp.own (TimeStamp.to_val' args__c.(startTime)) args__c.(startTime) dq ∗
+  "Hown_endTime" ∷ TimeStamp.own (TimeStamp.to_val' args__c.(endTime)) args__c.(endTime) dq.
+
 
 Definition to_val' (c : C) : val :=
   (#c.(id), (#(str c.(name)), (TimeStamp.to_val' c.(startTime), (TimeStamp.to_val' c.(endTime), #())))).
@@ -63,14 +63,14 @@ Proof.
   refine {|
     to_val := to_val';
     from_val := from_val';
-    IntoVal_def := (mkC (W32 0)  (IntoVal_def TimeStamp.C) (IntoVal_def TimeStamp.C))
+    IntoVal_def := (mkC (W32 0) "" (IntoVal_def TimeStamp.C) (IntoVal_def TimeStamp.C))
   |}.
   intros v. 
   destruct v as [id name [startTime_hour startTime_minute startTime_second] [endTime_hour endTime_minute endTime_second]]; done.
 Defined.
 
 #[global]
-Instance Event_into_val_for_type : IntoValForType C (struct.t S).
+Instance Event_into_val_for_type : IntoValForType C (struct.t event_gk.S).
 Proof. constructor; auto 10. Defined.
 
 Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
@@ -86,13 +86,11 @@ Proof.
   
   iUnfold own.
   iSplitL.
-  + iExists startTime__v, endTime__v. iFrame.
+  + iFrame.
     iPureIntro. done.
-  + rewrite Hown_struct.
-    rewrite Hval_startTime.
-    rewrite Hval_endTime.
-    iPureIntro. done.
+  + rewrite Hown_struct.  done.
 Qed.
+
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{
@@ -125,12 +123,12 @@ Proof.
   wp_load. wp_apply (wp_WriteBytes with "[$Hsl $Hargs_name_enc]").
   iIntros (?) "[Hsl _]". wp_store.
 
-  wp_load. wp_apply (TimeStamp.wp_Encode with "[$Hargs_startTime_enc $Hsl]").
-  iIntros (startTime_enc startTime_sl) "(%Hargs_startTime_enc & Hsl & Hargs_startTime_own)".
+  wp_load. wp_pures. wp_apply (TimeStamp.wp_Encode with "[$Hown_startTime $Hsl]").
+  iIntros (startTime_enc startTime_sl) "(%Hargs_startTime_enc & Hargs_startTime_own & Hsl)".
   wp_store.
 
-  wp_load. wp_apply (TimeStamp.wp_Encode with "[$Hargs_endTime_enc $Hsl]").
-  iIntros (endTime_enc endTime_sl) "(%Hargs_endTime_enc & Hsl & Hargs_endTime_own)".
+  wp_load. wp_pures. wp_apply (TimeStamp.wp_Encode with "[$Hown_endTime $Hsl]").
+  iIntros (endTime_enc endTime_sl) "(%Hargs_endTime_enc & Hargs_endTime_own & Hsl)".
   wp_store.
 
 

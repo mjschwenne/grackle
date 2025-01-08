@@ -17,12 +17,13 @@ message completeInt {
 
 message completeSlice {
   string strg = 1;
+  string strg2 = 3;
   bytes bytes = 2;
 }
 
 message complete {
   completeInt int = 1;
-  completeSlice slc = 2;
+  // completeSlice slc = 2;
   bool success = 3;
   // error err = 4;
 }

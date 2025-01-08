@@ -12,10 +12,8 @@
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   <<- $extval := (extValFields .Fields) ->>
   <<- $lists := (sliceFields .Fields) ->>
-  <<- if or (gt (len $extval) 0) (gt (len $lists) 0)  >>
-  ∃ << if len $extval ->>
-  (<<- range $idx, $field := $extval ->>
-  <<- $field.Name ->>__v << end ->>: val) << end ->>
+  <<- if (gt (len $lists) 0)  >>
+  ∃ 
   <<- if len $lists ->>
   (<<- range $idx, $field := $lists ->>
   <<- $field.Name ->>_sl << end ->>: Slice.t)
@@ -26,5 +24,5 @@ Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   "Hown_<< .Name >>" ∷ own_slice_small << .Name >>_sl << goType . >>T dq args__c.(<< .Name >>)
   <<- end >>
   <<- range $extval >> ∗
-  "Hown_<< .Name >>" ∷ << .TypeName >>.own << .Name >>__v args__c.(<< .Name >>) dq
+  "Hown_<< .Name >>" ∷ << .TypeName >>.own (<< .TypeName >>.to_val' args__c.(<< .Name >>)) args__c.(<< .Name >>) dq
   <<- end >>.

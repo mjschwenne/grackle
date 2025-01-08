@@ -17,54 +17,20 @@ Context `{!heapGS Σ}.
 Record C :=
     mkC {
         strg : byte_string;
+        strg2 : byte_string;
         bytes : list u8;
         }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   encoded = (u64_le $ length $ args.(strg)) ++ args.(strg) ++
+              (u64_le $ length $ args.(strg2)) ++ args.(strg2) ++
               (u64_le $ length $ args.(bytes)) ++ args.(bytes).
 
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  ∃ (bytes_sl : Slice.t), 
-  "%Hown_struct" ∷ ⌜ args__v = (#(str args__c.(strg)), (slice_val bytes_sl, #()))%V ⌝ ∗
+  ∃(bytes_sl : Slice.t), 
+  "%Hown_struct" ∷ ⌜ args__v = (#(str args__c.(strg)), (#(str args__c.(strg2)), (slice_val bytes_sl, #())))%V ⌝ ∗
   "Hown_bytes" ∷ own_slice_small bytes_sl byteT dq args__c.(bytes).
 
-Definition to_val' (c : C) : val :=
-  (#(str c.(strg)), (#(slice_val c.(bytes)), #())).
-
-Definition from_val' (v : val) : option C :=
-  match v with
-  | (#(LitString strg), (#(LitBytes bytes), #()))%V =>
-    Some (mkC strg bytes)
-  | _ => None
-  end.
-
-#[global]
-Instance completeSlice_into_val : IntoVal C.
-Proof.
-  refine {|
-    to_val := to_val';
-    from_val := from_val';
-    IntoVal_def := (mkC  [])
-  |}.
-  intros v. 
-  destruct v as [strg bytes]; done.
-Defined.
-
-#[global]
-Instance completeSlice_into_val_for_type : IntoValForType C (struct.t S).
-Proof. constructor; auto 10. Defined.
-
-Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
-  own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
-Proof.
-  iIntros "%Hown_struct".
-  
-  iUnfold own.
-  iSplitL.
-  + iPureIntro. done.
-  + iPureIntro. done.
-Qed.
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{
@@ -94,6 +60,14 @@ Proof.
   wp_load. wp_apply (wp_WriteBytes with "[$Hsl $Hargs_strg_enc]").
   iIntros (?) "[Hsl _]". wp_store.
 
+  wp_apply wp_StringToBytes. iIntros (?) "Hargs_strg2_enc". wp_pures.
+  wp_apply (wp_slice_len).
+  iDestruct (own_slice_sz with "Hargs_strg2_enc") as "%Hargs_strg2_sz".
+  iApply own_slice_to_small in "Hargs_strg2_enc".
+  wp_load. wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
+  wp_load. wp_apply (wp_WriteBytes with "[$Hsl $Hargs_strg2_enc]").
+  iIntros (?) "[Hsl _]". wp_store.
+
   iDestruct (own_slice_small_sz with "Hown_bytes") as "%Hargs_bytes_sz".
   wp_pures. wp_apply (wp_slice_len). wp_load.
   wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
@@ -110,6 +84,7 @@ Proof.
   
   rewrite ?string_bytes_length.
   rewrite Hargs_strg_sz.
+  rewrite Hargs_strg2_sz.
   rewrite Hargs_bytes_sz.
   rewrite ?w64_to_nat_id. exact.
 
@@ -137,6 +112,9 @@ Proof.
   iIntros (l__strg) "Hstrg". wp_pures.
   
   wp_apply wp_ref_of_zero; first done.
+  iIntros (l__strg2) "Hstrg2". wp_pures.
+  
+  wp_apply wp_ref_of_zero; first done.
   iIntros (l__bytes) "Hbytes". wp_pures.
   
   rewrite Henc. rewrite -?app_assoc.
@@ -156,6 +134,21 @@ Proof.
   wp_apply (wp_StringFromBytes with "[$Hstrg']"). iIntros "_".
   wp_store.
 
+  wp_apply wp_ref_of_zero; first done. iIntros (strg2Len) "Hstrg2Len". wp_pures.
+  wp_apply wp_ref_of_zero; first done. iIntros (strg2Bytes) "Hstrg2Bytes". wp_pures.
+  wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
+  iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
+
+  iDestruct (own_slice_small_sz with "Hsl") as %Hstrg2_sz.
+  wp_apply (wp_ReadBytesCopy with "[$]").
+  { rewrite length_app in Hstrg2_sz. word. }
+  iIntros (??) "[Hstrg2' Hsl]".
+
+  wp_pures. wp_store. wp_store. wp_load.
+  iApply own_slice_to_small in "Hstrg2'".
+  wp_apply (wp_StringFromBytes with "[$Hstrg2']"). iIntros "_".
+  wp_store.
+
   wp_apply wp_allocN; first done; first by val_ty.
   iIntros (?) "HbytesLen". iApply array_singleton in "HbytesLen". wp_pures.
   wp_apply wp_allocN; first done; first by val_ty.
@@ -170,7 +163,7 @@ Proof.
 
   wp_pures. wp_store. wp_store. wp_load. wp_store.
 
-  wp_load. wp_load. wp_load.
+  wp_load. wp_load. wp_load. wp_load.
   wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
   iPureIntro. reflexivity.
 Qed.

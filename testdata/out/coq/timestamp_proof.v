@@ -29,6 +29,7 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   "%Hown_struct" ∷ ⌜ args__v = (#args__c.(hour), (#args__c.(minute), (#args__c.(second), #())))%V ⌝.
 
+
 Definition to_val' (c : C) : val :=
   (#c.(hour), (#c.(minute), (#c.(second), #()))).
 
@@ -52,7 +53,7 @@ Proof.
 Defined.
 
 #[global]
-Instance TimeStamp_into_val_for_type : IntoValForType C (struct.t S).
+Instance TimeStamp_into_val_for_type : IntoValForType C (struct.t timestamp_gk.S).
 Proof. constructor; auto 10. Defined.
 
 Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
@@ -63,8 +64,9 @@ Proof.
   iUnfold own.
   iSplitL.
   + iPureIntro. done.
-  + iPureIntro. done.
+  +  done.
 Qed.
+
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{

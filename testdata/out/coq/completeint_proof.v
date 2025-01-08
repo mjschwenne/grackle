@@ -35,6 +35,7 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   "%Hown_struct" ∷ ⌜ args__v = (#args__c.(one), (#args__c.(two), (#args__c.(three), (#args__c.(four), (#args__c.(five), (#args__c.(six), #()))))))%V ⌝.
 
+
 Definition to_val' (c : C) : val :=
   (#c.(one), (#c.(two), (#c.(three), (#c.(four), (#c.(five), (#c.(six), #())))))).
 
@@ -58,7 +59,7 @@ Proof.
 Defined.
 
 #[global]
-Instance completeInt_into_val_for_type : IntoValForType C (struct.t S).
+Instance completeInt_into_val_for_type : IntoValForType C (struct.t completeint_gk.S).
 Proof. constructor; auto 10. Defined.
 
 Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
@@ -69,8 +70,9 @@ Proof.
   iUnfold own.
   iSplitL.
   + iPureIntro. done.
-  + iPureIntro. done.
+  +  done.
 Qed.
+
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{

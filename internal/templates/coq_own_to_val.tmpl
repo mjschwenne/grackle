@@ -13,10 +13,8 @@ Proof.
   iUnfold own.
   iSplitL.
   + << if (len .NestedMessages) ->>
-    iExists << range $idx, $f := (messageFields .Fields) >><< if $idx >>, << end >><< .Name >>__v<< end >>. iFrame.
+    iFrame.
     << end >>iPureIntro. done.
   + << if (len .NestedMessages) ->>
-    rewrite Hown_struct.
-    << range (messageFields .Fields) >>rewrite Hval_<< .Name >>.
-    << end >><< end >>iPureIntro. done.
+    rewrite Hown_struct. << end >> done.
 Qed.
