@@ -16,6 +16,7 @@ Definition Marshal: val :=
     let: "strgBytes" := StringToBytes (struct.get S "Strg" "c") in
     "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len "strgBytes"));;
     "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") "strgBytes");;
+    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len (struct.get S "Bytes" "c")));;
     "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") (struct.get S "Bytes" "c"));;
     ![slice.T byteT] "enc".
 

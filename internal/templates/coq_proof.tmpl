@@ -11,25 +11,13 @@
 << template "coq_encode.tmpl" . >>
 << template "coq_marshal_setup.tmpl" . >>
 <<- range .Fields ->>
-<<- if isCoqType . "list u8" ->>
-<< template "coq_marshal_bytes.tmpl" . >>
-<<- else if isMessage . ->>
-<< template "coq_marshal_message.tmpl" . >>
-<<- else ->>
-<< callTemplate (join "" (join "_" "coq" "marshal" (coqType .)) ".tmpl") . >>
-<<- end ->>
+<< callTemplate (join "" (join "_" "coq" "marshal" (protoType .)) ".tmpl") . >>
 <<- end ->>
 << template "coq_marshal_conclusion.tmpl" . >>
 << template "coq_decode.tmpl" . >>
 << template "coq_unmarshal_setup.tmpl" . >>
 <<- range .Fields ->>
-<<- if isCoqType . "list u8" ->>
-<< template "coq_unmarshal_bytes.tmpl" . >>
-<<- else if isMessage . ->>
-<< template "coq_unmarshal_message.tmpl" . >>
-<<- else ->>
-<< callTemplate (join "" (join "_" "coq" "unmarshal" (coqType .)) ".tmpl") . >>
-<<- end ->>
+<< callTemplate (join "" (join "_" "coq" "unmarshal" (protoType .)) ".tmpl") . >>
 <<- end ->>
 << template "coq_unmarshal_conclusion.tmpl" . >>
 << template "coq_file_conculsion.tmpl" . >>

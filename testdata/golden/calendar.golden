@@ -216,7 +216,7 @@ Context `{!heapGS Σ}.
 Record C :=
     mkC {
         id : u32;
-        name : string;
+        name : byte_string;
         startTime : TimeStamp.C;
         endTime : TimeStamp.C;
         }.
@@ -224,7 +224,7 @@ Record C :=
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   ∃ (startTime_enc endTime_enc : list u8), 
   encoded = (u32_le args.(id)) ++
-              (u64_le $ length $ string_to_bytes args.(name)) ++ string_to_bytes args.(name) ++
+              (u64_le $ length $ args.(name)) ++ args.(name) ++
               startTime_enc ++
               endTime_enc
   /\ TimeStamp.has_encoding startTime_enc args.(startTime)
@@ -260,7 +260,7 @@ Proof.
   refine {|
     to_val := to_val';
     from_val := from_val';
-    IntoVal_def := (mkC (W32 0) "" (IntoVal_def TimeStamp.C) (IntoVal_def TimeStamp.C))
+    IntoVal_def := (mkC (W32 0)  (IntoVal_def TimeStamp.C) (IntoVal_def TimeStamp.C))
   |}.
   intros v. 
   destruct v as [id name [startTime_hour startTime_minute startTime_second] [endTime_hour endTime_minute endTime_second]]; done.

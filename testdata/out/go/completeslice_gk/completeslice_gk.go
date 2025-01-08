@@ -20,6 +20,7 @@ func Marshal(c S, prefix []byte) []byte {
 	strgBytes := []byte(c.Strg)
 	enc = marshal.WriteInt(enc, uint64(len(strgBytes)))
 	enc = marshal.WriteBytes(enc, strgBytes)
+	enc = marshal.WriteInt(enc, uint64(len(c.Bytes)))
 	enc = marshal.WriteBytes(enc, c.Bytes)
 
 	return enc

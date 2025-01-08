@@ -2,7 +2,7 @@
   wp_apply wp_allocN; first done; first by val_ty.
   iIntros (?) "H<< .Name >>Len". iApply array_singleton in "H<< .Name >>Len". wp_pures.
   wp_apply wp_allocN; first done; first by val_ty.
-  iIntros (?) "H<< .Name >>". iApply array_singleton in "H<< .Name >>". wp_pures.
+  iIntros (?) "H<< .Name >>Bytes". iApply array_singleton in "H<< .Name >>Bytes". wp_pures.
   wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
   iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
 
@@ -11,4 +11,4 @@
   { rewrite length_app in H<< .Name >>_sz. word. }
   iIntros (??) "[H<< .Name >>' Hsl]". iApply own_slice_to_small in "H<< .Name >>'".
 
-  wp_pures. wp_store. wp_store. wp_load. wp_storeField.
+  wp_pures. wp_store. wp_store. wp_load. wp_store.

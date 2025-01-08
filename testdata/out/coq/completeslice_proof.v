@@ -16,12 +16,12 @@ Context `{!heapGS Σ}.
 
 Record C :=
     mkC {
-        strg : string;
+        strg : byte_string;
         bytes : list u8;
         }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-  encoded = (u64_le $ length $ string_to_bytes args.(strg)) ++ string_to_bytes args.(strg) ++
+  encoded = (u64_le $ length $ args.(strg)) ++ args.(strg) ++
               (u64_le $ length $ args.(bytes)) ++ args.(bytes).
 
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
@@ -30,32 +30,12 @@ Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   "Hown_bytes" ∷ own_slice_small bytes_sl byteT dq args__c.(bytes).
 
 Definition to_val' (c : C) : val :=
-  (#(str c.(strg)), (val_of_list ((λ u : u8, #u) <$> c.(bytes)), #())).
-
-Fixpoint opt_list {A:Type} (l : list (option A)) : option (list A) :=
-  match l with
-  | nil => Some nil
-  | Some v :: l' => match opt_list l' with
-                   | Some l'' => Some (v :: l'')
-                   | None => None
-                   end
-  | None :: l' => None
-  end.
+  (#(str c.(strg)), (#(slice_val c.(bytes)), #())).
 
 Definition from_val' (v : val) : option C :=
   match v with
-  | (#(LitString strg), (bytes, #()))%V =>
-      match list_from_val bytes with
-       | Some bytes =>
-           match opt_list ((fun v : val => match v with
-            | #(LitByte b) => Some b
-            | _ => None
-           end) <$> bytes) with
-                      | Some bytes => Some (mkC strg bytes)
-                      | None => None
-                      end
-       | None => None
-      end
+  | (#(LitString strg), (#(LitBytes bytes), #()))%V =>
+    Some (mkC strg bytes)
   | _ => None
   end.
 
@@ -65,7 +45,7 @@ Proof.
   refine {|
     to_val := to_val';
     from_val := from_val';
-    IntoVal_def := (mkC "" (IntoVal_def slice.t))
+    IntoVal_def := (mkC  [])
   |}.
   intros v. 
   destruct v as [strg bytes]; done.
@@ -114,12 +94,11 @@ Proof.
   wp_load. wp_apply (wp_WriteBytes with "[$Hsl $Hargs_strg_enc]").
   iIntros (?) "[Hsl _]". wp_store.
 
-  iDestruct (own_slice_small_sz with "Hargs_bytes_sl") as "%Hargs_bytes_sz".
-  wp_loadField. wp_apply wp_slice_len. wp_load.
+  iDestruct (own_slice_small_sz with "Hown_bytes") as "%Hargs_bytes_sz".
+  wp_pures. wp_apply (wp_slice_len). wp_load.
   wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
-
-  wp_loadField. wp_load.
-  wp_apply (wp_WriteBytes with "[$Hsl $Hargs_bytes_sl]").
+  wp_pures. wp_load.
+  wp_apply (wp_WriteBytes with "[$Hsl $Hown_bytes]").
   iIntros (?) "[Hsl Hargs_bytes_sl]". wp_store.
 
 
@@ -134,6 +113,7 @@ Proof.
   rewrite Hargs_bytes_sz.
   rewrite ?w64_to_nat_id. exact.
 
+  } done.
 Qed.
 
 Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
@@ -179,7 +159,7 @@ Proof.
   wp_apply wp_allocN; first done; first by val_ty.
   iIntros (?) "HbytesLen". iApply array_singleton in "HbytesLen". wp_pures.
   wp_apply wp_allocN; first done; first by val_ty.
-  iIntros (?) "Hbytes". iApply array_singleton in "Hbytes". wp_pures.
+  iIntros (?) "HbytesBytes". iApply array_singleton in "HbytesBytes". wp_pures.
   wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
   iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
 
@@ -188,7 +168,7 @@ Proof.
   { rewrite length_app in Hbytes_sz. word. }
   iIntros (??) "[Hbytes' Hsl]". iApply own_slice_to_small in "Hbytes'".
 
-  wp_pures. wp_store. wp_store. wp_load. wp_storeField.
+  wp_pures. wp_store. wp_store. wp_load. wp_store.
 
   wp_load. wp_load. wp_load.
   wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.

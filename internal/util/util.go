@@ -23,6 +23,7 @@ const DirPermissions = 0755
 const FilePermissions = 0644
 
 type TypeData struct {
+	ProtoType   string // Holds the string name of this type to unify names across languages
 	CoqType     string // Holds the corresponding coq type
 	GoType      string // Holds the corresponding go type
 	MarshalType string // Holds the name of the function in tchajed/marshal which operates on this type
@@ -33,47 +34,56 @@ type TypeData struct {
 
 var TypeMap = map[fieldType]TypeData{
 	descriptorpb.FieldDescriptorProto_TYPE_INT32: {
+		ProtoType: "int32",
 		CoqType:     "u32",
 		GoType:      "uint32",
 		MarshalType: "Int32",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_UINT32: {
+		ProtoType: "int32",
 		CoqType:     "u32",
 		GoType:      "uint32",
 		MarshalType: "Int32",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED32: {
+		ProtoType: "int32",
 		CoqType:     "u32",
 		GoType:      "uint32",
 		MarshalType: "Int32",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_INT64: {
+		ProtoType: "int64",
 		CoqType:     "u64",
 		GoType:      "uint64",
 		MarshalType: "Int",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_UINT64: {
+		ProtoType: "int64",
 		CoqType:     "u64",
 		GoType:      "uint64",
 		MarshalType: "Int",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: {
+		ProtoType: "int64",
 		CoqType:     "u64",
 		GoType:      "uint64",
 		MarshalType: "Int",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_BOOL: {
+		ProtoType: "bool",
 		CoqType:     "bool",
 		GoType:      "bool",
 		MarshalType: "Bool",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: {
+		ProtoType: "message",
 		CoqType:     "message",
 		GoType:      "message",
 		MarshalType: "message",
 		ValType:     true,
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_BYTES: {
+		ProtoType: "bytes",
 		CoqType:     "list u8",
 		GoType:      "byte",
 		MarshalType: "Bytes",
@@ -81,13 +91,15 @@ var TypeMap = map[fieldType]TypeData{
 		ToValFunc:   "slice_val",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_STRING: {
-		CoqType:     "string",
+		ProtoType: "string",
+		CoqType:     "byte_string",
 		GoType:      "string",
 		MarshalType: "String", // Not technically true, but it helps on the coq side
 		SliceType:   false,    // Not really true, but it all works out.
 		ToValFunc:   "str",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_ENUM: {
+		ProtoType: "enum",
 		CoqType:     "enum",
 		GoType:      "enum",
 		MarshalType: "enum",
@@ -129,6 +141,10 @@ func Indent(n int, s string) string {
 }
 
 // MAP ACCESSORS & TRANSFORMERS
+
+func GetProtoTypeName(field *field) string {
+	return TypeMap[field.GetType()].ProtoType
+}
 
 func GetCoqTypeName(field *field) string {
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {

@@ -10,7 +10,7 @@
   iFrame. iPureIntro.
 
   << $msgs := (messageFields .Fields) ->>
-  << $sob  := (filterByCoqType .Fields "list u8|string") ->>
+  << $sob  := (filterByCoqType .Fields "list u8|byte_string") ->>
   << if (or (gt (len $sob) 0) (gt (len $msgs) 0)) ->>
   unfold has_encoding. split.
   {
@@ -22,6 +22,7 @@
   <<- end >>} done.
   <<- else if gt (len $sob) 0 >>
   << template "string_and_bytes" $sob >>
+  } done.
   <<- end >><< else >>done.
   <<- end >>
 Qed.

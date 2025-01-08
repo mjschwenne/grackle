@@ -119,6 +119,7 @@ func setupTemplates(files *descriptorpb.FileDescriptorSet) *template.Template {
 
 	tmpl := template.New("grackle").Delims("<<", ">>")
 	funcMap := template.FuncMap{
+		"protoType":     util.GetProtoTypeName,
 		"coqType":       util.GetCoqTypeName,
 		"isExtValType":  util.IsExternalValType,
 		"isMessage":     util.IsMessageType,

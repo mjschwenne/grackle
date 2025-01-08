@@ -10,7 +10,7 @@ func Marshal(<<- param .Name >> S, prefix []byte) []byte {
     << lower .Name>>Bytes := []byte(<<- param $.Name ->>.<< goName .Name >>)
     enc = marshal.WriteInt(enc, uint64(len(<< lower .Name >>Bytes)))
     enc = marshal.WriteBytes(enc, << lower .Name >>Bytes)
-    << else if isGoType . "[]byte" ->>
+    << else if (and (isGoType . "byte") (isSliceType .)) ->>
     enc = marshal.WriteInt(enc, uint64(len(<< param $.Name >>.<< goName .Name >>)))
     enc = marshal.WriteBytes(enc, << param $.Name >>.<< goName .Name >>)
     << else ->>
