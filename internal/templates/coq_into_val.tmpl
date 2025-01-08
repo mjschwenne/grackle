@@ -9,7 +9,7 @@
   (W64 0)
   <<- else if isCoqType . "bool" ->>
   false
-  <<- else if isCoqType . "string" ->>
+  <<- else if isCoqType . "byte_string" ->>
   ""
   <<- else if isCoqType . "message" ->>
   (IntoVal_def << coqType . >>)
