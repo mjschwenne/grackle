@@ -34,56 +34,56 @@ type TypeData struct {
 
 var TypeMap = map[fieldType]TypeData{
 	descriptorpb.FieldDescriptorProto_TYPE_INT32: {
-		ProtoType: "int32",
+		ProtoType:   "int32",
 		CoqType:     "u32",
 		GoType:      "uint32",
 		MarshalType: "Int32",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_UINT32: {
-		ProtoType: "int32",
+		ProtoType:   "int32",
 		CoqType:     "u32",
 		GoType:      "uint32",
 		MarshalType: "Int32",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED32: {
-		ProtoType: "int32",
+		ProtoType:   "int32",
 		CoqType:     "u32",
 		GoType:      "uint32",
 		MarshalType: "Int32",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_INT64: {
-		ProtoType: "int64",
+		ProtoType:   "int64",
 		CoqType:     "u64",
 		GoType:      "uint64",
 		MarshalType: "Int",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_UINT64: {
-		ProtoType: "int64",
+		ProtoType:   "int64",
 		CoqType:     "u64",
 		GoType:      "uint64",
 		MarshalType: "Int",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_FIXED64: {
-		ProtoType: "int64",
+		ProtoType:   "int64",
 		CoqType:     "u64",
 		GoType:      "uint64",
 		MarshalType: "Int",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_BOOL: {
-		ProtoType: "bool",
+		ProtoType:   "bool",
 		CoqType:     "bool",
 		GoType:      "bool",
 		MarshalType: "Bool",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: {
-		ProtoType: "message",
+		ProtoType:   "message",
 		CoqType:     "message",
 		GoType:      "message",
 		MarshalType: "message",
 		ValType:     true,
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_BYTES: {
-		ProtoType: "bytes",
+		ProtoType:   "bytes",
 		CoqType:     "list u8",
 		GoType:      "byte",
 		MarshalType: "Bytes",
@@ -91,7 +91,7 @@ var TypeMap = map[fieldType]TypeData{
 		ToValFunc:   "slice_val",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_STRING: {
-		ProtoType: "string",
+		ProtoType:   "string",
 		CoqType:     "byte_string",
 		GoType:      "string",
 		MarshalType: "String", // Not technically true, but it helps on the coq side
@@ -99,7 +99,7 @@ var TypeMap = map[fieldType]TypeData{
 		ToValFunc:   "str",
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_ENUM: {
-		ProtoType: "enum",
+		ProtoType:   "enum",
 		CoqType:     "enum",
 		GoType:      "enum",
 		MarshalType: "enum",
