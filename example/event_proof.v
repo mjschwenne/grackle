@@ -11,7 +11,7 @@ Context `{!heapGS Σ}.
 Record C :=
   mkC {
       id : u32 ;
-      name : string ;
+      name : byte_string ;
       startTime : TimeStamp.C ;
       endTime : TimeStamp.C ;
     }.
@@ -19,7 +19,7 @@ Record C :=
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   ∃ start_enc end_enc,
     encoded = (u32_le args.(id)) ++
-              (u64_le $ length $ string_to_bytes args.(name)) ++ string_to_bytes args.(name) ++
+              (u64_le $ length $ args.(name)) ++ args.(name) ++
               start_enc ++ end_enc
     /\ TimeStamp.has_encoding start_enc args.(startTime)
     /\ TimeStamp.has_encoding end_enc args.(endTime).
