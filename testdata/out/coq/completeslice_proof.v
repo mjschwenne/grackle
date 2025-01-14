@@ -5,6 +5,7 @@
 
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
+From Perennial.goose_lang Require Import lib.slice.pred_slice.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 
 Module completeSlice.
@@ -26,10 +27,23 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               (u64_le $ length $ args.(strg2)) ++ args.(strg2) ++
               (u64_le $ length $ args.(bytes)) ++ args.(bytes).
 
+Definition own_byte (v: val) (b: u8) (dq: dfrac) : iProp Σ :=
+  ⌜v = to_val b⌝.
+
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   ∃(bytes_sl : Slice.t), 
   "%Hown_struct" ∷ ⌜ args__v = (#(str args__c.(strg)), (#(str args__c.(strg2)), (slice_val bytes_sl, #())))%V ⌝ ∗
-  "Hown_bytes" ∷ own_slice_small bytes_sl byteT dq args__c.(bytes).
+  "Hown_bytes" ∷ is_pred_slice own_byte bytes_sl byteT dq args__c.(bytes).
+
+Instance val_IntoVal : IntoVal val.
+Proof.
+  refine {|
+      to_val := λ v, v;
+      from_val := λ v, Some v;
+      IntoVal_def := #();
+    |}.
+  intros v; auto.
+Defined.
 
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
@@ -49,6 +63,8 @@ Proof.
   iIntros (?) "[Hown Hsl] HΦ".
   wp_rec. wp_pures.
   iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
+  iUnfold is_pred_slice in "Hown_bytes".
+  iDestruct "Hown_bytes" as "[%vs [Hown_bytes HΨ_bytes]]".
   wp_apply (wp_ref_to); first by val_ty.
   iIntros (?) "Hptr". wp_pures.
 
@@ -68,11 +84,12 @@ Proof.
   wp_load. wp_apply (wp_WriteBytes with "[$Hsl $Hargs_strg2_enc]").
   iIntros (?) "[Hsl _]". wp_store.
 
-  iDestruct (own_slice_small_sz with "Hown_bytes") as "%Hargs_bytes_sz".
+  iDestruct (slice.own_slice_small_sz with "Hown_bytes") as "%Hargs_bytes_sz".
   wp_pures. wp_apply (wp_slice_len). wp_load.
   wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
   wp_pures. wp_load.
-  wp_apply (wp_WriteBytes with "[$Hsl $Hown_bytes]").
+  wp_apply (wp_WriteBytes with "[$Hsl Hown_bytes]").
+  { iUnfold own_slice_small.  }
   iIntros (?) "[Hsl Hargs_bytes_sl]". wp_store.
 
 
