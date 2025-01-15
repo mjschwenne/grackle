@@ -23,7 +23,7 @@ message completeSlice {
 
 message complete {
   completeInt int = 1;
-  // completeSlice slc = 2;
+  completeSlice slc = 2;
   bool success = 3;
   // error err = 4;
 }
