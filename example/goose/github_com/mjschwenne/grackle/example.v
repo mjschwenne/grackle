@@ -5,7 +5,7 @@ From Goose Require github_com.tchajed.marshal.
 Section code.
 Context `{ext_ty: ext_types}.
 
-(* event.go *)
+(* calendar.go *)
 
 (* TimeStamp from timestamp.go *)
 
@@ -15,12 +15,20 @@ Definition TimeStamp := struct.decl [
   "second" :: uint32T
 ].
 
+(* Event from event.go *)
+
 Definition Event := struct.decl [
   "id" :: uint32T;
   "name" :: stringT;
   "startTime" :: struct.t TimeStamp;
   "endTime" :: struct.t TimeStamp
 ].
+
+Definition Calendar := struct.decl [
+  "events" :: slice.T (struct.t Event)
+].
+
+(* MarshalTimeStamp from timestamp.go *)
 
 Definition MarshalTimeStamp: val :=
   rec: "MarshalTimeStamp" "t" "prefix" :=
@@ -29,6 +37,8 @@ Definition MarshalTimeStamp: val :=
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get TimeStamp "minute" "t"));;
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get TimeStamp "second" "t"));;
     ![slice.T byteT] "enc".
+
+(* MarshalEvent from event.go *)
 
 Definition MarshalEvent: val :=
   rec: "MarshalEvent" "e" "prefix" :=
@@ -40,6 +50,15 @@ Definition MarshalEvent: val :=
     "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.get Event "startTime" "e") (![slice.T byteT] "enc"));;
     "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.get Event "endTime" "e") (![slice.T byteT] "enc"));;
     ![slice.T byteT] "enc".
+
+Definition MarshalCalendar: val :=
+  rec: "MarshalCalendar" "c" "prefix" :=
+    let: "enc" := ref_to (slice.T byteT) "prefix" in
+    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len (struct.get Calendar "events" "c")));;
+    "enc" <-[slice.T byteT] (marshal.WriteSlice (struct.t Event) "prefix" (struct.get Calendar "events" "c") MarshalEvent);;
+    ![slice.T byteT] "enc".
+
+(* UnmarshalTimeStamp from timestamp.go *)
 
 Definition UnmarshalTimeStamp: val :=
   rec: "UnmarshalTimeStamp" "s" :=
@@ -61,6 +80,8 @@ Definition UnmarshalTimeStamp: val :=
        "minute" ::= ![uint32T] "minute";
        "second" ::= ![uint32T] "second"
      ], ![slice.T byteT] "enc").
+
+(* UnmarshalEvent from event.go *)
 
 Definition UnmarshalEvent: val :=
   rec: "UnmarshalEvent" "s" :=
@@ -93,6 +114,23 @@ Definition UnmarshalEvent: val :=
        "startTime" ::= ![struct.t TimeStamp] "startTime";
        "endTime" ::= ![struct.t TimeStamp] "endTime"
      ], ![slice.T byteT] "enc").
+
+Definition UnmarshalCalendar: val :=
+  rec: "UnmarshalCalendar" "s" :=
+    let: "enc" := ref_to (slice.T byteT) "s" in
+    let: "events" := ref (zero_val (slice.T (struct.t Event))) in
+    let: "eventsLen" := ref (zero_val uint64T) in
+    let: ("0_ret", "1_ret") := marshal.ReadInt (![slice.T byteT] "enc") in
+    "eventsLen" <-[uint64T] "0_ret";;
+    "enc" <-[slice.T byteT] "1_ret";;
+    let: ("0_ret", "1_ret") := marshal.ReadSlice (struct.t Event) (![slice.T byteT] "enc") (![uint64T] "eventsLen") UnmarshalEvent in
+    "events" <-[slice.T (struct.t Event)] "0_ret";;
+    "enc" <-[slice.T byteT] "1_ret";;
+    (struct.mk Calendar [
+       "events" ::= ![slice.T (struct.t Event)] "events"
+     ], ![slice.T byteT] "enc").
+
+(* event.go *)
 
 (* timestamp.go *)
 

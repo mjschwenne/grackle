@@ -11,7 +11,8 @@ type Calendar struct {
 func MarshalCalendar(c Calendar, prefix []byte) []byte {
 	var enc = prefix
 
-	enc = marshal.WriteSliceLenPrefix(prefix, c.events, MarshalEvent)
+	enc = marshal.WriteInt(enc, uint64(len(c.events)))
+	enc = marshal.WriteSlice(prefix, c.events, MarshalEvent)
 
 	return enc
 }
@@ -19,8 +20,10 @@ func MarshalCalendar(c Calendar, prefix []byte) []byte {
 func UnmarshalCalendar(s []byte) (Calendar, []byte) {
 	var enc = s
 	var events []Event
+	var eventsLen uint64
 
-	events, enc = marshal.ReadSliceLenPrefix(enc, UnmarshalEvent)
+	eventsLen, enc = marshal.ReadInt(enc)
+	events, enc = marshal.ReadSlice(enc, eventsLen, UnmarshalEvent)
 
 	return Calendar{events: events}, enc
 }
