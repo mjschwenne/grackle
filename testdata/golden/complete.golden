@@ -525,6 +525,8 @@ From Perennial.program_proof Require Import marshal_stateless_proof.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.complete_gk.
 From Grackle.test Require Import completeint_proof.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
+From Grackle.test Require Import completeslice_proof.
+From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 
 Module complete.
 Section complete.
@@ -536,29 +538,37 @@ Context `{!heapGS Σ}.
 Record C :=
     mkC {
         int : completeInt.C;
+        slc : completeSlice.C;
         success : bool;
         }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-  ∃ (int_enc : list u8), 
+  ∃ (int_enc slc_enc : list u8), 
   encoded = int_enc ++
+              slc_enc ++
               [if args.(success) then W8 1 else W8 0]
-  /\ completeInt.has_encoding int_enc args.(int).
+  /\ completeInt.has_encoding int_enc args.(int)
+  /\ completeSlice.has_encoding slc_enc args.(slc).
 
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  "%Hown_struct" ∷ ⌜ args__v = (completeInt.to_val' args__c.(int), (#args__c.(success), #()))%V ⌝ ∗
-  "Hown_int" ∷ completeInt.own (completeInt.to_val' args__c.(int)) args__c.(int) dq.
+  "%Hown_struct" ∷ ⌜ args__v = (completeInt.to_val' args__c.(int), (completeSlice.to_val' args__c.(slc), (#args__c.(success), #())))%V ⌝ ∗
+  "Hown_int" ∷ completeInt.own (completeInt.to_val' args__c.(int)) args__c.(int) dq ∗
+  "Hown_slc" ∷ completeSlice.own (completeSlice.to_val' args__c.(slc)) args__c.(slc) dq.
 
 
 Definition to_val' (c : C) : val :=
-  (completeInt.to_val' c.(int), (#c.(success), #())).
+  (completeInt.to_val' c.(int), (completeSlice.to_val' c.(slc), (#c.(success), #()))).
 
 Definition from_val' (v : val) : option C :=
   match v with
-  | (int, (#(LitBool success), #()))%V =>
+  | (int, (slc, (#(LitBool success), #())))%V =>
     match completeInt.from_val' int with
     | Some int =>
-        Some (mkC int success)
+        match completeSlice.from_val' slc with
+        | Some slc =>
+            Some (mkC int slc success)
+        | None => None
+        end
     | None => None
     end
   | _ => None
@@ -570,10 +580,10 @@ Proof.
   refine {|
     to_val := to_val';
     from_val := from_val';
-    IntoVal_def := (mkC (IntoVal_def completeInt.C) false)
+    IntoVal_def := (mkC (IntoVal_def completeInt.C) (IntoVal_def completeSlice.C) false)
   |}.
   intros v. 
-  destruct v as [[int_one int_two int_three int_four int_five int_six] success]; done.
+  destruct v as [[int_one int_two int_three int_four int_five int_six] [slc_strg slc_strg2 slc_bytes] success]; done.
 Defined.
 
 #[global]
@@ -587,6 +597,9 @@ Proof.
   
   iApply (completeInt.own_to_val) in "Hown_int".
   iDestruct "Hown_int" as "[Hown_int %Hval_int]".
+  
+  iApply (completeSlice.own_to_val) in "Hown_slc".
+  iDestruct "Hown_slc" as "[Hown_slc %Hval_slc]".
   
   iUnfold own.
   iSplitL.
@@ -620,6 +633,10 @@ Proof.
   iIntros (int_enc int_sl) "(%Hargs_int_enc & Hargs_int_own & Hsl)".
   wp_store.
 
+  wp_load. wp_pures. wp_apply (completeSlice.wp_Encode with "[$Hown_slc $Hsl]").
+  iIntros (slc_enc slc_sl) "(%Hargs_slc_enc & Hargs_slc_own & Hsl)".
+  wp_store.
+
   wp_load. wp_apply (wp_WriteBool with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
 
@@ -629,9 +646,10 @@ Proof.
 
   unfold has_encoding. split.
   {
-  exists int_enc. 
+  exists int_enc, slc_enc. 
   rewrite ?string_bytes_length.
   rewrite ?w64_to_nat_id. exact.
+  
   } done.
 Qed.
 
@@ -656,10 +674,13 @@ Proof.
   iIntros (l__int) "Hint". wp_pures.
   
   wp_apply wp_ref_of_zero; first done.
+  iIntros (l__slc) "Hslc". wp_pures.
+  
+  wp_apply wp_ref_of_zero; first done.
   iIntros (l__success) "Hsuccess". wp_pures.
   
   unfold has_encoding in Henc.
-  destruct Henc as ( int_sl & Henc & Hencoding_int ).
+  destruct Henc as ( int_sl & slc_sl & Henc & Hencoding_int & Hencoding_slc ).
   rewrite Henc. rewrite -?app_assoc.
 
   wp_load. wp_apply (completeInt.wp_Decode int_sl with "[$Hsl //]").
@@ -667,6 +688,13 @@ Proof.
   iApply (completeInt.own_to_val) in "Hown_int".
   iDestruct "Hown_int" as "[Hown_int %Hval_int]".
   rewrite Hval_int.
+  wp_pures. wp_store. wp_store.
+
+  wp_load. wp_apply (completeSlice.wp_Decode slc_sl with "[$Hsl //]").
+  iIntros (slc__v ?) "[Hown_slc Hsl]".
+  iApply (completeSlice.own_to_val) in "Hown_slc".
+  iDestruct "Hown_slc" as "[Hown_slc %Hval_slc]".
+  rewrite Hval_slc.
   wp_pures. wp_store. wp_store.
 
   wp_load. wp_apply (wp_ReadBool with "[Hsl]").
@@ -677,7 +705,7 @@ Proof.
   rewrite Hargs_success.
   wp_pures. wp_store. wp_store.
 
-  wp_load. wp_load. wp_load.
+  wp_load. wp_load. wp_load. wp_load.
   wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
   iPureIntro. reflexivity.
 Qed.
@@ -698,10 +726,12 @@ import (
 	"github.com/tchajed/marshal"
 
 	"github.com/mjschwenne/grackle/testdata/out/go/completeint_gk"
+	"github.com/mjschwenne/grackle/testdata/out/go/completeslice_gk"
 )
 
 type S struct {
 	Int     completeint_gk.S
+	Slc     completeslice_gk.S
 	Success bool
 }
 
@@ -709,6 +739,7 @@ func Marshal(c S, prefix []byte) []byte {
 	var enc = prefix
 
 	enc = completeint_gk.Marshal(c.Int, enc)
+	enc = completeslice_gk.Marshal(c.Slc, enc)
 	enc = marshal.WriteBool(enc, c.Success)
 
 	return enc
@@ -717,13 +748,16 @@ func Marshal(c S, prefix []byte) []byte {
 func Unmarshal(s []byte) (S, []byte) {
 	var enc = s // Needed for goose compatibility
 	var int completeint_gk.S
+	var slc completeslice_gk.S
 	var success bool
 
 	int, enc = completeint_gk.Unmarshal(enc)
+	slc, enc = completeslice_gk.Unmarshal(enc)
 	success, enc = marshal.ReadBool(enc)
 
 	return S{
 		Int:     int,
+		Slc:     slc,
 		Success: success,
 	}, enc
 }
