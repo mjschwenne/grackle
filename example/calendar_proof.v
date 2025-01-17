@@ -15,18 +15,10 @@ Module Calendar.
           events : list Event.C;
         }.
 
-    Fixpoint has_events_encoding (encoding:list u8) (events: list Event.C) : Prop :=
-      match events with
-      | [] => encoding = []
-      | e :: tail => ∃ (e_enc tail_enc:list u8), encoding = e_enc ++ tail_enc /\
-                                               Event.has_encoding e_enc e /\
-                                               has_events_encoding tail_enc tail
-      end.
-
     Definition has_encoding (encoded:list u8) (args:C) : Prop :=
       ∃ (events_enc : list u8),
         encoded = (u64_le $ length $ args.(events)) ++ events_enc /\
-        has_events_encoding events_enc args.(events).
+        encodes events_enc args.(events) Event.has_encoding.
     
     Definition own (args__v : val) (args__c : C) (dq :dfrac) : iProp Σ :=
       ∃ (events__sl : Slice.t),
@@ -65,6 +57,8 @@ Module Calendar.
     Admitted.
     
     Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac) :
+      (* TODO: See if this precondition can be removed. *)
+      length args__c.(events) < 2^64 ->
       {{{
             ⌜ has_encoding enc args__c ⌝ ∗
             own_slice_small enc_sl byteT dq (enc ++ suffix)
@@ -76,7 +70,7 @@ Module Calendar.
             own_slice_small suff_sl byteT dq suffix
       }}}.
     Proof.
-      iIntros (?) "[%Henc Hsl] HΦ". wp_rec.
+      iIntros (Helen ?) "[%Henc Hsl] HΦ". wp_rec.
       wp_apply wp_ref_to; first done.
       iIntros (l__s) "Hs". wp_pures.
       
@@ -93,8 +87,8 @@ Module Calendar.
       iIntros (?) "Hsl". wp_pures. wp_store. wp_store.
 
       wp_load. wp_load.
-      
-      wp_apply (wp_ReadSlice _ _ args__c.(events) _ Event.has_encoding Event.own with "[]").
+
+      wp_apply (wp_ReadSlice _ _ args__c.(events) _ Event.has_encoding Event.own with "[Hevents HeventsLen Hsl]").
       {
         iIntros (???) "Hown". iUnfold Event.own in "Hown".
         iUnfold timestamp_proof.TimeStamp.own in "Hown".
@@ -106,7 +100,12 @@ Module Calendar.
         rewrite Hown_struct.
         rewrite Hown_struct0.
         rewrite Hown_struct1.
+        repeat constructor.
       } { done. }
+      { iFrame.
+        iSplit; first done.
+        iSplit; first word.
+    Admitted.
   End Calendar.
 End Calendar.
     
