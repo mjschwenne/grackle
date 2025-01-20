@@ -90,21 +90,27 @@ Module Calendar.
 
       wp_apply (wp_ReadSlice _ _ args__c.(events) _ Event.has_encoding Event.own with "[Hevents HeventsLen Hsl]").
       {
-        iIntros (???) "Hown". iUnfold Event.own in "Hown".
-        iUnfold timestamp_proof.TimeStamp.own in "Hown".
+        iIntros (???) "Hown".
+        unfold Event.own.
+        unfold timestamp_proof.TimeStamp.own.
         iDestruct "Hown" as "[%stv [%etv Hown]]".
         iNamed "Hown".
         iNamed "Hown_startTime".
         iNamed "Hown_endTime".
         iPureIntro.
-        rewrite Hown_struct.
-        rewrite Hown_struct0.
-        rewrite Hown_struct1.
+        subst.
         repeat constructor.
       } { done. }
       { iFrame.
         iSplit; first done.
         iSplit; first word.
+        iIntros (????) "!>".
+        iIntros (?) "[Hsl' Henc'] HΦ".
+        wp_apply (Event.wp_Decode with "[$Hsl' $Henc']").
+        iApply "HΦ".
+      }
+      iIntros (??) "Hpsl".
+      wp_pures.
     Admitted.
   End Calendar.
 End Calendar.
