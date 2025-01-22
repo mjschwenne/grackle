@@ -64,11 +64,14 @@ Module Calendar.
       wp_pures. wp_store. wp_load.
       iModIntro.
       iApply "HΦ".
-      iSplit. { done.
-      iFrame.
+      iSplit.
+      { iPureIntro. unfold has_encoding. exists enc. split; done. }
+      iFrame. rewrite Hevents_sz. rewrite w64_to_nat_id. rewrite app_assoc.
+      iFrame. iPureIntro. done.
+    Qed.
     
     Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac) :
-      (* TODO: See if this precondition can be removed. *)
+      (* FIXME: Remove this precondition. *)
       length args__c.(events) < 2^64 ->
       {{{
             ⌜ has_encoding enc args__c ⌝ ∗
