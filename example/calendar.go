@@ -12,7 +12,7 @@ func MarshalCalendar(c Calendar, prefix []byte) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt(enc, uint64(len(c.events)))
-	enc = marshal.WriteSlice(prefix, c.events, MarshalEvent)
+	enc = marshal.WriteSlice(enc, c.events, MarshalEvent)
 
 	return enc
 }

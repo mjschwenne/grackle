@@ -90,8 +90,8 @@ Lemma wp_Encode (args__v : val) (args__c : C) (prefix : list u8) (pre_sl : Slice
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜ has_encoding enc args__c ⌝ ∗
-        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc) ∗
-        own args__v args__c dq
+        own args__v args__c dq ∗
+        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
   }}}.
 Proof.
   iIntros (?) "[Hown Hsl] HΦ". iNamed "Hown". rewrite Hown_struct.

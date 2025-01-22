@@ -55,7 +55,7 @@ Definition MarshalCalendar: val :=
   rec: "MarshalCalendar" "c" "prefix" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
     "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len (struct.get Calendar "events" "c")));;
-    "enc" <-[slice.T byteT] (marshal.WriteSlice (struct.t Event) "prefix" (struct.get Calendar "events" "c") MarshalEvent);;
+    "enc" <-[slice.T byteT] (marshal.WriteSlice (struct.t Event) (![slice.T byteT] "enc") (struct.get Calendar "events" "c") MarshalEvent);;
     ![slice.T byteT] "enc".
 
 (* UnmarshalTimeStamp from timestamp.go *)

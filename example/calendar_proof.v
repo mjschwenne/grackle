@@ -42,19 +42,30 @@ Module Calendar.
       iIntros (?) "[Hown Hsl] HΦ".
       wp_rec. wp_pures.
       iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
-      iUnfold is_pred_slice in "Hown_events".
-      iDestruct "Hown_events" as "[%es [Hown_events #HΨ_events]]".
-      iDestruct (big_sepL2_length with "HΨ_events") as "%HΨ_events_len".
+      iDestruct (pred_slice_sz with "Hown_events") as "%Hevents_sz".
       wp_apply (wp_ref_to); first by val_ty.
-      iIntros (?) "Hptr". wp_pures.
+      iIntros (l__enc) "Hptr_enc". wp_pures.
     
       wp_apply (wp_slice_len).
-      iDestruct (own_slice_small_sz with "Hown_events") as "%Hargs_events_sz".
       wp_load. wp_apply (wp_WriteInt with "[$Hsl]").
       iIntros (?) "Hsl". wp_store. wp_pures.
       
-      (* TODO: Finish once wp_WriteSlice exists *)
-    Admitted.
+      wp_load.
+      wp_apply (wp_WriteSlice _ _ args__c.(events) Event.has_encoding Event.own with
+                 "[Hown_events Hsl]").
+      {
+        iFrame.
+        iIntros (????) "!>".
+        iIntros (?) "[Hown' Hsl'] HΦ".
+        wp_apply (Event.wp_Encode with "[$Hsl' $Hown']").
+        iApply "HΦ".
+      }
+      iIntros (??) "(Hpsl_events & %Henc & Hsl)".
+      wp_pures. wp_store. wp_load.
+      iModIntro.
+      iApply "HΦ".
+      iSplit. { done.
+      iFrame.
     
     Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac) :
       (* TODO: See if this precondition can be removed. *)
