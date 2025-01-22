@@ -18,7 +18,8 @@ Module Calendar.
     Definition has_encoding (encoded:list u8) (args:C) : Prop :=
       ∃ (events_enc : list u8),
         encoded = (u64_le $ length $ args.(events)) ++ events_enc /\
-        encodes events_enc args.(events) Event.has_encoding.
+        encodes events_enc args.(events) Event.has_encoding /\
+        length args.(events) < 2^64.
     
     Definition own (args__v : val) (args__c : C) (dq :dfrac) : iProp Σ :=
       ∃ (events__sl : Slice.t),
@@ -65,14 +66,13 @@ Module Calendar.
       iModIntro.
       iApply "HΦ".
       iSplit.
-      { iPureIntro. unfold has_encoding. exists enc. split; done. }
+      { iPureIntro. unfold has_encoding. exists enc.
+        split; first done. split; first done. word. }
       iFrame. rewrite Hevents_sz. rewrite w64_to_nat_id. rewrite app_assoc.
       iFrame. iPureIntro. done.
     Qed.
     
     Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac) :
-      (* FIXME: Remove this precondition. *)
-      length args__c.(events) < 2^64 ->
       {{{
             ⌜ has_encoding enc args__c ⌝ ∗
             own_slice_small enc_sl byteT dq (enc ++ suffix)
@@ -84,7 +84,7 @@ Module Calendar.
             own_slice_small suff_sl byteT dq suffix
       }}}.
     Proof.
-      iIntros (Helen ?) "[%Henc Hsl] HΦ". wp_rec.
+      iIntros (?) "[%Henc Hsl] HΦ". wp_rec.
       wp_apply wp_ref_to; first done.
       iIntros (l__s) "Hs". wp_pures.
       
@@ -94,7 +94,7 @@ Module Calendar.
       wp_apply wp_ref_of_zero; first done.
       iIntros (l__eventsLen) "HeventsLen". wp_pures.
 
-      destruct Henc as [events_enc [Henc Henc_events]].
+      destruct Henc as (events_enc & Henc & Henc_events & Hevents_sz).
       rewrite Henc. rewrite -?app_assoc.
 
       wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
