@@ -99,7 +99,7 @@ Module Calendar.
 
       wp_load. wp_load.
 
-      wp_apply (wp_ReadSlice _ _ args__c.(events) _ Event.has_encoding Event.own with "[Hevents HeventsLen Hsl]").
+      wp_apply (wp_ReadSlice _ _ _ _ Event.has_encoding Event.own with "[Hsl]").
       {
         iIntros (???) "Hown".
         unfold Event.own.
@@ -120,9 +120,12 @@ Module Calendar.
         wp_apply (Event.wp_Decode with "[$Hsl' $Henc']").
         iApply "HΦ".
       }
-      iIntros (??) "Hpsl".
-      wp_pures.
-    Admitted.
+      iIntros (??) "[Hpsl Hsl]".
+      wp_pures. wp_store. wp_store.
+      wp_load. wp_load. wp_pures.
+      iModIntro. iApply "HΦ".
+      iFrame. iPureIntro. done.
+    Qed.
   End Calendar.
 End Calendar.
     
