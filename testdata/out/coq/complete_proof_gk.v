@@ -34,57 +34,27 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   /\ completeSlice.has_encoding slc_enc args.(slc).
 
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  "%Hown_struct" ∷ ⌜ args__v = (completeInt.to_val' args__c.(int), (completeSlice.to_val' args__c.(slc), (#args__c.(success), #())))%V ⌝ ∗
-  "Hown_int" ∷ completeInt.own (completeInt.to_val' args__c.(int)) args__c.(int) dq ∗
-  "Hown_slc" ∷ completeSlice.own (completeSlice.to_val' args__c.(slc)) args__c.(slc) dq.
+  ∃(int__v slc__v : val) , 
+  "%Hown_struct" ∷ ⌜ args__v = (int__v, (slc__v, (#args__c.(success), #())))%V ⌝ ∗
+  "Hown_int" ∷ completeInt.own int__v args__c.(int) dq ∗
+  "Hown_slc" ∷ completeSlice.own slc__v args__c.(slc) dq.
 
 
-Definition to_val' (c : C) : val :=
-  (completeInt.to_val' c.(int), (completeSlice.to_val' c.(slc), (#c.(success), #()))).
-
-Definition from_val' (v : val) : option C :=
-  match v with
-  | (int, (slc, (#(LitBool success), #())))%V =>
-    match completeInt.from_val' int with
-    | Some int =>
-        match completeSlice.from_val' slc with
-        | Some slc =>
-            Some (mkC int slc success)
-        | None => None
-        end
-    | None => None
-    end
-  | _ => None
-  end.
-
-#[global]
-Instance complete_into_val : IntoVal C.
+Lemma own_val_ty :
+  ∀ (v : val) (x : C) (dq : dfrac), own v x dq -∗ ⌜val_ty v (struct.t complete_gk.S)⌝.
 Proof.
-  refine {|
-    to_val := to_val';
-    from_val := from_val';
-    IntoVal_def := (mkC (IntoVal_def completeInt.C) (IntoVal_def completeSlice.C) false)
-  |}.
-  intros v. 
-  destruct v as [[int_one int_two int_three int_four int_five int_six] [slc_strg slc_strg2 slc_bytes] success]; done.
-Defined.
-
-#[global]
-Instance complete_into_val_for_type : IntoValForType C (struct.t complete_gk.S).
-Proof. constructor; auto 10. Defined.
-
-Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
-  own v c dq -∗ ⌜ v = to_val c ⌝.
-Proof.
-  iIntros "Hown". iNamed "Hown".
+  iIntros (???) "Hown".
+  unfold own. iNamed "Hown".
   
-  iDestruct (completeInt.own_to_val with "Hown_int") as "%Hval_int".
-  
-  iDestruct (completeSlice.own_to_val with "Hown_slc") as "%Hval_slc".
-  
-  done.
+  unfold completeint_proof_gk.completeInt.own.
+  unfold completeslice_proof_gk.completeSlice.own.
+  iNamed "Hown_int".
+  iNamed "Hown_slc".
+  iPureIntro.
+  subst.
+  repeat constructor.
+  by val_ty.
 Qed.
-
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{
@@ -162,14 +132,12 @@ Proof.
 
   wp_load. wp_apply (completeInt.wp_Decode int_sl with "[$Hsl //]").
   iIntros (int__v ?) "[Hown_int Hsl]".
-  iDestruct (completeInt.own_to_val with "Hown_int") as "%Hval_int".
-  rewrite Hval_int.
+  iDestruct (completeInt.own_val_ty with "Hown_int") as "%Hval_int".
   wp_pures. wp_store. wp_store.
 
   wp_load. wp_apply (completeSlice.wp_Decode slc_sl with "[$Hsl //]").
   iIntros (slc__v ?) "[Hown_slc Hsl]".
-  iDestruct (completeSlice.own_to_val with "Hown_slc") as "%Hval_slc".
-  rewrite Hval_slc.
+  iDestruct (completeSlice.own_val_ty with "Hown_slc") as "%Hval_slc".
   wp_pures. wp_store. wp_store.
 
   wp_load. wp_apply (wp_ReadBool with "[Hsl]").

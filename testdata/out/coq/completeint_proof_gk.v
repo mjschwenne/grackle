@@ -67,9 +67,20 @@ Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
 Proof.
   iIntros "%Hown_struct".
   
-  done.
+  subst. done.
 Qed.
 
+
+Lemma own_val_ty :
+  ∀ (v : val) (x : C) (dq : dfrac), own v x dq -∗ ⌜val_ty v (struct.t completeint_gk.S)⌝.
+Proof.
+  iIntros (???) "Hown".
+  unfold own. iNamed "Hown".
+  
+  iPureIntro.
+  subst.
+  repeat constructor.
+Qed.
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{

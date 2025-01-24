@@ -107,13 +107,14 @@ Module Calendar.
         iIntros (???) "Hown".
         unfold Event.own.
         unfold timestamp_proof.TimeStamp.own.
-        iDestruct "Hown" as "[%stv [%etv Hown]]".
+        iDestruct "Hown" as "(%stv & %etv & Hown)".
         iNamed "Hown".
         iNamed "Hown_startTime".
         iNamed "Hown_endTime".
         iPureIntro.
         subst.
         repeat constructor.
+        by val_ty.
       } { done. }
       { iFrame.
         iSplit; first done.

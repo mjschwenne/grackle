@@ -34,9 +34,10 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   /\ TimeStamp.has_encoding endTime_enc args.(endTime).
 
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  "%Hown_struct" ∷ ⌜ args__v = (#args__c.(id), (#(str args__c.(name)), (TimeStamp.to_val' args__c.(startTime), (TimeStamp.to_val' args__c.(endTime), #()))))%V ⌝ ∗
-  "Hown_startTime" ∷ TimeStamp.own (TimeStamp.to_val' args__c.(startTime)) args__c.(startTime) dq ∗
-  "Hown_endTime" ∷ TimeStamp.own (TimeStamp.to_val' args__c.(endTime)) args__c.(endTime) dq.
+  ∃(startTime__v endTime__v : val) , 
+  "%Hown_struct" ∷ ⌜ args__v = (#args__c.(id), (#(str args__c.(name)), (startTime__v, (endTime__v, #()))))%V ⌝ ∗
+  "Hown_startTime" ∷ TimeStamp.own startTime__v args__c.(startTime) dq ∗
+  "Hown_endTime" ∷ TimeStamp.own endTime__v args__c.(endTime) dq.
 
 
 Definition to_val' (c : C) : val :=
@@ -82,9 +83,23 @@ Proof.
   
   iDestruct (TimeStamp.own_to_val with "Hown_endTime") as "%Hval_endTime".
   
-  done.
+  subst. done.
 Qed.
 
+
+Lemma own_val_ty :
+  ∀ (v : val) (x : C) (dq : dfrac), own v x dq -∗ ⌜val_ty v (struct.t event_gk.S)⌝.
+Proof.
+  iIntros (???) "Hown".
+  unfold own. iNamed "Hown".
+  
+  unfold timestamp_proof_gk.TimeStamp.own.
+  iNamed "Hown_startTime".
+  iNamed "Hown_endTime".
+  iPureIntro.
+  subst.
+  repeat constructor.
+Qed.
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{
@@ -192,14 +207,12 @@ Proof.
 
   wp_load. wp_apply (TimeStamp.wp_Decode startTime_sl with "[$Hsl //]").
   iIntros (startTime__v ?) "[Hown_startTime Hsl]".
-  iDestruct (TimeStamp.own_to_val with "Hown_startTime") as "%Hval_startTime".
-  rewrite Hval_startTime.
+  iDestruct (TimeStamp.own_val_ty with "Hown_startTime") as "%Hval_startTime".
   wp_pures. wp_store. wp_store.
 
   wp_load. wp_apply (TimeStamp.wp_Decode endTime_sl with "[$Hsl //]").
   iIntros (endTime__v ?) "[Hown_endTime Hsl]".
-  iDestruct (TimeStamp.own_to_val with "Hown_endTime") as "%Hval_endTime".
-  rewrite Hval_endTime.
+  iDestruct (TimeStamp.own_val_ty with "Hown_endTime") as "%Hval_endTime".
   wp_pures. wp_store. wp_store.
 
   wp_load. wp_load. wp_load. wp_load. wp_load.

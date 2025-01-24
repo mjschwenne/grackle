@@ -3,8 +3,10 @@
   #()
   <<- else ->>
   (<<- with $valF := index . 0 ->>
-  <<- if valFunc $valF ->>
-  <<- if not (or (isExtValType .) (isSliceType .)) >>#(<< end >><< valFunc $valF >> << else >>#<< end >><< if isSliceType . >><< .Name >>_sl<< else >>args__c.(<<- $valF.Name ->>)<< end >>
+  <<- if isExtValType $valF ->> << $valF.Name >>__v
+  <<- else if valFunc $valF ->>
+  <<- if not (isSliceType .) >>#(<< end >><< valFunc $valF >> << else >>#
+  <<- end >><< if isSliceType . >><< .Name >>_sl<< else if not (isExtValType .) >>args__c.(<<- $valF.Name ->>)<< end >>
   <<- if and (not (or (isExtValType .) (isSliceType .))) (valFunc $valF) >>)<< end >>, << end ->>
   << template "coq_own_struct" (slice . 1) ->>)
   <<- end ->>
@@ -12,9 +14,12 @@
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   <<- $extval := (extValFields .Fields) ->>
   <<- $lists := (sliceFields .Fields) ->>
-  <<- if (gt (len $lists) 0)  >>
+  <<- if (or (gt (len $extval) 0) (gt (len $lists) 0)) >>
   ∃ 
-  <<- if len $lists ->>
+  <<- if len $extval ->>
+  (<<- range $idx, $field := $extval ->>
+  <<- $field.Name ->>__v << end ->>: val)
+  <<- end >> << if len $lists ->>
   (<<- range $idx, $field := $lists ->>
   <<- $field.Name ->>_sl << end ->>: Slice.t)
   <<- end ->>
@@ -24,5 +29,5 @@ Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   "Hown_<< .Name >>" ∷ own_slice_small << .Name >>_sl << goType . >>T dq args__c.(<< .Name >>)
   <<- end >>
   <<- range $extval >> ∗
-  "Hown_<< .Name >>" ∷ << .TypeName >>.own (<< .TypeName >>.to_val' args__c.(<< .Name >>)) args__c.(<< .Name >>) dq
-  <<- end >>.
+  "Hown_<< .Name >>" ∷ << .TypeName >>.own << .Name >>__v args__c.(<< .Name >>) dq
+  <<- end ->>.

@@ -27,10 +27,22 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               (u64_le $ length $ args.(bytes)) ++ args.(bytes).
 
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  ∃(bytes_sl : Slice.t), 
+  ∃ (bytes_sl : Slice.t), 
   "%Hown_struct" ∷ ⌜ args__v = (#(str args__c.(strg)), (#(str args__c.(strg2)), (slice_val bytes_sl, #())))%V ⌝ ∗
   "Hown_bytes" ∷ own_slice_small bytes_sl byteT dq args__c.(bytes).
 
+
+Lemma own_val_ty :
+  ∀ (v : val) (x : C) (dq : dfrac), own v x dq -∗ ⌜val_ty v (struct.t completeslice_gk.S)⌝.
+Proof.
+  iIntros (???) "Hown".
+  unfold own. iNamed "Hown".
+  
+  iPureIntro.
+  subst.
+  repeat constructor.
+  by val_ty.
+Qed.
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{

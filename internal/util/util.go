@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strings"
 	"unicode"
 
@@ -183,8 +184,50 @@ func GetBuiltInMarshalFuncType(field *field) string {
 	return TypeMap[field.GetType()].MarshalType
 }
 
-func GetValFunc(field *field) string {
-	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+func GetAllNestedMessages(msgName string, nested []string, msgMap map[string]*descriptorpb.DescriptorProto) []string {
+	msg := msgMap[msgName]
+	for _, f := range msg.GetField() {
+		name := f.GetTypeName()
+		if f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && !slices.Contains(nested, name) {
+			nested = append(nested, name)
+			nested = GetAllNestedMessages(name, nested, msgMap)
+		}
+	}
+	return nested
+}
+
+func GetFieldsRecursive(msgName string, fieldFunc func(f []*field) []*field, msgMap map[string]*descriptorpb.DescriptorProto) []*field {
+	nested := GetAllNestedMessages(msgName, []string{msgName}, msgMap)
+	resultFields := []*field{}
+	for _, m := range nested {
+		resultFields = append(resultFields, fieldFunc(msgMap[m].GetField())...)
+	}
+	return resultFields
+}
+
+func HasValFunc(msgName string, msgMap map[string]*descriptorpb.DescriptorProto) bool {
+	msg := msgMap[msgName]
+	var nested []string
+	for _, f := range msg.GetField() {
+		if f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+			realName := f.GetTypeName()
+			if slices.Contains(nested, realName) {
+				continue
+			} else if HasValFunc(realName, msgMap) {
+				nested = append(nested, realName)
+			} else {
+				return false
+			}
+		}
+		if IsSliceType(f) {
+			return false
+		}
+	}
+	return true
+}
+
+func GetValFunc(field *field, msgMap map[string]*descriptorpb.DescriptorProto) string {
+	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && HasValFunc(field.GetTypeName(), msgMap) {
 		return field.GetTypeName() + ".to_val'"
 	}
 	return TypeMap[field.GetType()].ToValFunc

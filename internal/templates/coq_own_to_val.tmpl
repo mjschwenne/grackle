@@ -9,5 +9,5 @@ Proof.
   << range (messageFields .Fields) >>
   iDestruct (<< coqModuleName . >>.own_to_val with "Hown_<< .Name >>") as "%Hval_<< .Name >>".
   << end >>
-  done.
+  subst. done.
 Qed.

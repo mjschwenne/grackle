@@ -44,6 +44,7 @@ type messageParams struct {
 	GoPackage       *string
 	NestedMessages  []string
 	Fields          []*field
+	MsgMap          map[string]*descriptorpb.DescriptorProto
 }
 
 //go:embed internal/templates
@@ -131,7 +132,11 @@ func setupTemplates(files *descriptorpb.FileDescriptorSet) *template.Template {
 		"notMsgFields": func(fields []*field) []*field {
 			return util.Filter(fields, func(f *field) bool { return !util.IsMessageType(f) })
 		},
-		"sliceFields": func(fields []*field) []*field { return util.Filter(fields, util.IsSliceType) },
+		"allNestedMsgs": func(m string) []string { return util.GetAllNestedMessages(m, []string{}, msgDict) },
+		"sliceFields":   func(fields []*field) []*field { return util.Filter(fields, util.IsSliceType) },
+		"sliceFieldsRecursive": func(m string) []*field {
+			return util.GetFieldsRecursive(m, func(fields []*field) []*field { return util.Filter(fields, util.IsSliceType) }, msgDict)
+		},
 		"filterByCoqType": func(fields []*field, typeStr string) []*field {
 			return util.Filter(fields, func(f *field) bool { return util.IsCoqType(f, typeStr) })
 		},
@@ -149,7 +154,8 @@ func setupTemplates(files *descriptorpb.FileDescriptorSet) *template.Template {
 		"marshalType":   util.GetBuiltInMarshalFuncType,
 		"goModuleName":  util.GetGoModuleName,
 		"coqModuleName": util.GetCoqModuleName,
-		"valFunc":       util.GetValFunc,
+		"valFunc":       func(f *field) string { return util.GetValFunc(f, msgDict) },
+		"hasValFunc":    func(m string) bool { return util.HasValFunc(m, msgDict) },
 		"cleanCoqName":  util.CleanCoqName,
 		"goName":        util.Capitialize,
 		// This is a bit of a hack to let me call templates with dynamic names
@@ -278,7 +284,7 @@ func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqP
 	for _, file := range descriptorSet.File {
 		fileOpts := getFileOptions(file, gooseOutput, coqLogicalPath, coqPhysicalPath, goOutputPath, goPackage)
 		for _, enum := range file.EnumType {
-			log.Printf("Found enum: %s\n", enum.GetName())
+			// log.Printf("Found enum: %s\n", enum.GetName())
 			var goOut io.Writer
 			goPhysicalPath := util.GetGoOutputPath(goOutputPath, enum.Name)
 			if *goOutputPath != "" {

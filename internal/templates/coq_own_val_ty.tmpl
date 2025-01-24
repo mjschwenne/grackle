@@ -1,0 +1,18 @@
+Lemma own_val_ty :
+  ∀ (v : val) (x : C) (dq : dfrac), own v x dq -∗ ⌜val_ty v (struct.t << lower .Name >>_gk.S)⌝.
+Proof.
+  iIntros (???) "Hown".
+  unfold own. iNamed "Hown".
+  << range allNestedMsgs .Name >>
+  unfold << lower . >>_proof_gk.<< . >>.own.
+  <<- end ->>
+  << range messageFields .Fields >>
+  iNamed "Hown_<< .Name >>".
+  <<- end >>
+  iPureIntro.
+  subst.
+  repeat constructor.
+  <<- if gt (len (sliceFieldsRecursive .Name)) 0 >>
+  by val_ty.
+  <<- end >>
+Qed.
