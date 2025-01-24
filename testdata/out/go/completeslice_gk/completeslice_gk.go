@@ -10,9 +10,10 @@ import (
 )
 
 type S struct {
-	Strg  string
-	Strg2 string
-	Bytes []byte
+	Strg   string
+	Strg2  string
+	Bytes  []byte
+	Bytes2 []byte
 }
 
 func Marshal(c S, prefix []byte) []byte {
@@ -26,6 +27,8 @@ func Marshal(c S, prefix []byte) []byte {
 	enc = marshal.WriteBytes(enc, strg2Bytes)
 	enc = marshal.WriteInt(enc, uint64(len(c.Bytes)))
 	enc = marshal.WriteBytes(enc, c.Bytes)
+	enc = marshal.WriteInt(enc, uint64(len(c.Bytes2)))
+	enc = marshal.WriteBytes(enc, c.Bytes2)
 
 	return enc
 }
@@ -35,6 +38,7 @@ func Unmarshal(s []byte) (S, []byte) {
 	var strg string
 	var strg2 string
 	var bytes []byte
+	var bytes2 []byte
 
 	var strgLen uint64
 	var strgBytes []byte
@@ -51,10 +55,16 @@ func Unmarshal(s []byte) (S, []byte) {
 	bytesLen, enc = marshal.ReadInt(enc)
 	bytesBytes, enc = marshal.ReadBytesCopy(enc, bytesLen)
 	bytes = bytesBytes
+	var bytes2Len uint64
+	var bytes2Bytes []byte
+	bytes2Len, enc = marshal.ReadInt(enc)
+	bytes2Bytes, enc = marshal.ReadBytesCopy(enc, bytes2Len)
+	bytes2 = bytes2Bytes
 
 	return S{
-		Strg:  strg,
-		Strg2: strg2,
-		Bytes: bytes,
+		Strg:   strg,
+		Strg2:  strg2,
+		Bytes:  bytes,
+		Bytes2: bytes2,
 	}, enc
 }

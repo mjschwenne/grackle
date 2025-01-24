@@ -8,7 +8,8 @@ Context `{ext_ty: ext_types}.
 Definition S := struct.decl [
   "Strg" :: stringT;
   "Strg2" :: stringT;
-  "Bytes" :: slice.T byteT
+  "Bytes" :: slice.T byteT;
+  "Bytes2" :: slice.T byteT
 ].
 
 Definition Marshal: val :=
@@ -22,6 +23,8 @@ Definition Marshal: val :=
     "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") "strg2Bytes");;
     "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len (struct.get S "Bytes" "c")));;
     "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") (struct.get S "Bytes" "c"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len (struct.get S "Bytes2" "c")));;
+    "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") (struct.get S "Bytes2" "c"));;
     ![slice.T byteT] "enc".
 
 Definition Unmarshal: val :=
@@ -30,6 +33,7 @@ Definition Unmarshal: val :=
     let: "strg" := ref (zero_val stringT) in
     let: "strg2" := ref (zero_val stringT) in
     let: "bytes" := ref (zero_val (slice.T byteT)) in
+    let: "bytes2" := ref (zero_val (slice.T byteT)) in
     let: "strgLen" := ref (zero_val uint64T) in
     let: "strgBytes" := ref (zero_val (slice.T byteT)) in
     let: ("0_ret", "1_ret") := marshal.ReadInt (![slice.T byteT] "enc") in
@@ -57,10 +61,20 @@ Definition Unmarshal: val :=
     "bytesBytes" <-[slice.T byteT] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
     "bytes" <-[slice.T byteT] (![slice.T byteT] "bytesBytes");;
+    let: "bytes2Len" := ref (zero_val uint64T) in
+    let: "bytes2Bytes" := ref (zero_val (slice.T byteT)) in
+    let: ("0_ret", "1_ret") := marshal.ReadInt (![slice.T byteT] "enc") in
+    "bytes2Len" <-[uint64T] "0_ret";;
+    "enc" <-[slice.T byteT] "1_ret";;
+    let: ("0_ret", "1_ret") := marshal.ReadBytesCopy (![slice.T byteT] "enc") (![uint64T] "bytes2Len") in
+    "bytes2Bytes" <-[slice.T byteT] "0_ret";;
+    "enc" <-[slice.T byteT] "1_ret";;
+    "bytes2" <-[slice.T byteT] (![slice.T byteT] "bytes2Bytes");;
     (struct.mk S [
        "Strg" ::= ![stringT] "strg";
        "Strg2" ::= ![stringT] "strg2";
-       "Bytes" ::= ![slice.T byteT] "bytes"
+       "Bytes" ::= ![slice.T byteT] "bytes";
+       "Bytes2" ::= ![slice.T byteT] "bytes2"
      ], ![slice.T byteT] "enc").
 
 End code.

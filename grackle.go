@@ -120,15 +120,16 @@ func setupTemplates(files *descriptorpb.FileDescriptorSet) *template.Template {
 
 	tmpl := template.New("grackle").Delims("<<", ">>")
 	funcMap := template.FuncMap{
-		"protoType":     util.GetProtoTypeName,
-		"coqType":       util.GetCoqTypeName,
-		"isExtValType":  util.IsExternalValType,
-		"isMessage":     util.IsMessageType,
-		"isCoqType":     util.IsCoqType,
-		"isGoType":      util.IsGoType,
-		"isSliceType":   util.IsSliceType,
-		"extValFields":  func(fields []*field) []*field { return util.Filter(fields, util.IsExternalValType) },
-		"messageFields": func(fields []*field) []*field { return util.Filter(fields, util.IsMessageType) },
+		"protoType":      util.GetProtoTypeName,
+		"coqType":        util.GetCoqTypeName,
+		"isExtValType":   util.IsExternalValType,
+		"isMessage":      util.IsMessageType,
+		"isCoqType":      util.IsCoqType,
+		"isGoType":       util.IsGoType,
+		"isSliceType":    util.IsSliceType,
+		"isRepeatedType": util.IsRepeatedType,
+		"extValFields":   func(fields []*field) []*field { return util.Filter(fields, util.IsExternalValType) },
+		"messageFields":  func(fields []*field) []*field { return util.Filter(fields, util.IsMessageType) },
 		"notMsgFields": func(fields []*field) []*field {
 			return util.Filter(fields, func(f *field) bool { return !util.IsMessageType(f) })
 		},

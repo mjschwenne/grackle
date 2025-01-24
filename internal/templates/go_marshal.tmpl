@@ -2,7 +2,7 @@ func Marshal(<<- param .Name >> S, prefix []byte) []byte {
     var enc = prefix
 
     << range .Fields ->>
-    << if isMessage . ->>
+    << if and (isMessage .) (not (isRepeatedType .)) ->>
     enc = << goModuleName . >>.Marshal(<< param $.Name ->>.<< goName .Name >>, enc)
     << else if isGoType . "enum" ->>
     enc = marshal.WriteInt32(enc, uint32(<< param $.Name >>.<< goName .Name >>))
@@ -13,6 +13,9 @@ func Marshal(<<- param .Name >> S, prefix []byte) []byte {
     << else if (and (isGoType . "byte") (isSliceType .)) ->>
     enc = marshal.WriteInt(enc, uint64(len(<< param $.Name >>.<< goName .Name >>)))
     enc = marshal.WriteBytes(enc, << param $.Name >>.<< goName .Name >>)
+    << else if isSliceType . >>
+    enc = marshal.WriteInt(enc, uint64(len(<< param $.Name >>.<< goName .Name >>)))
+    enc = marshal.WriteSlice(enc, << param $.Name >>.<< goName .Name >>, << goModuleName . >>.Marshal )
     << else ->>
     enc = marshal.Write<<- marshalType . ->>(enc, << param $.Name ->>.<< goName .Name >>)
     << end ->><<- end >>

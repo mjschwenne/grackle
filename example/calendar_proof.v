@@ -114,7 +114,6 @@ Module Calendar.
         iPureIntro.
         subst.
         repeat constructor.
-        by val_ty.
       } { done. }
       { iFrame.
         iSplit; first done.

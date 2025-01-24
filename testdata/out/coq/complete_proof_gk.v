@@ -53,7 +53,7 @@ Proof.
   iPureIntro.
   subst.
   repeat constructor.
-  by val_ty.
+  all: by val_ty.
 Qed.
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):

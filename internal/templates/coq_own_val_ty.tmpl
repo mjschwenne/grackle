@@ -13,6 +13,6 @@ Proof.
   subst.
   repeat constructor.
   <<- if gt (len (sliceFieldsRecursive .Name)) 0 >>
-  by val_ty.
+  all: by val_ty.
   <<- end >>
 Qed.

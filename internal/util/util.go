@@ -107,6 +107,16 @@ var TypeMap = map[fieldType]TypeData{
 	},
 }
 
+var LabelMap = map[descriptorpb.FieldDescriptorProto_Label]TypeData{
+	descriptorpb.FieldDescriptorProto_LABEL_REPEATED: {
+		ProtoType:   "repeated",
+		CoqType:     "list",
+		GoType:      "[]",
+		MarshalType: "SliceLenPrefix",
+		SliceType:   true,
+	},
+}
+
 // STRING MANIPULATION UTILITIES
 
 func CleanCoqName(goPackage string) string {
@@ -233,12 +243,16 @@ func GetValFunc(field *field, msgMap map[string]*descriptorpb.DescriptorProto) s
 	return TypeMap[field.GetType()].ToValFunc
 }
 
+func IsRepeatedType(field *field) bool {
+	return *field.Label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED
+}
+
 func IsExternalValType(field *field) bool {
 	return TypeMap[field.GetType()].ValType
 }
 
 func IsSliceType(field *field) bool {
-	return TypeMap[field.GetType()].SliceType
+	return TypeMap[field.GetType()].SliceType || IsRepeatedType(field)
 }
 
 func IsMessageType(field *field) bool {
