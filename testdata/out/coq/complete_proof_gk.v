@@ -6,9 +6,9 @@
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.complete_gk.
-From Grackle.test Require Import completeint_proof.
+From Grackle.test Require Import completeint_proof_gk.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
-From Grackle.test Require Import completeslice_proof.
+From Grackle.test Require Import completeslice_proof_gk.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 
 Module complete.
@@ -34,10 +34,57 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   /\ completeSlice.has_encoding slc_enc args.(slc).
 
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  ∃ (int__v slc__v:val),
-  "%Hown_struct" ∷ ⌜ args__v = (int__v, (slc__v, (#args__c.(success), #())))%V ⌝ ∗
-  "Hown_int" ∷ completeInt.own int__v args__c.(int) dq ∗
-  "Hown_slc" ∷ completeSlice.own slc__v args__c.(slc) dq.
+  "%Hown_struct" ∷ ⌜ args__v = (completeInt.to_val' args__c.(int), (completeSlice.to_val' args__c.(slc), (#args__c.(success), #())))%V ⌝ ∗
+  "Hown_int" ∷ completeInt.own (completeInt.to_val' args__c.(int)) args__c.(int) dq ∗
+  "Hown_slc" ∷ completeSlice.own (completeSlice.to_val' args__c.(slc)) args__c.(slc) dq.
+
+
+Definition to_val' (c : C) : val :=
+  (completeInt.to_val' c.(int), (completeSlice.to_val' c.(slc), (#c.(success), #()))).
+
+Definition from_val' (v : val) : option C :=
+  match v with
+  | (int, (slc, (#(LitBool success), #())))%V =>
+    match completeInt.from_val' int with
+    | Some int =>
+        match completeSlice.from_val' slc with
+        | Some slc =>
+            Some (mkC int slc success)
+        | None => None
+        end
+    | None => None
+    end
+  | _ => None
+  end.
+
+#[global]
+Instance complete_into_val : IntoVal C.
+Proof.
+  refine {|
+    to_val := to_val';
+    from_val := from_val';
+    IntoVal_def := (mkC (IntoVal_def completeInt.C) (IntoVal_def completeSlice.C) false)
+  |}.
+  intros v. 
+  destruct v as [[int_one int_two int_three int_four int_five int_six] [slc_strg slc_strg2 slc_bytes] success]; done.
+Defined.
+
+#[global]
+Instance complete_into_val_for_type : IntoValForType C (struct.t complete_gk.S).
+Proof. constructor; auto 10. Defined.
+
+Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
+  own v c dq -∗ ⌜ v = to_val c ⌝.
+Proof.
+  iIntros "Hown". iNamed "Hown".
+  
+  iDestruct (completeInt.own_to_val with "Hown_int") as "%Hval_int".
+  
+  iDestruct (completeSlice.own_to_val with "Hown_slc") as "%Hval_slc".
+  
+  done.
+Qed.
+
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{
@@ -115,15 +162,13 @@ Proof.
 
   wp_load. wp_apply (completeInt.wp_Decode int_sl with "[$Hsl //]").
   iIntros (int__v ?) "[Hown_int Hsl]".
-  iApply (completeInt.own_to_val) in "Hown_int".
-  iDestruct "Hown_int" as "[Hown_int %Hval_int]".
+  iDestruct (completeInt.own_to_val with "Hown_int") as "%Hval_int".
   rewrite Hval_int.
   wp_pures. wp_store. wp_store.
 
   wp_load. wp_apply (completeSlice.wp_Decode slc_sl with "[$Hsl //]").
   iIntros (slc__v ?) "[Hown_slc Hsl]".
-  iUnfold completeSlice.own in "Hown_slc".
-  iDestruct "Hown_slc" as "[%slc_sl_sl [%Hval_slc Hown_slc]]".
+  iDestruct (completeSlice.own_to_val with "Hown_slc") as "%Hval_slc".
   rewrite Hval_slc.
   wp_pures. wp_store. wp_store.
 
@@ -137,7 +182,7 @@ Proof.
 
   wp_load. wp_load. wp_load. wp_load.
   wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
-  iExists slc__v. iSplitL; iPureIntro; rewrite Hval_slc; reflexivity.
+  iPureIntro. reflexivity.
 Qed.
 
 End complete.

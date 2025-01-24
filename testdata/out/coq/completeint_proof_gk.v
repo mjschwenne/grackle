@@ -63,14 +63,11 @@ Instance completeInt_into_val_for_type : IntoValForType C (struct.t completeint_
 Proof. constructor; auto 10. Defined.
 
 Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
-  own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
+  own v c dq -∗ ⌜ v = to_val c ⌝.
 Proof.
   iIntros "%Hown_struct".
   
-  iUnfold own.
-  iSplitL.
-  + iPureIntro. done.
-  +  done.
+  done.
 Qed.
 
 

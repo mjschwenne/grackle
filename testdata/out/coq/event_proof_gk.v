@@ -6,7 +6,7 @@
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.event_gk.
-From Grackle.test Require Import timestamp_proof.
+From Grackle.test Require Import timestamp_proof_gk.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
 
 Module Event.
@@ -74,21 +74,15 @@ Instance Event_into_val_for_type : IntoValForType C (struct.t event_gk.S).
 Proof. constructor; auto 10. Defined.
 
 Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
-  own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
+  own v c dq -∗ ⌜ v = to_val c ⌝.
 Proof.
   iIntros "Hown". iNamed "Hown".
   
-  iApply (TimeStamp.own_to_val) in "Hown_startTime".
-  iDestruct "Hown_startTime" as "[Hown_startTime %Hval_startTime]".
+  iDestruct (TimeStamp.own_to_val with "Hown_startTime") as "%Hval_startTime".
   
-  iApply (TimeStamp.own_to_val) in "Hown_endTime".
-  iDestruct "Hown_endTime" as "[Hown_endTime %Hval_endTime]".
+  iDestruct (TimeStamp.own_to_val with "Hown_endTime") as "%Hval_endTime".
   
-  iUnfold own.
-  iSplitL.
-  + iFrame.
-    iPureIntro. done.
-  + rewrite Hown_struct.  done.
+  done.
 Qed.
 
 
@@ -198,15 +192,13 @@ Proof.
 
   wp_load. wp_apply (TimeStamp.wp_Decode startTime_sl with "[$Hsl //]").
   iIntros (startTime__v ?) "[Hown_startTime Hsl]".
-  iApply (TimeStamp.own_to_val) in "Hown_startTime".
-  iDestruct "Hown_startTime" as "[Hown_startTime %Hval_startTime]".
+  iDestruct (TimeStamp.own_to_val with "Hown_startTime") as "%Hval_startTime".
   rewrite Hval_startTime.
   wp_pures. wp_store. wp_store.
 
   wp_load. wp_apply (TimeStamp.wp_Decode endTime_sl with "[$Hsl //]").
   iIntros (endTime__v ?) "[Hown_endTime Hsl]".
-  iApply (TimeStamp.own_to_val) in "Hown_endTime".
-  iDestruct "Hown_endTime" as "[Hown_endTime %Hval_endTime]".
+  iDestruct (TimeStamp.own_to_val with "Hown_endTime") as "%Hval_endTime".
   rewrite Hval_endTime.
   wp_pures. wp_store. wp_store.
 

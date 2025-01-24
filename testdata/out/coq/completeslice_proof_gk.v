@@ -5,7 +5,6 @@
 
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
-From Perennial.goose_lang Require Import lib.slice.pred_slice.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 
 Module completeSlice.
@@ -30,7 +29,8 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
 Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   ∃(bytes_sl : Slice.t), 
   "%Hown_struct" ∷ ⌜ args__v = (#(str args__c.(strg)), (#(str args__c.(strg2)), (slice_val bytes_sl, #())))%V ⌝ ∗
-  "Hown_bytes" ∷ is_pred_slice own_val bytes_sl byteT dq args__c.(bytes).
+  "Hown_bytes" ∷ own_slice_small bytes_sl byteT dq args__c.(bytes).
+
 
 Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
   {{{
@@ -49,10 +49,6 @@ Proof.
   iIntros (?) "[Hown Hsl] HΦ".
   wp_rec. wp_pures.
   iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
-  iUnfold is_pred_slice in "Hown_bytes".
-  iDestruct "Hown_bytes" as "[%vs [Hown_bytes #HΨ_bytes]]".
-  iDestruct (big_sepL2_length with "HΨ_bytes") as "%HΨ_bytes_len".
-  iDestruct (big_sepL2_own_val with "HΨ_bytes") as "%HΨ_bytes_rel".
   wp_apply (wp_ref_to); first by val_ty.
   iIntros (?) "Hptr". wp_pures.
 
@@ -76,27 +72,23 @@ Proof.
   wp_pures. wp_apply (wp_slice_len). wp_load.
   wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
   wp_pures. wp_load.
-  wp_apply (wp_WriteBytes with "[$Hsl Hown_bytes]").
-  { rewrite -> HΨ_bytes_rel.
-    unfold own_slice_small.
-    rewrite untype_val_list.
-    iFrame. }
-  iIntros (?) "[Hsl Hargs_bytes_sl]". wp_store. 
+  wp_apply (wp_WriteBytes with "[$Hsl $Hown_bytes]").
+  iIntros (?) "[Hsl Hargs_bytes_sl]". wp_store.
 
 
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
-  iFrame. iSplitR.
-  + iPureIntro.
-    unfold has_encoding.
-    rewrite ?string_bytes_length.
-    rewrite Hargs_strg_sz.
-    rewrite Hargs_strg2_sz.
-    rewrite <- HΨ_bytes_len.
-    rewrite Hargs_bytes_sz.
-    rewrite ?w64_to_nat_id. exact.
-  + iExists bytes_sl. iSplitR; first done.
-    iUnfold is_pred_slice. unfold own_slice_small. iExists (list.untype args__c.(bytes)).
-    rewrite untype_val_list. iFrame. rewrite HΨ_bytes_rel. done.
+  iFrame. iPureIntro.
+
+  unfold has_encoding. split.
+  {
+  
+  rewrite ?string_bytes_length.
+  rewrite Hargs_strg_sz.
+  rewrite Hargs_strg2_sz.
+  rewrite Hargs_bytes_sz.
+  rewrite ?w64_to_nat_id. exact.
+
+  } done.
 Qed.
 
 Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
@@ -173,12 +165,7 @@ Proof.
 
   wp_load. wp_load. wp_load. wp_load.
   wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
-  iUnfold own. iExists b1. iSplitR; first done. iUnfold is_pred_slice.
-  iExists (list.untype args__c.(bytes)). iSplitR "Hbytes".
-  + unfold own_slice_small. rewrite untype_val_list. iFrame.
-  + unfold list.untype, own_val.
-    rewrite big_sepL2_fmap_l.
-    rewrite <- big_sepL_sepL2_diag. done.
+  iPureIntro. reflexivity.
 Qed.
 
 End completeSlice.

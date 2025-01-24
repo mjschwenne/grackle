@@ -1,5 +1,5 @@
 Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
-  own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
+  own v c dq -∗ ⌜ v = to_val c ⌝.
 Proof.
   <<- if (len .NestedMessages) >>
   iIntros "Hown". iNamed "Hown".
@@ -7,14 +7,7 @@ Proof.
   iIntros "%Hown_struct".
   <<- end >>
   << range (messageFields .Fields) >>
-  iApply (<< coqModuleName . >>.own_to_val) in "Hown_<< .Name >>".
-  iDestruct "Hown_<< .Name >>" as "[Hown_<< .Name >> %Hval_<< .Name >>]".
+  iDestruct (<< coqModuleName . >>.own_to_val with "Hown_<< .Name >>") as "%Hval_<< .Name >>".
   << end >>
-  iUnfold own.
-  iSplitL.
-  + << if (len .NestedMessages) ->>
-    iFrame.
-    << end >>iPureIntro. done.
-  + << if (len .NestedMessages) ->>
-    rewrite Hown_struct. << end >> done.
+  done.
 Qed.
