@@ -267,7 +267,7 @@ func GetModulePath(suffix string) string {
 }
 
 func GetCoqOutputPath(coqPhysicalPath *string, messageName *string) string {
-	return path.Join(*coqPhysicalPath, strings.ToLower(*messageName)+"_proof.v")
+	return path.Join(*coqPhysicalPath, strings.ToLower(*messageName)+"_proof_gk.v")
 }
 
 func GetGoOutputPath(goPhysicalPath *string, messageName *string) string {
