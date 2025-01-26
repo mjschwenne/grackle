@@ -1,0 +1,16 @@
+
+  wp_apply (wp_slice_len).
+  wp_load. wp_apply (wp_WriteInt with "[$Hsl]").
+  iIntros (?) "Hsl". wp_store. wp_pures.
+
+  wp_load.
+  wp_apply (wp_WriteSlice _ _ args__c.(<< .Name >>) << .TypeName >>.has_encoding << .TypeName >>.own with "[Hown_<< .Name >> Hsl]").
+  {
+    iFrame.
+    iIntros (????) "!>".
+    iIntros (?) "[Hown' Hsl'] HΦ".
+    wp_apply (<< .TypeName >>.wp_Encode with "[$Hsl' $Hown']").
+    iApply "HΦ".
+  }
+  iIntros (??) "(Hpsl_<< .Name >> & %Henc_<< .Name >> & Hsl)".
+  wp_pures. wp_store.

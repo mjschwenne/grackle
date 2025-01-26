@@ -120,21 +120,23 @@ func setupTemplates(files *descriptorpb.FileDescriptorSet) *template.Template {
 
 	tmpl := template.New("grackle").Delims("<<", ">>")
 	funcMap := template.FuncMap{
-		"protoType":      util.GetProtoTypeName,
-		"coqType":        util.GetCoqTypeName,
-		"isExtValType":   util.IsExternalValType,
-		"isMessage":      util.IsMessageType,
-		"isCoqType":      util.IsCoqType,
-		"isGoType":       util.IsGoType,
-		"isSliceType":    util.IsSliceType,
-		"isRepeatedType": util.IsRepeatedType,
-		"extValFields":   func(fields []*field) []*field { return util.Filter(fields, util.IsExternalValType) },
-		"messageFields":  func(fields []*field) []*field { return util.Filter(fields, util.IsMessageType) },
+		"protoType":       util.GetProtoTypeName,
+		"coqType":         util.GetCoqTypeName,
+		"isExtValType":    util.IsExternalValType,
+		"isMessage":       util.IsMessageType,
+		"isCoqType":       util.IsCoqType,
+		"isGoType":        util.IsGoType,
+		"isSliceType":     util.IsSliceType,
+		"isPredSliceType": util.IsPredSliceType,
+		"isRepeatedType":  util.IsRepeatedType,
+		"extValFields":    func(fields []*field) []*field { return util.Filter(fields, util.IsExternalValType) },
+		"messageFields":   func(fields []*field) []*field { return util.Filter(fields, util.IsMessageType) },
 		"notMsgFields": func(fields []*field) []*field {
 			return util.Filter(fields, func(f *field) bool { return !util.IsMessageType(f) })
 		},
-		"allNestedMsgs": func(m string) []string { return util.GetAllNestedMessages(m, []string{}, msgDict) },
-		"sliceFields":   func(fields []*field) []*field { return util.Filter(fields, util.IsSliceType) },
+		"allNestedMsgs":   func(m string) []string { return util.GetAllNestedMessages(m, []string{}, msgDict) },
+		"sliceFields":     func(fields []*field) []*field { return util.Filter(fields, util.IsSliceType) },
+		"predSliceFields": func(fields []*field) []*field { return util.Filter(fields, util.IsPredSliceType) },
 		"sliceFieldsRecursive": func(m string) []*field {
 			return util.GetFieldsRecursive(m, func(fields []*field) []*field { return util.Filter(fields, util.IsSliceType) }, msgDict)
 		},

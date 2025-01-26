@@ -1,6 +1,6 @@
 Record C :=
     mkC {
         << range .Fields ->>
-        <<- .Name >> : << coqType . ->>;
+        <<- .Name >> : << if isSliceType . >>list<< end >> << coqType . ->>;
         << end ->>
     }.

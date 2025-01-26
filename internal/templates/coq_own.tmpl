@@ -3,7 +3,7 @@
   #()
   <<- else ->>
   (<<- with $valF := index . 0 ->>
-  <<- if isExtValType $valF ->> << $valF.Name >>__v
+  <<- if and (isExtValType $valF) (not (isRepeatedType .)) ->> << $valF.Name >>__v
   <<- else if valFunc $valF ->>
   <<- if not (isSliceType .) >>#(<< end >><< valFunc $valF >> << else >>#
   <<- end >><< if isSliceType . >><< .Name >>_sl<< else if not (isExtValType .) >>args__c.(<<- $valF.Name ->>)<< end >>
@@ -26,7 +26,11 @@ Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   , << end >>
   "%Hown_struct" ∷ ⌜ args__v = << template "coq_own_struct" .Fields >>%V ⌝
   <<- range $lists >> ∗
+  <<- if isCoqType . "message" >>
+  "Hown_<< .Name >>" ∷ is_pred_slice << .TypeName >>.own << .Name >>_sl (struct.t << goType . >>) dq args__c.(<< .Name >>)
+  <<- else >>
   "Hown_<< .Name >>" ∷ own_slice_small << .Name >>_sl << goType . >>T dq args__c.(<< .Name >>)
+  <<- end >>
   <<- end >>
   <<- range $extval >> ∗
   "Hown_<< .Name >>" ∷ << .TypeName >>.own << .Name >>__v args__c.(<< .Name >>) dq

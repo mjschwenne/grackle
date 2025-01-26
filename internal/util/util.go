@@ -85,7 +85,7 @@ var TypeMap = map[fieldType]TypeData{
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_BYTES: {
 		ProtoType:   "bytes",
-		CoqType:     "list u8",
+		CoqType:     "u8",
 		GoType:      "byte",
 		MarshalType: "Bytes",
 		SliceType:   true,
@@ -154,6 +154,9 @@ func Indent(n int, s string) string {
 // MAP ACCESSORS & TRANSFORMERS
 
 func GetProtoTypeName(field *field) string {
+	if IsRepeatedType(field) {
+		return "slice"
+	}
 	return TypeMap[field.GetType()].ProtoType
 }
 
@@ -237,6 +240,9 @@ func HasValFunc(msgName string, msgMap map[string]*descriptorpb.DescriptorProto)
 }
 
 func GetValFunc(field *field, msgMap map[string]*descriptorpb.DescriptorProto) string {
+	if IsRepeatedType(field) {
+		return "slice_val"
+	}
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && HasValFunc(field.GetTypeName(), msgMap) {
 		return field.GetTypeName() + ".to_val'"
 	}
@@ -248,11 +254,15 @@ func IsRepeatedType(field *field) bool {
 }
 
 func IsExternalValType(field *field) bool {
-	return TypeMap[field.GetType()].ValType
+	return TypeMap[field.GetType()].ValType && !IsRepeatedType(field)
 }
 
 func IsSliceType(field *field) bool {
 	return TypeMap[field.GetType()].SliceType || IsRepeatedType(field)
+}
+
+func IsPredSliceType(field *field) bool {
+	return field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && IsRepeatedType(field)
 }
 
 func IsMessageType(field *field) bool {

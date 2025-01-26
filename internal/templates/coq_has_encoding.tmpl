@@ -8,9 +8,9 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   encoded = << range $idx, $field := .Fields ->>
               << if $idx >> ++
               << end >>
-              <<- if isMessage . ->>
+              <<- if and (isMessage .) (not (isSliceType .)) ->>
               << $field.Name ->>_enc
-              <<- else if or (isCoqType . "byte_string") (isCoqType . "list u8") ->>
+              <<- else if or (isCoqType . "byte_string") (isSliceType .) ->>
               (u64_le $ length $ args.(<< $field.Name >>)) ++ args.(<< $field.Name >>)
               <<- else if (isCoqType . "bool") ->>
               [if args.(<< $field.Name >>) then W8 1 else W8 0]
@@ -18,5 +18,10 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               (<<- coqType $field >>_le args.(<<- $field.Name ->>))
               <<- end ->><<- end ->>
   <<- range $idx, $field := $msgs >>
+  <<- if isSliceType . >>
+  /\ encodes << $field.Name >>_enc args.(<< $field.Name >>) << $field.TypeName >>.has_encoding
+  /\ length args.(<< $field.Name >>) < 2^64
+  <<- else >>
   /\ << $field.TypeName ->>.has_encoding << $field.Name ->>_enc args.(<<- $field.Name ->>)
+  <<- end ->>
   <<- end ->>.
