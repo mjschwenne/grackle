@@ -6,6 +6,7 @@
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
+From Perennial.goose_lang Require Import lib.slice.pred_slice.
 
 Module completeSlice.
 Section completeSlice.
@@ -16,8 +17,8 @@ Context `{!heapGS Σ}.
 
 Record C :=
     mkC {
-        strg : byte_string;
-        strg2 : byte_string;
+        strg :  byte_string;
+        strg2 :  byte_string;
         bytes : list u8;
         bytes2 : list u8;
         }.
@@ -109,8 +110,9 @@ Proof.
   rewrite Hargs_strg2_sz.
   rewrite Hargs_bytes_sz.
   rewrite Hargs_bytes2_sz.
-  rewrite ?w64_to_nat_id. exact.
+  rewrite ?w64_to_nat_id.
 
+  done.
   } done.
 Qed.
 

@@ -1,7 +1,7 @@
 package << lower .Name >>_gk
 
 import (
-    <<- if ne (len .NestedMessages) (len .Fields) >>
+    <<- if ne (len (extValFields .Fields)) (len .Fields) >>
     "github.com/tchajed/marshal"
     <<- end >>
     << range .NestedMessages >>

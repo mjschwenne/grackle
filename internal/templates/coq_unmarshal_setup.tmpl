@@ -7,13 +7,17 @@ Proof.
   iIntros (l__<< .Name >>) "H<< .Name >>". wp_pures.
   << end >>
   << $refs := (extValFields .Fields) ->>
-  << $msgs := (messageFields $refs) ->>
-  << if gt (len $refs) 0 ->>
+  << $psls := (predSliceFields .Fields) ->>
+  << if or (len $psls) (len $refs)  ->>
   unfold has_encoding in Henc.
   destruct Henc as (
-  <<- range $idx, $r := $msgs ->>
-    <<- if $idx >>&<< end >> << .Name >>_sl << end ->>
+  <<- range $idx, $r := (messageFields .Fields) ->>
+    <<- if $idx >>&<< end >> << .Name >>_enc << end ->>
     & Henc
-    <<- range $idx, $m := $msgs >> & Hencoding_<< .Name >> <<- end >> ).
+    <<- range .Fields >>
+    <<- if isMessage . >> & Henc_<< .Name >>
+    <<- if isPredSliceType . >> & H<< .Name >>_sz <<- end ->>
+    <<- end >>
+    <<- end >> ).
   << end ->>
   rewrite Henc. rewrite -?app_assoc.

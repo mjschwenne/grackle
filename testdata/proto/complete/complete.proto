@@ -22,13 +22,14 @@ message completeSlice {
   bytes bytes2 = 4;
 }
 
+message structSlice {
+  repeated completeSlice slices = 1;
+  repeated completeInt ints = 2;
+}
+
 message complete {
   completeInt int = 1;
   completeSlice slc = 2;
   bool success = 3;
-  // error err = 4;
-}
-
-message structSlice {
-  repeated completeSlice slices = 1;
+  repeated structSlice sslice = 4;
 }

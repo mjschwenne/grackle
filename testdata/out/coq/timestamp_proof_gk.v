@@ -6,6 +6,7 @@
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
+From Perennial.goose_lang Require Import lib.slice.pred_slice.
 
 Module TimeStamp.
 Section TimeStamp.
@@ -16,9 +17,9 @@ Context `{!heapGS Σ}.
 
 Record C :=
     mkC {
-        hour : u32;
-        minute : u32;
-        second : u64;
+        hour :  u32;
+        minute :  u32;
+        second :  u64;
         }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=

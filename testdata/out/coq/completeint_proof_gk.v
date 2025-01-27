@@ -6,6 +6,7 @@
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
+From Perennial.goose_lang Require Import lib.slice.pred_slice.
 
 Module completeInt.
 Section completeInt.
@@ -16,12 +17,12 @@ Context `{!heapGS Σ}.
 
 Record C :=
     mkC {
-        one : u32;
-        two : u32;
-        three : u32;
-        four : u64;
-        five : u64;
-        six : u64;
+        one :  u32;
+        two :  u32;
+        three :  u32;
+        four :  u64;
+        five :  u64;
+        six :  u64;
         }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=

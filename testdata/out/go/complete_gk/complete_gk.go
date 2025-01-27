@@ -10,12 +10,14 @@ import (
 
 	"github.com/mjschwenne/grackle/testdata/out/go/completeint_gk"
 	"github.com/mjschwenne/grackle/testdata/out/go/completeslice_gk"
+	"github.com/mjschwenne/grackle/testdata/out/go/structslice_gk"
 )
 
 type S struct {
 	Int     completeint_gk.S
 	Slc     completeslice_gk.S
 	Success bool
+	Sslice  []structslice_gk.S
 }
 
 func Marshal(c S, prefix []byte) []byte {
@@ -25,6 +27,9 @@ func Marshal(c S, prefix []byte) []byte {
 	enc = completeslice_gk.Marshal(c.Slc, enc)
 	enc = marshal.WriteBool(enc, c.Success)
 
+	enc = marshal.WriteInt(enc, uint64(len(c.Sslice)))
+	enc = marshal.WriteSlice(enc, c.Sslice, structslice_gk.Marshal)
+
 	return enc
 }
 
@@ -33,14 +38,19 @@ func Unmarshal(s []byte) (S, []byte) {
 	var int completeint_gk.S
 	var slc completeslice_gk.S
 	var success bool
+	var sslice []structslice_gk.S
 
 	int, enc = completeint_gk.Unmarshal(enc)
 	slc, enc = completeslice_gk.Unmarshal(enc)
 	success, enc = marshal.ReadBool(enc)
+	var ssliceLen uint64
+	ssliceLen, enc = marshal.ReadInt(enc)
+	sslice, enc = marshal.ReadSlice(enc, ssliceLen, structslice_gk.Unmarshal)
 
 	return S{
 		Int:     int,
 		Slc:     slc,
 		Success: success,
+		Sslice:  sslice,
 	}, enc
 }

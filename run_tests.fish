@@ -10,5 +10,5 @@ go build (find ./testdata/out/go/ -mindepth 1 -maxdepth 1 -type d)
 echo "Checking grackle coq..."
 rm .coqdeps.d
 make -j(nproc) -s (find testdata/out/coq -name "*.v" | sed -e "s/\.v\$/\.vo/g")
-# echo "Running grackle tests..."
-# go test .
+echo "Running grackle tests..."
+go test .
