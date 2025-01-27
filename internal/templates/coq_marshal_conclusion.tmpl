@@ -3,14 +3,14 @@
   <<- range . >>
   rewrite Hargs_<< .Name >>_sz.
   <<- end >>
-  rewrite ?w64_to_nat_id. exact.
+  rewrite ?w64_to_nat_id.
 << end >>
 
   wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
   iFrame. iPureIntro.
 
   << $msgs := (messageFields .Fields) ->>
-  << $sob  := (filterByCoqType .Fields "list u8|byte_string") ->>
+  << $sob  := (filterByCoqType .Fields "byte_string|list") ->>
   << if (or (gt (len $sob) 0) (gt (len $msgs) 0)) ->>
   unfold has_encoding. split.
   {
@@ -18,10 +18,23 @@
   <<- if $idx >>, << end ->>
   <<- .Name ->>_enc
   <<- end ->>. << range $idx, $field := $msgs >>
-  << if not $idx >><< template "string_and_bytes" $sob >>  << end >>
+  << if not $idx >><< template "string_and_bytes" $sob >>
+  <<- if len (predSliceFields $.Fields) >>
+  repeat split.
+  all: word || done.
+  << else >>
+  done.
+  << end ->>
+  << end >>
   <<- end >>} done.
   <<- else if gt (len $sob) 0 >>
   << template "string_and_bytes" $sob >>
+  <<- if len (predSliceFields .Fields) >>
+  repeat split.
+  all: word || done.
+  << else >>
+  done.
+  << end ->>
   } done.
   <<- end >><< else >>done.
   <<- end >>

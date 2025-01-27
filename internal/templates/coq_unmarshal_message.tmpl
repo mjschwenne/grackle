@@ -1,5 +1,5 @@
 
-  wp_load. wp_apply (<< coqModuleName . >>.wp_Decode << .Name >>_sl with "[$Hsl //]").
+  wp_load. wp_apply (<< coqModuleName . >>.wp_Decode << .Name >>_enc with "[$Hsl //]").
   iIntros (<< .Name >>__v ?) "[Hown_<< .Name >> Hsl]".
   iDestruct (<< coqModuleName . >>.own_val_ty with "Hown_<< .Name >>") as "%Hval_<< .Name >>".
   wp_pures. wp_store. wp_store.

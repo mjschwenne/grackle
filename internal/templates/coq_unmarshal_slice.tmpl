@@ -1,0 +1,25 @@
+
+  wp_apply wp_ref_of_zero; first done.
+  iIntros (l__<< .Name >>Len) "H<< .Name >>Len". wp_pures.
+
+  wp_load. wp_apply (wp_ReadInt with "[Hsl]"); first simpl; iFrame.
+  iIntros (?) "Hsl". wp_pures. wp_store. wp_store.
+
+  wp_load. wp_load.
+  wp_apply (wp_ReadSlice _ _ _ _ << .TypeName >>.has_encoding << .TypeName >>.own with "[Hsl]").
+  {
+    iIntros (???) "Hown'".
+    iApply << .TypeName >>.own_val_ty.
+    iFrame.
+  } { done. }
+  {
+    iFrame.
+    iSplit; first done.
+    iSplit; first word.
+    iIntros (????) "!>".
+    iIntros (?) "[Hsl' Henc'] HΦ".
+    wp_apply (<< .TypeName >>.wp_Decode with "[$Hsl' $Henc']").
+    iApply "HΦ".
+  }
+  iIntros (??) "[Hpsl_<< .Name >> Hsl]".
+  wp_pures. wp_store. wp_store.

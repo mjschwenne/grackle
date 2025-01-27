@@ -12,5 +12,5 @@
     wp_apply (<< .TypeName >>.wp_Encode with "[$Hsl' $Hown']").
     iApply "HΦ".
   }
-  iIntros (??) "(Hpsl_<< .Name >> & %Henc_<< .Name >> & Hsl)".
+  iIntros (<< .Name >>_enc << .Name >>_sl') "(Hpsl_<< .Name >> & %Henc_<< .Name >> & Hsl)".
   wp_pures. wp_store.

@@ -8,6 +8,7 @@ From Perennial.program_proof Require Import marshal_stateless_proof.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.event_gk.
 From Grackle.test Require Import timestamp_proof_gk.
 From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
+From Perennial.goose_lang Require Import lib.slice.pred_slice.
 
 Module Event.
 Section Event.
@@ -18,10 +19,10 @@ Context `{!heapGS Σ}.
 
 Record C :=
     mkC {
-        id : u32;
-        name : byte_string;
-        startTime : TimeStamp.C;
-        endTime : TimeStamp.C;
+        id :  u32;
+        name :  byte_string;
+        startTime :  TimeStamp.C;
+        endTime :  TimeStamp.C;
         }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
@@ -149,7 +150,9 @@ Proof.
   exists startTime_enc, endTime_enc. 
   rewrite ?string_bytes_length.
   rewrite Hargs_name_sz.
-  rewrite ?w64_to_nat_id. exact.
+  rewrite ?w64_to_nat_id.
+
+  done.
   
   } done.
 Qed.
@@ -184,7 +187,7 @@ Proof.
   iIntros (l__endTime) "HendTime". wp_pures.
   
   unfold has_encoding in Henc.
-  destruct Henc as ( startTime_sl & endTime_sl & Henc & Hencoding_startTime & Hencoding_endTime ).
+  destruct Henc as ( startTime_enc & endTime_enc & Henc & Henc_startTime & Henc_endTime ).
   rewrite Henc. rewrite -?app_assoc.
 
   wp_load. wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl".
@@ -205,12 +208,12 @@ Proof.
   wp_apply (wp_StringFromBytes with "[$Hname']"). iIntros "_".
   wp_store.
 
-  wp_load. wp_apply (TimeStamp.wp_Decode startTime_sl with "[$Hsl //]").
+  wp_load. wp_apply (TimeStamp.wp_Decode startTime_enc with "[$Hsl //]").
   iIntros (startTime__v ?) "[Hown_startTime Hsl]".
   iDestruct (TimeStamp.own_val_ty with "Hown_startTime") as "%Hval_startTime".
   wp_pures. wp_store. wp_store.
 
-  wp_load. wp_apply (TimeStamp.wp_Decode endTime_sl with "[$Hsl //]").
+  wp_load. wp_apply (TimeStamp.wp_Decode endTime_enc with "[$Hsl //]").
   iIntros (endTime__v ?) "[Hown_endTime Hsl]".
   iDestruct (TimeStamp.own_val_ty with "Hown_endTime") as "%Hval_endTime".
   wp_pures. wp_store. wp_store.

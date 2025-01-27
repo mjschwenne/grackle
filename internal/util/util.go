@@ -273,6 +273,9 @@ func IsCoqType(field *field, typeStr string) bool {
 	// Supports disjunctions via |
 	types := strings.Split(typeStr, "|")
 	for _, t := range types {
+		if t == "list" && IsSliceType(field) {
+			return true
+		}
 		if TypeMap[field.GetType()].CoqType == t {
 			return true
 		}
@@ -284,6 +287,9 @@ func IsGoType(field *field, typeStr string) bool {
 	// Supports disjunctions via |
 	types := strings.Split(typeStr, "|")
 	for _, t := range types {
+		if t == "slice" && IsSliceType(field) {
+			return true
+		}
 		if TypeMap[field.GetType()].GoType == t {
 			return true
 		}

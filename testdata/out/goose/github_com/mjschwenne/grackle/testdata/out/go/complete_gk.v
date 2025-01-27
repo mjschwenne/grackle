@@ -2,6 +2,7 @@
 From Perennial.goose_lang Require Import prelude.
 From Goose Require github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
 From Goose Require github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
+From Goose Require github_com.mjschwenne.grackle.testdata.out.go.structslice_gk.
 From Goose Require github_com.tchajed.marshal.
 
 Section code.
@@ -10,7 +11,8 @@ Context `{ext_ty: ext_types}.
 Definition S := struct.decl [
   "Int" :: struct.t completeint_gk.S;
   "Slc" :: struct.t completeslice_gk.S;
-  "Success" :: boolT
+  "Success" :: boolT;
+  "Sslice" :: slice.T (struct.t structslice_gk.S)
 ].
 
 Definition Marshal: val :=
@@ -19,6 +21,8 @@ Definition Marshal: val :=
     "enc" <-[slice.T byteT] (completeint_gk.Marshal (struct.get S "Int" "c") (![slice.T byteT] "enc"));;
     "enc" <-[slice.T byteT] (completeslice_gk.Marshal (struct.get S "Slc" "c") (![slice.T byteT] "enc"));;
     "enc" <-[slice.T byteT] (marshal.WriteBool (![slice.T byteT] "enc") (struct.get S "Success" "c"));;
+    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len (struct.get S "Sslice" "c")));;
+    "enc" <-[slice.T byteT] (marshal.WriteSlice (struct.t structslice_gk.S) (![slice.T byteT] "enc") (struct.get S "Sslice" "c") structslice_gk.Marshal);;
     ![slice.T byteT] "enc".
 
 Definition Unmarshal: val :=
@@ -27,6 +31,7 @@ Definition Unmarshal: val :=
     let: "int" := ref (zero_val (struct.t completeint_gk.S)) in
     let: "slc" := ref (zero_val (struct.t completeslice_gk.S)) in
     let: "success" := ref (zero_val boolT) in
+    let: "sslice" := ref (zero_val (slice.T (struct.t structslice_gk.S))) in
     let: ("0_ret", "1_ret") := completeint_gk.Unmarshal (![slice.T byteT] "enc") in
     "int" <-[struct.t completeint_gk.S] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
@@ -36,10 +41,18 @@ Definition Unmarshal: val :=
     let: ("0_ret", "1_ret") := marshal.ReadBool (![slice.T byteT] "enc") in
     "success" <-[boolT] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
+    let: "ssliceLen" := ref (zero_val uint64T) in
+    let: ("0_ret", "1_ret") := marshal.ReadInt (![slice.T byteT] "enc") in
+    "ssliceLen" <-[uint64T] "0_ret";;
+    "enc" <-[slice.T byteT] "1_ret";;
+    let: ("0_ret", "1_ret") := marshal.ReadSlice (struct.t structslice_gk.S) (![slice.T byteT] "enc") (![uint64T] "ssliceLen") structslice_gk.Unmarshal in
+    "sslice" <-[slice.T (struct.t structslice_gk.S)] "0_ret";;
+    "enc" <-[slice.T byteT] "1_ret";;
     (struct.mk S [
        "Int" ::= ![struct.t completeint_gk.S] "int";
        "Slc" ::= ![struct.t completeslice_gk.S] "slc";
-       "Success" ::= ![boolT] "success"
+       "Success" ::= ![boolT] "success";
+       "Sslice" ::= ![slice.T (struct.t structslice_gk.S)] "sslice"
      ], ![slice.T byteT] "enc").
 
 End code.

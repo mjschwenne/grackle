@@ -10,8 +10,10 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               << end >>
               <<- if and (isMessage .) (not (isSliceType .)) ->>
               << $field.Name ->>_enc
-              <<- else if or (isCoqType . "byte_string") (isSliceType .) ->>
+              <<- else if isCoqType . "byte_string|u8" ->>
               (u64_le $ length $ args.(<< $field.Name >>)) ++ args.(<< $field.Name >>)
+              <<- else if isSliceType . ->>
+              (u64_le $ length $ args.(<< $field.Name >>)) ++ << $field.Name >>_enc
               <<- else if (isCoqType . "bool") ->>
               [if args.(<< $field.Name >>) then W8 1 else W8 0]
               <<- else ->>
