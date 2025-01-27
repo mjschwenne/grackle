@@ -18,6 +18,7 @@ type S struct {
 	Slc     completeslice_gk.S
 	Success bool
 	Sslice  []structslice_gk.S
+	Iints   []uint64
 }
 
 func Marshal(c S, prefix []byte) []byte {
@@ -30,6 +31,9 @@ func Marshal(c S, prefix []byte) []byte {
 	enc = marshal.WriteInt(enc, uint64(len(c.Sslice)))
 	enc = marshal.WriteSlice(enc, c.Sslice, structslice_gk.Marshal)
 
+	enc = marshal.WriteInt(enc, uint64(len(c.Iints)))
+	enc = marshal.WriteSlice(enc, c.Iints, marshal.WriteInt)
+
 	return enc
 }
 
@@ -39,6 +43,7 @@ func Unmarshal(s []byte) (S, []byte) {
 	var slc completeslice_gk.S
 	var success bool
 	var sslice []structslice_gk.S
+	var iints []uint64
 
 	int, enc = completeint_gk.Unmarshal(enc)
 	slc, enc = completeslice_gk.Unmarshal(enc)
@@ -46,11 +51,15 @@ func Unmarshal(s []byte) (S, []byte) {
 	var ssliceLen uint64
 	ssliceLen, enc = marshal.ReadInt(enc)
 	sslice, enc = marshal.ReadSlice(enc, ssliceLen, structslice_gk.Unmarshal)
+	var iintsLen uint64
+	iintsLen, enc = marshal.ReadInt(enc)
+	iints, enc = marshal.ReadSlice(enc, iintsLen, marshal.ReadInt)
 
 	return S{
 		Int:     int,
 		Slc:     slc,
 		Success: success,
 		Sslice:  sslice,
+		Iints:   iints,
 	}, enc
 }

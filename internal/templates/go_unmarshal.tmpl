@@ -17,7 +17,7 @@ func Unmarshal(s []byte) (S, []byte) {
     <<- else if isSliceType . >>
     var << .Name >>Len uint64
     << .Name >>Len, enc = marshal.ReadInt(enc)
-    << .Name >>, enc = marshal.ReadSlice(enc, << .Name >>Len, << goModuleName . >>.Unmarshal)
+    << .Name >>, enc = marshal.ReadSlice(enc, << .Name >>Len, << if isMessage . >><< goModuleName . >>.Unmarshal<< else >>marshal.Read<< marshalType . >><< end >>)
     <<- else >>
     << .Name >>, enc = marshal.Read<<- marshalType . ->>(enc)
     <<- end ->> <<- end >>

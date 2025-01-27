@@ -15,7 +15,7 @@ func Marshal(<<- param .Name >> S, prefix []byte) []byte {
     enc = marshal.WriteBytes(enc, << param $.Name >>.<< goName .Name >>)
     << else if isSliceType . >>
     enc = marshal.WriteInt(enc, uint64(len(<< param $.Name >>.<< goName .Name >>)))
-    enc = marshal.WriteSlice(enc, << param $.Name >>.<< goName .Name >>, << goModuleName . >>.Marshal )
+    enc = marshal.WriteSlice(enc, << param $.Name >>.<< goName .Name >>, << if isMessage . >><< goModuleName . >>.Marshal<< else >>marshal.Write<< marshalType . >><< end >>)
     << else ->>
     enc = marshal.Write<<- marshalType . ->>(enc, << param $.Name ->>.<< goName .Name >>)
     << end ->><<- end >>
