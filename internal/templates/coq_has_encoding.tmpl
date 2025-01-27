@@ -1,10 +1,10 @@
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-  <<- $msgs := (messageFields .Fields) ->>
-  <<- range $idx, $field := $msgs ->>
+  <<- $extEncs := (extEncFields .Fields) ->>
+  <<- range $idx, $field := $extEncs ->>
   <<- if not $idx >>
   ∃ (<<- end ->>
   <<- $field.Name ->>_enc << end ->>
-  << if len $msgs >>: list u8), << end >>
+  << if len $extEncs >>: list u8), << end >>
   encoded = << range $idx, $field := .Fields ->>
               << if $idx >> ++
               << end >>
@@ -19,9 +19,9 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               <<- else ->>
               (<<- coqType $field >>_le args.(<<- $field.Name ->>))
               <<- end ->><<- end ->>
-  <<- range $idx, $field := $msgs >>
+  <<- range $idx, $field := $extEncs >>
   <<- if isSliceType . >>
-  /\ encodes << $field.Name >>_enc args.(<< $field.Name >>) << $field.TypeName >>.has_encoding
+  /\ encodes << $field.Name >>_enc args.(<< $field.Name >>) << if isMessage . >><< $field.TypeName >>.has_encoding<< else >><< goType . >>_has_encoding<< end >>
   /\ length args.(<< $field.Name >>) < 2^64
   <<- else >>
   /\ << $field.TypeName ->>.has_encoding << $field.Name ->>_enc args.(<<- $field.Name ->>)

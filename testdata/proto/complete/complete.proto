@@ -32,5 +32,5 @@ message complete {
   completeSlice slc = 2;
   bool success = 3;
   repeated structSlice sslice = 4;
-  // repeated uint64 iints = 5;
+  repeated uint64 iints = 5;
 }
