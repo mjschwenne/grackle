@@ -8,7 +8,7 @@ type Calendar struct {
 	events []Event
 }
 
-func MarshalCalendar(c Calendar, prefix []byte) []byte {
+func MarshalCalendar(prefix []byte, c Calendar) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt(enc, uint64(len(c.events)))

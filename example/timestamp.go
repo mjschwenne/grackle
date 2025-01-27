@@ -10,7 +10,7 @@ type TimeStamp struct {
 	second uint32
 }
 
-func MarshalTimeStamp(t TimeStamp, prefix []byte) []byte {
+func MarshalTimeStamp(prefix []byte, t TimeStamp) []byte {
 	var enc = prefix
 	enc = marshal.WriteInt32(enc, t.hour)
 	enc = marshal.WriteInt32(enc, t.minute)

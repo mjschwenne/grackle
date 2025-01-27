@@ -31,7 +31,7 @@ Definition Calendar := struct.decl [
 (* MarshalTimeStamp from timestamp.go *)
 
 Definition MarshalTimeStamp: val :=
-  rec: "MarshalTimeStamp" "t" "prefix" :=
+  rec: "MarshalTimeStamp" "prefix" "t" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get TimeStamp "hour" "t"));;
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get TimeStamp "minute" "t"));;
@@ -41,18 +41,18 @@ Definition MarshalTimeStamp: val :=
 (* MarshalEvent from event.go *)
 
 Definition MarshalEvent: val :=
-  rec: "MarshalEvent" "e" "prefix" :=
+  rec: "MarshalEvent" "prefix" "e" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get Event "id" "e"));;
     let: "nameByte" := StringToBytes (struct.get Event "name" "e") in
     "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len "nameByte"));;
     "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") "nameByte");;
-    "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.get Event "startTime" "e") (![slice.T byteT] "enc"));;
-    "enc" <-[slice.T byteT] (MarshalTimeStamp (struct.get Event "endTime" "e") (![slice.T byteT] "enc"));;
+    "enc" <-[slice.T byteT] (MarshalTimeStamp (![slice.T byteT] "enc") (struct.get Event "startTime" "e"));;
+    "enc" <-[slice.T byteT] (MarshalTimeStamp (![slice.T byteT] "enc") (struct.get Event "endTime" "e"));;
     ![slice.T byteT] "enc".
 
 Definition MarshalCalendar: val :=
-  rec: "MarshalCalendar" "c" "prefix" :=
+  rec: "MarshalCalendar" "prefix" "c" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
     "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len (struct.get Calendar "events" "c")));;
     "enc" <-[slice.T byteT] (marshal.WriteSlice (struct.t Event) (![slice.T byteT] "enc") (struct.get Calendar "events" "c") MarshalEvent);;

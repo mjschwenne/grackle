@@ -32,7 +32,7 @@ Module Calendar.
             own args__v args__c dq ∗
             own_slice pre_sl byteT (DfracOwn 1) prefix
       }}}
-        MarshalCalendar args__v (slice_val pre_sl)
+        MarshalCalendar (slice_val pre_sl) args__v
       {{{
             enc enc_sl, RET (slice_val enc_sl);
             ⌜ has_encoding enc args__c ⌝ ∗

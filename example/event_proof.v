@@ -86,7 +86,7 @@ Lemma wp_Encode (args__v : val) (args__c : C) (prefix : list u8) (pre_sl : Slice
         own args__v args__c dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    MarshalEvent args__v (slice_val pre_sl)
+    MarshalEvent (slice_val pre_sl) args__v
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜ has_encoding enc args__c ⌝ ∗

@@ -63,7 +63,7 @@ Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list 
         own args__v args__c dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    MarshalTimeStamp args__v (slice_val pre_sl)
+    MarshalTimeStamp (slice_val pre_sl) args__v
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜ has_encoding enc args__c ⌝ ∗

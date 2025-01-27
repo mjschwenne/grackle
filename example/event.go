@@ -11,7 +11,7 @@ type Event struct {
 	endTime   TimeStamp
 }
 
-func MarshalEvent(e Event, prefix []byte) []byte {
+func MarshalEvent(prefix []byte, e Event) []byte {
 	var enc = prefix
 	enc = marshal.WriteInt32(enc, e.id)
 
@@ -19,8 +19,8 @@ func MarshalEvent(e Event, prefix []byte) []byte {
 	enc = marshal.WriteInt(enc, uint64(len(nameByte)))
 	enc = marshal.WriteBytes(enc, nameByte)
 
-	enc = MarshalTimeStamp(e.startTime, enc)
-	enc = MarshalTimeStamp(e.endTime, enc)
+	enc = MarshalTimeStamp(enc, e.startTime)
+	enc = MarshalTimeStamp(enc, e.endTime)
 	return enc
 }
 
