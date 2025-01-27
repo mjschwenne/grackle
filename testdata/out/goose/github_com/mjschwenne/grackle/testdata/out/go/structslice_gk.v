@@ -13,7 +13,7 @@ Definition S := struct.decl [
 ].
 
 Definition Marshal: val :=
-  rec: "Marshal" "s" "prefix" :=
+  rec: "Marshal" "prefix" "s" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
     "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len (struct.get S "Slices" "s")));;
     "enc" <-[slice.T byteT] (marshal.WriteSlice (struct.t completeslice_gk.S) (![slice.T byteT] "enc") (struct.get S "Slices" "s") completeslice_gk.Marshal);;

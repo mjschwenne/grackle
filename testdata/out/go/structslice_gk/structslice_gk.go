@@ -17,7 +17,7 @@ type S struct {
 	Ints   []completeint_gk.S
 }
 
-func Marshal(s S, prefix []byte) []byte {
+func Marshal(prefix []byte, s S) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt(enc, uint64(len(s.Slices)))

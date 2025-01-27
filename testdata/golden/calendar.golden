@@ -83,7 +83,7 @@ Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list 
         own args__v args__c dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    timestamp_gk.Marshal args__v (slice_val pre_sl)
+    timestamp_gk.Marshal (slice_val pre_sl) args__v
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -178,7 +178,7 @@ type S struct {
 	Second uint64
 }
 
-func Marshal(t S, prefix []byte) []byte {
+func Marshal(prefix []byte, t S) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt32(enc, t.Hour)
@@ -315,7 +315,7 @@ Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list 
         own args__v args__c dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    event_gk.Marshal args__v (slice_val pre_sl)
+    event_gk.Marshal (slice_val pre_sl) args__v
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -456,15 +456,15 @@ type S struct {
 	EndTime   timestamp_gk.S
 }
 
-func Marshal(e S, prefix []byte) []byte {
+func Marshal(prefix []byte, e S) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt32(enc, e.Id)
 	nameBytes := []byte(e.Name)
 	enc = marshal.WriteInt(enc, uint64(len(nameBytes)))
 	enc = marshal.WriteBytes(enc, nameBytes)
-	enc = timestamp_gk.Marshal(e.StartTime, enc)
-	enc = timestamp_gk.Marshal(e.EndTime, enc)
+	enc = timestamp_gk.Marshal(enc, e.StartTime)
+	enc = timestamp_gk.Marshal(enc, e.EndTime)
 
 	return enc
 }

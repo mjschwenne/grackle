@@ -122,7 +122,7 @@ Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list 
         own args__v args__c dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    completeint_gk.Marshal args__v (slice_val pre_sl)
+    completeint_gk.Marshal (slice_val pre_sl) args__v
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -247,7 +247,7 @@ type S struct {
 	Six   uint64
 }
 
-func Marshal(c S, prefix []byte) []byte {
+func Marshal(prefix []byte, c S) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt32(enc, c.One)
@@ -342,7 +342,7 @@ Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list 
         own args__v args__c dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    completeslice_gk.Marshal args__v (slice_val pre_sl)
+    completeslice_gk.Marshal (slice_val pre_sl) args__v
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -522,7 +522,7 @@ type S struct {
 	Bytes2 []byte
 }
 
-func Marshal(c S, prefix []byte) []byte {
+func Marshal(prefix []byte, c S) []byte {
 	var enc = prefix
 
 	strgBytes := []byte(c.Strg)
@@ -640,7 +640,7 @@ Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list 
         own args__v args__c dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    structslice_gk.Marshal args__v (slice_val pre_sl)
+    structslice_gk.Marshal (slice_val pre_sl) args__v
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -815,7 +815,7 @@ type S struct {
 	Ints   []completeint_gk.S
 }
 
-func Marshal(s S, prefix []byte) []byte {
+func Marshal(prefix []byte, s S) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt(enc, uint64(len(s.Slices)))
@@ -919,7 +919,7 @@ Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list 
         own args__v args__c dq ∗
         own_slice pre_sl byteT (DfracOwn 1) prefix
   }}}
-    complete_gk.Marshal args__v (slice_val pre_sl)
+    complete_gk.Marshal (slice_val pre_sl) args__v
   {{{
         enc enc_sl, RET (slice_val enc_sl);
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -1089,11 +1089,11 @@ type S struct {
 	Sslice  []structslice_gk.S
 }
 
-func Marshal(c S, prefix []byte) []byte {
+func Marshal(prefix []byte, c S) []byte {
 	var enc = prefix
 
-	enc = completeint_gk.Marshal(c.Int, enc)
-	enc = completeslice_gk.Marshal(c.Slc, enc)
+	enc = completeint_gk.Marshal(enc, c.Int)
+	enc = completeslice_gk.Marshal(enc, c.Slc)
 	enc = marshal.WriteBool(enc, c.Success)
 
 	enc = marshal.WriteInt(enc, uint64(len(c.Sslice)))

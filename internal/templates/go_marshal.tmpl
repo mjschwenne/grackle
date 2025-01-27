@@ -1,9 +1,9 @@
-func Marshal(<<- param .Name >> S, prefix []byte) []byte {
+func Marshal(prefix []byte, <<- param .Name >> S) []byte {
     var enc = prefix
 
     << range .Fields ->>
     << if and (isMessage .) (not (isRepeatedType .)) ->>
-    enc = << goModuleName . >>.Marshal(<< param $.Name ->>.<< goName .Name >>, enc)
+    enc = << goModuleName . >>.Marshal(enc, << param $.Name ->>.<< goName .Name >>)
     << else if isGoType . "enum" ->>
     enc = marshal.WriteInt32(enc, uint32(<< param $.Name >>.<< goName .Name >>))
     << else if isGoType . "string" ->>

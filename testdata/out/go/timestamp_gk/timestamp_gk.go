@@ -15,7 +15,7 @@ type S struct {
 	Second uint64
 }
 
-func Marshal(t S, prefix []byte) []byte {
+func Marshal(prefix []byte, t S) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt32(enc, t.Hour)

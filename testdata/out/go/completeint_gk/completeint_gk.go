@@ -18,7 +18,7 @@ type S struct {
 	Six   uint64
 }
 
-func Marshal(c S, prefix []byte) []byte {
+func Marshal(prefix []byte, c S) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt32(enc, c.One)

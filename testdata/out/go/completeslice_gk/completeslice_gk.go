@@ -16,7 +16,7 @@ type S struct {
 	Bytes2 []byte
 }
 
-func Marshal(c S, prefix []byte) []byte {
+func Marshal(prefix []byte, c S) []byte {
 	var enc = prefix
 
 	strgBytes := []byte(c.Strg)

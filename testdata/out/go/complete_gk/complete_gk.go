@@ -20,11 +20,11 @@ type S struct {
 	Sslice  []structslice_gk.S
 }
 
-func Marshal(c S, prefix []byte) []byte {
+func Marshal(prefix []byte, c S) []byte {
 	var enc = prefix
 
-	enc = completeint_gk.Marshal(c.Int, enc)
-	enc = completeslice_gk.Marshal(c.Slc, enc)
+	enc = completeint_gk.Marshal(enc, c.Int)
+	enc = completeslice_gk.Marshal(enc, c.Slc)
 	enc = marshal.WriteBool(enc, c.Success)
 
 	enc = marshal.WriteInt(enc, uint64(len(c.Sslice)))

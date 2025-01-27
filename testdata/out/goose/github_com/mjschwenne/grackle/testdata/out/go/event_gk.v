@@ -14,14 +14,14 @@ Definition S := struct.decl [
 ].
 
 Definition Marshal: val :=
-  rec: "Marshal" "e" "prefix" :=
+  rec: "Marshal" "prefix" "e" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get S "Id" "e"));;
     let: "nameBytes" := StringToBytes (struct.get S "Name" "e") in
     "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len "nameBytes"));;
     "enc" <-[slice.T byteT] (marshal.WriteBytes (![slice.T byteT] "enc") "nameBytes");;
-    "enc" <-[slice.T byteT] (timestamp_gk.Marshal (struct.get S "StartTime" "e") (![slice.T byteT] "enc"));;
-    "enc" <-[slice.T byteT] (timestamp_gk.Marshal (struct.get S "EndTime" "e") (![slice.T byteT] "enc"));;
+    "enc" <-[slice.T byteT] (timestamp_gk.Marshal (![slice.T byteT] "enc") (struct.get S "StartTime" "e"));;
+    "enc" <-[slice.T byteT] (timestamp_gk.Marshal (![slice.T byteT] "enc") (struct.get S "EndTime" "e"));;
     ![slice.T byteT] "enc".
 
 Definition Unmarshal: val :=

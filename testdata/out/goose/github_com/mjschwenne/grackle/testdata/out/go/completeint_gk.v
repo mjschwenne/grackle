@@ -15,7 +15,7 @@ Definition S := struct.decl [
 ].
 
 Definition Marshal: val :=
-  rec: "Marshal" "c" "prefix" :=
+  rec: "Marshal" "prefix" "c" :=
     let: "enc" := ref_to (slice.T byteT) "prefix" in
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get S "One" "c"));;
     "enc" <-[slice.T byteT] (marshal.WriteInt32 (![slice.T byteT] "enc") (struct.get S "Two" "c"));;

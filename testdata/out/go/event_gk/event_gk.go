@@ -18,15 +18,15 @@ type S struct {
 	EndTime   timestamp_gk.S
 }
 
-func Marshal(e S, prefix []byte) []byte {
+func Marshal(prefix []byte, e S) []byte {
 	var enc = prefix
 
 	enc = marshal.WriteInt32(enc, e.Id)
 	nameBytes := []byte(e.Name)
 	enc = marshal.WriteInt(enc, uint64(len(nameBytes)))
 	enc = marshal.WriteBytes(enc, nameBytes)
-	enc = timestamp_gk.Marshal(e.StartTime, enc)
-	enc = timestamp_gk.Marshal(e.EndTime, enc)
+	enc = timestamp_gk.Marshal(enc, e.StartTime)
+	enc = timestamp_gk.Marshal(enc, e.EndTime)
 
 	return enc
 }
