@@ -12,7 +12,7 @@ require (
 )
 
 require (
-	github.com/tchajed/marshal v0.6.3-0.20241126201513-ad1cec675534
+	github.com/tchajed/marshal v0.6.3-0.20250127163558-876eeac28f0c
 	google.golang.org/protobuf v1.36.3
 )
 
