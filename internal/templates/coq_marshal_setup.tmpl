@@ -4,6 +4,6 @@ Proof.
   iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
   <<- range (predSliceFields .Fields) >>
   iDestruct (pred_slice_sz with "Hown_<< .Name >>") as "%Hargs_<< .Name >>_sz".
-  << end >>
+  <<- end >>
   wp_apply (wp_ref_to); first by val_ty.
   iIntros (?) "Hptr". wp_pures.

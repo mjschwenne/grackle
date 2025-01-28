@@ -4,13 +4,27 @@
   iIntros (?) "Hsl". wp_store. wp_pures.
 
   wp_load.
+  <<- if isMessage . >>
   wp_apply (wp_WriteSlice _ _ args__c.(<< .Name >>) << .TypeName >>.has_encoding << .TypeName >>.own with "[Hown_<< .Name >> Hsl]").
+  <<- else >>
+  wp_apply (wp_WriteSlice _ _ args__c.(<< .Name >>) << goType . >>_has_encoding own_val with "[Hown_<< .Name >> Hsl]").
+  <<- end >>
   {
     iFrame.
     iIntros (????) "!>".
     iIntros (?) "[Hown' Hsl'] HΦ".
+    <<- if isMessage . >>
     wp_apply (<< .TypeName >>.wp_Encode with "[$Hsl' $Hown']").
     iApply "HΦ".
+    <<- else >>
+    iDestruct (own_val_to_val with "Hown'") as "%Hown_x".
+    rewrite Hown_x.
+    wp_apply (wp_Write<< marshalType . >> with "[$Hsl']").
+    iIntros (?) "Hsl".
+    iApply "HΦ".
+    iFrame.
+    done.
+    <<- end >>
   }
   iIntros (<< .Name >>_enc << .Name >>_sl') "(Hpsl_<< .Name >> & %Henc_<< .Name >> & Hsl)".
   wp_pures. wp_store.

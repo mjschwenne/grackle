@@ -75,9 +75,7 @@ Proof.
   wp_rec. wp_pures.
   iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
   iDestruct (pred_slice_sz with "Hown_slices") as "%Hargs_slices_sz".
-  
   iDestruct (pred_slice_sz with "Hown_ints") as "%Hargs_ints_sz".
-  
   wp_apply (wp_ref_to); first by val_ty.
   iIntros (?) "Hptr". wp_pures.
 
@@ -127,7 +125,6 @@ Proof.
 
   repeat split.
   all: word || done.
-  
   } done.
 Qed.
 

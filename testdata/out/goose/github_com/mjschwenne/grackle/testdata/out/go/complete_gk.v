@@ -13,7 +13,8 @@ Definition S := struct.decl [
   "Slc" :: struct.t completeslice_gk.S;
   "Success" :: boolT;
   "Sslice" :: slice.T (struct.t structslice_gk.S);
-  "Iints" :: slice.T uint64T
+  "Iints" :: slice.T uint64T;
+  "Sints" :: slice.T uint32T
 ].
 
 Definition Marshal: val :=
@@ -26,6 +27,8 @@ Definition Marshal: val :=
     "enc" <-[slice.T byteT] (marshal.WriteSlice (struct.t structslice_gk.S) (![slice.T byteT] "enc") (struct.get S "Sslice" "c") structslice_gk.Marshal);;
     "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len (struct.get S "Iints" "c")));;
     "enc" <-[slice.T byteT] (marshal.WriteSlice uint64T (![slice.T byteT] "enc") (struct.get S "Iints" "c") marshal.WriteInt);;
+    "enc" <-[slice.T byteT] (marshal.WriteInt (![slice.T byteT] "enc") (slice.len (struct.get S "Sints" "c")));;
+    "enc" <-[slice.T byteT] (marshal.WriteSlice uint32T (![slice.T byteT] "enc") (struct.get S "Sints" "c") marshal.WriteInt32);;
     ![slice.T byteT] "enc".
 
 Definition Unmarshal: val :=
@@ -36,6 +39,7 @@ Definition Unmarshal: val :=
     let: "success" := ref (zero_val boolT) in
     let: "sslice" := ref (zero_val (slice.T (struct.t structslice_gk.S))) in
     let: "iints" := ref (zero_val (slice.T uint64T)) in
+    let: "sints" := ref (zero_val (slice.T uint32T)) in
     let: ("0_ret", "1_ret") := completeint_gk.Unmarshal (![slice.T byteT] "enc") in
     "int" <-[struct.t completeint_gk.S] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
@@ -59,12 +63,20 @@ Definition Unmarshal: val :=
     let: ("0_ret", "1_ret") := marshal.ReadSlice uint64T (![slice.T byteT] "enc") (![uint64T] "iintsLen") marshal.ReadInt in
     "iints" <-[slice.T uint64T] "0_ret";;
     "enc" <-[slice.T byteT] "1_ret";;
+    let: "sintsLen" := ref (zero_val uint64T) in
+    let: ("0_ret", "1_ret") := marshal.ReadInt (![slice.T byteT] "enc") in
+    "sintsLen" <-[uint64T] "0_ret";;
+    "enc" <-[slice.T byteT] "1_ret";;
+    let: ("0_ret", "1_ret") := marshal.ReadSlice uint32T (![slice.T byteT] "enc") (![uint64T] "sintsLen") marshal.ReadInt32 in
+    "sints" <-[slice.T uint32T] "0_ret";;
+    "enc" <-[slice.T byteT] "1_ret";;
     (struct.mk S [
        "Int" ::= ![struct.t completeint_gk.S] "int";
        "Slc" ::= ![struct.t completeslice_gk.S] "slc";
        "Success" ::= ![boolT] "success";
        "Sslice" ::= ![slice.T (struct.t structslice_gk.S)] "sslice";
-       "Iints" ::= ![slice.T uint64T] "iints"
+       "Iints" ::= ![slice.T uint64T] "iints";
+       "Sints" ::= ![slice.T uint32T] "sints"
      ], ![slice.T byteT] "enc").
 
 End code.

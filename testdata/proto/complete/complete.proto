@@ -33,4 +33,5 @@ message complete {
   bool success = 3;
   repeated structSlice sslice = 4;
   repeated uint64 iints = 5;
+  repeated uint32 sints = 6;
 }

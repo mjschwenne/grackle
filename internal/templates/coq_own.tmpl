@@ -28,8 +28,10 @@ Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
   <<- range $lists >> ∗
   <<- if isCoqType . "message" >>
   "Hown_<< .Name >>" ∷ is_pred_slice << .TypeName >>.own << .Name >>_sl (struct.t << goType . >>) dq args__c.(<< .Name >>)
-  <<- else >>
+  <<- else if isCoqType . "u8|byte_string" >>
   "Hown_<< .Name >>" ∷ own_slice_small << .Name >>_sl << goType . >>T dq args__c.(<< .Name >>)
+  <<- else >>
+  "Hown_<< .Name >>" ∷ is_pred_slice own_val << .Name >>_sl << goType . >>T dq args__c.(<< .Name >>)
   <<- end >>
   <<- end >>
   <<- range $extval >> ∗

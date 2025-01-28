@@ -11,11 +11,11 @@ Proof.
   << if or (len $psls) (len $refs)  ->>
   unfold has_encoding in Henc.
   destruct Henc as (
-  <<- range $idx, $r := (messageFields .Fields) ->>
+  <<- range $idx, $r := (extEncFields .Fields) ->>
     <<- if $idx >>&<< end >> << .Name >>_enc << end ->>
     & Henc
     <<- range .Fields >>
-    <<- if isMessage . >> & Henc_<< .Name >>
+    <<- if or (isMessage .) (isPredSliceType .) >> & Henc_<< .Name >>
     <<- if isPredSliceType . >> & H<< .Name >>_sz <<- end ->>
     <<- end >>
     <<- end >> ).

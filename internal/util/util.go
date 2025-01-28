@@ -262,7 +262,7 @@ func IsSliceType(field *field) bool {
 }
 
 func IsPredSliceType(field *field) bool {
-	return field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && IsRepeatedType(field)
+	return IsRepeatedType(field)
 }
 
 func IsMessageType(field *field) bool {
