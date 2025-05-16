@@ -28,6 +28,7 @@
         packages = with pkgs; [
           # Coq deps
           coq
+          coqPackages.stdlib
 
           # Go deps
           go
@@ -48,6 +49,7 @@
         ];
 
         shellHook = ''
+          unset COQPATH
         '';
       };
   };
