@@ -5,14 +5,19 @@
 
 -arg -w -arg -ssr-search-moved
 -arg -w -arg +deprecated-instance-without-locality
--arg -w -arg -future-coercion-class-field
+# don't allow ambiguous coercions
+-arg -w -arg +ambiguous-paths
 -arg -w -arg +deprecated-hint-rewrite-without-locality
 -arg -w -arg -deprecated-field-instance-without-locality
 -arg -w -arg +deprecated-tactic-notation
 -arg -w -arg -deprecated-since-8.19
 -arg -w -arg -deprecated-since-8.20
+-arg -w -arg -deprecated-since-9.0
+# seems to have false positives
 -arg -w -arg -notation-incompatible-prefix
+# we haven't updated our code to fix this one
 -arg -w -arg -deprecated-typeclasses-transparency-without-locality
+# Iris-disabled warnings
 -arg -w -arg -notation-overridden,-redundant-canonical-projection,-unknown-warning,-argument-scope-delimiter
 
 # copy perennial's dependencies
@@ -29,7 +34,5 @@
 -Q perennial/external/iris-named-props/src iris_named_props
 # perennial itself
 -Q perennial/src Perennial
--Q perennial/new_trusted_code New.code
--Q perennial/new_code_axioms New.code
 -Q perennial/new New
 -Q perennial/external/Goose Goose
