@@ -35,7 +35,7 @@
         };
       in {
         packages = {
-          inherit grackle;
+          inherit grackle goose;
           default = grackle;
         };
         devShells.default = with pkgs;
