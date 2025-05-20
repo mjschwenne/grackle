@@ -117,6 +117,7 @@ Proof.
   iIntros (l__second) "Hsecond". wp_pures.
 
   unfold has_encoding in Henc. rewrite Henc.
+  rewrite -?app_assoc.
 
   wp_load. wp_apply (wp_ReadInt32 with "[$]"). iIntros (?) "Hsl".
   wp_pures. wp_store. wp_store.
