@@ -1,5 +1,6 @@
 # Grackle 
 -Q example Grackle.example
+-Q new_example Grackle.new_ex
 -Q testdata/out/goose Goose 
 -Q testdata/out/coq Grackle.test
 
