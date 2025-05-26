@@ -13,7 +13,7 @@ message eQuery {
 
 message Address {
   string line1 = 1;
-  option string line2 = 2;
+  string line2 = 2;
   string city = 3;
   string state = 4;
   uint32 zip = 5;
