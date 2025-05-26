@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+enum Corpus {
+  CORPUS_UNSPECIFIED = 0;
+  CORPUS_WEB = 1;
+  CORPUS_NEWS = 2;
+}
+
+message eQuery {
+  string query = 1;
+  Corpus corpus = 2;
+}
+
+message Address {
+  string line1 = 1;
+  option string line2 = 2;
+  string city = 3;
+  string state = 4;
+  uint32 zip = 5;
+}
+
+message oQuery {
+  string query = 1;
+  oneof corpus {
+    string URL = 2;
+    Address addr = 3;
+  }
+}
