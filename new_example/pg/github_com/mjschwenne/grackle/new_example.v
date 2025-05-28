@@ -3,7 +3,7 @@ Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.github_com.tchajed.marshal.
 Require Export New.golang.theory.
 
-Require Export New.code.github_com.mjschwenne.grackle.new_example.
+Require Export Grackle.new_ex.goose.github_com.mjschwenne.grackle.new_example.
 
 Set Default Proof Using "Type".
 
