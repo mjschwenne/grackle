@@ -15,6 +15,79 @@ Definition TimeStamp : go_type := structT [
   "second" :: uint32T
 ].
 
+Definition Event : go_type := structT [
+  "id" :: uint32T;
+  "name" :: stringT;
+  "startTime" :: TimeStamp;
+  "endTime" :: TimeStamp
+].
+
+(* go: event.go:14:6 *)
+Definition MarshalEvent : val :=
+  rec: "MarshalEvent" "enc" "e" :=
+    exception_do (let: "e" := (mem.alloc "e") in
+    let: "enc" := (mem.alloc "enc") in
+    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
+    let: "$a1" := (![#uint32T] (struct.field_ref #Event #"id"%go "e")) in
+    (func_call #marshal.marshal #"WriteInt32"%go) "$a0" "$a1") in
+    do:  ("enc" <-[#sliceT] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
+    let: "$a1" := (string.to_bytes (![#stringT] (struct.field_ref #Event #"name"%go "e"))) in
+    (func_call #marshal.marshal #"WriteLenPrefixedBytes"%go) "$a0" "$a1") in
+    do:  ("enc" <-[#sliceT] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
+    let: "$a1" := (![#TimeStamp] (struct.field_ref #Event #"startTime"%go "e")) in
+    (func_call #new_example.main #"MarshalTimeStamp"%go) "$a0" "$a1") in
+    do:  ("enc" <-[#sliceT] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
+    let: "$a1" := (![#TimeStamp] (struct.field_ref #Event #"endTime"%go "e")) in
+    (func_call #new_example.main #"MarshalTimeStamp"%go) "$a0" "$a1") in
+    do:  ("enc" <-[#sliceT] "$r0");;;
+    return: (![#sliceT] "enc")).
+
+(* go: event.go:22:6 *)
+Definition UnmarshalEvent : val :=
+  rec: "UnmarshalEvent" "s" :=
+    exception_do (let: "s" := (mem.alloc "s") in
+    let: "id" := (mem.alloc (type.zero_val #uint32T)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    (func_call #marshal.marshal #"ReadInt32"%go) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("id" <-[#uint32T] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
+    let: "nameBytes" := (mem.alloc (type.zero_val #sliceT)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("nameBytes" <-[#sliceT] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
+    let: "startTime" := (mem.alloc (type.zero_val #TimeStamp)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    (func_call #new_example.main #"UnmarshalTimeStamp"%go) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("startTime" <-[#TimeStamp] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
+    let: "endTime" := (mem.alloc (type.zero_val #TimeStamp)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    (func_call #new_example.main #"UnmarshalTimeStamp"%go) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("endTime" <-[#TimeStamp] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
+    return: (let: "$id" := (![#uint32T] "id") in
+     let: "$name" := (string.from_bytes (![#sliceT] "nameBytes")) in
+     let: "$startTime" := (![#TimeStamp] "startTime") in
+     let: "$endTime" := (![#TimeStamp] "endTime") in
+     struct.make #Event [{
+       "id" ::= "$id";
+       "name" ::= "$name";
+       "startTime" ::= "$startTime";
+       "endTime" ::= "$endTime"
+     }], ![#sliceT] "s")).
+
 (* go: timestamp.go:11:6 *)
 Definition MarshalTimeStamp : val :=
   rec: "MarshalTimeStamp" "enc" "t" :=
@@ -70,9 +143,9 @@ Definition UnmarshalTimeStamp : val :=
 
 Definition vars' : list (go_string * go_type) := [].
 
-Definition functions' : list (go_string * val) := [("MarshalTimeStamp"%go, MarshalTimeStamp); ("UnmarshalTimeStamp"%go, UnmarshalTimeStamp)].
+Definition functions' : list (go_string * val) := [("MarshalEvent"%go, MarshalEvent); ("UnmarshalEvent"%go, UnmarshalEvent); ("MarshalTimeStamp"%go, MarshalTimeStamp); ("UnmarshalTimeStamp"%go, UnmarshalTimeStamp)].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [("TimeStamp"%go, []); ("TimeStamp'ptr"%go, [])].
+Definition msets' : list (go_string * (list (go_string * val))) := [("Event"%go, []); ("Event'ptr"%go, []); ("TimeStamp"%go, []); ("TimeStamp'ptr"%go, [])].
 
 #[global] Instance info' : PkgInfo new_example.main :=
   {|

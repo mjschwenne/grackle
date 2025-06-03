@@ -9,468 +9,6 @@ Set Default Proof Using "Type".
 
 Module main.
 
-(* type main.Corpus *)
-Module Corpus.
-Section def.
-Context `{ffi_syntax}.
-Definition t := w64.
-End def.
-End Corpus.
-
-(* type main.eQuery *)
-Module eQuery.
-Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  query' : go_string;
-  corpus' : Corpus.t;
-}.
-End def.
-End eQuery.
-
-Section instances.
-Context `{ffi_syntax}.
-
-Global Instance settable_eQuery : Settable eQuery.t :=
-  settable! eQuery.mk < eQuery.query'; eQuery.corpus' >.
-Global Instance into_val_eQuery : IntoVal eQuery.t :=
-  {| to_val_def v :=
-    struct.val_aux main.eQuery [
-    "query" ::= #(eQuery.query' v);
-    "corpus" ::= #(eQuery.corpus' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_eQuery : IntoValTyped eQuery.t main.eQuery :=
-{|
-  default_val := eQuery.mk (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_eQuery_query : IntoValStructField "query" main.eQuery eQuery.query'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_eQuery_corpus : IntoValStructField "corpus" main.eQuery eQuery.corpus'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_eQuery query' corpus':
-  PureWp True
-    (struct.make #main.eQuery (alist_val [
-      "query" ::= #query';
-      "corpus" ::= #corpus'
-    ]))%struct
-    #(eQuery.mk query' corpus').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance eQuery_struct_fields_split dq l (v : eQuery.t) :
-  StructFieldsSplit dq l v (
-    "Hquery" ∷ l ↦s[main.eQuery :: "query"]{dq} v.(eQuery.query') ∗
-    "Hcorpus" ∷ l ↦s[main.eQuery :: "corpus"]{dq} v.(eQuery.corpus')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (eQuery.query' v)) main.eQuery "query"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type main.Address *)
-Module Address.
-Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  line1' : go_string;
-  line2' : go_string;
-  city' : go_string;
-  state' : go_string;
-  zip' : w32;
-}.
-End def.
-End Address.
-
-Section instances.
-Context `{ffi_syntax}.
-
-Global Instance settable_Address : Settable Address.t :=
-  settable! Address.mk < Address.line1'; Address.line2'; Address.city'; Address.state'; Address.zip' >.
-Global Instance into_val_Address : IntoVal Address.t :=
-  {| to_val_def v :=
-    struct.val_aux main.Address [
-    "line1" ::= #(Address.line1' v);
-    "line2" ::= #(Address.line2' v);
-    "city" ::= #(Address.city' v);
-    "state" ::= #(Address.state' v);
-    "zip" ::= #(Address.zip' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_Address : IntoValTyped Address.t main.Address :=
-{|
-  default_val := Address.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_Address_line1 : IntoValStructField "line1" main.Address Address.line1'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Address_line2 : IntoValStructField "line2" main.Address Address.line2'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Address_city : IntoValStructField "city" main.Address Address.city'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Address_state : IntoValStructField "state" main.Address Address.state'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Address_zip : IntoValStructField "zip" main.Address Address.zip'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_Address line1' line2' city' state' zip':
-  PureWp True
-    (struct.make #main.Address (alist_val [
-      "line1" ::= #line1';
-      "line2" ::= #line2';
-      "city" ::= #city';
-      "state" ::= #state';
-      "zip" ::= #zip'
-    ]))%struct
-    #(Address.mk line1' line2' city' state' zip').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance Address_struct_fields_split dq l (v : Address.t) :
-  StructFieldsSplit dq l v (
-    "Hline1" ∷ l ↦s[main.Address :: "line1"]{dq} v.(Address.line1') ∗
-    "Hline2" ∷ l ↦s[main.Address :: "line2"]{dq} v.(Address.line2') ∗
-    "Hcity" ∷ l ↦s[main.Address :: "city"]{dq} v.(Address.city') ∗
-    "Hstate" ∷ l ↦s[main.Address :: "state"]{dq} v.(Address.state') ∗
-    "Hzip" ∷ l ↦s[main.Address :: "zip"]{dq} v.(Address.zip')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (Address.line1' v)) main.Address "line1"%go.
-  simpl_one_flatten_struct (# (Address.line2' v)) main.Address "line2"%go.
-  simpl_one_flatten_struct (# (Address.city' v)) main.Address "city"%go.
-  simpl_one_flatten_struct (# (Address.state' v)) main.Address "state"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type main.bQuery *)
-Module bQuery.
-Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  query' : go_string;
-  has_URL' : bool;
-  URL' : go_string;
-  has_addr' : bool;
-  addr' : Address.t;
-}.
-End def.
-End bQuery.
-
-Section instances.
-Context `{ffi_syntax}.
-
-Global Instance settable_bQuery : Settable bQuery.t :=
-  settable! bQuery.mk < bQuery.query'; bQuery.has_URL'; bQuery.URL'; bQuery.has_addr'; bQuery.addr' >.
-Global Instance into_val_bQuery : IntoVal bQuery.t :=
-  {| to_val_def v :=
-    struct.val_aux main.bQuery [
-    "query" ::= #(bQuery.query' v);
-    "has_URL" ::= #(bQuery.has_URL' v);
-    "URL" ::= #(bQuery.URL' v);
-    "has_addr" ::= #(bQuery.has_addr' v);
-    "addr" ::= #(bQuery.addr' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_bQuery : IntoValTyped bQuery.t main.bQuery :=
-{|
-  default_val := bQuery.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_bQuery_query : IntoValStructField "query" main.bQuery bQuery.query'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_bQuery_has_URL : IntoValStructField "has_URL" main.bQuery bQuery.has_URL'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_bQuery_URL : IntoValStructField "URL" main.bQuery bQuery.URL'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_bQuery_has_addr : IntoValStructField "has_addr" main.bQuery bQuery.has_addr'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_bQuery_addr : IntoValStructField "addr" main.bQuery bQuery.addr'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_bQuery query' has_URL' URL' has_addr' addr':
-  PureWp True
-    (struct.make #main.bQuery (alist_val [
-      "query" ::= #query';
-      "has_URL" ::= #has_URL';
-      "URL" ::= #URL';
-      "has_addr" ::= #has_addr';
-      "addr" ::= #addr'
-    ]))%struct
-    #(bQuery.mk query' has_URL' URL' has_addr' addr').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance bQuery_struct_fields_split dq l (v : bQuery.t) :
-  StructFieldsSplit dq l v (
-    "Hquery" ∷ l ↦s[main.bQuery :: "query"]{dq} v.(bQuery.query') ∗
-    "Hhas_URL" ∷ l ↦s[main.bQuery :: "has_URL"]{dq} v.(bQuery.has_URL') ∗
-    "HURL" ∷ l ↦s[main.bQuery :: "URL"]{dq} v.(bQuery.URL') ∗
-    "Hhas_addr" ∷ l ↦s[main.bQuery :: "has_addr"]{dq} v.(bQuery.has_addr') ∗
-    "Haddr" ∷ l ↦s[main.bQuery :: "addr"]{dq} v.(bQuery.addr')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (bQuery.query' v)) main.bQuery "query"%go.
-  simpl_one_flatten_struct (# (bQuery.has_URL' v)) main.bQuery "has_URL"%go.
-  simpl_one_flatten_struct (# (bQuery.URL' v)) main.bQuery "URL"%go.
-  simpl_one_flatten_struct (# (bQuery.has_addr' v)) main.bQuery "has_addr"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type main.iCorpus *)
-Module iCorpus.
-Section def.
-Context `{ffi_syntax}.
-Definition t := interface.t.
-End def.
-End iCorpus.
-
-(* type main.URL *)
-Module URL.
-Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  contents' : go_string;
-}.
-End def.
-End URL.
-
-Section instances.
-Context `{ffi_syntax}.
-
-Global Instance settable_URL : Settable URL.t :=
-  settable! URL.mk < URL.contents' >.
-Global Instance into_val_URL : IntoVal URL.t :=
-  {| to_val_def v :=
-    struct.val_aux main.URL [
-    "contents" ::= #(URL.contents' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_URL : IntoValTyped URL.t main.URL :=
-{|
-  default_val := URL.mk (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_URL_contents : IntoValStructField "contents" main.URL URL.contents'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_URL contents':
-  PureWp True
-    (struct.make #main.URL (alist_val [
-      "contents" ::= #contents'
-    ]))%struct
-    #(URL.mk contents').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance URL_struct_fields_split dq l (v : URL.t) :
-  StructFieldsSplit dq l v (
-    "Hcontents" ∷ l ↦s[main.URL :: "contents"]{dq} v.(URL.contents')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type main.Addr *)
-Module Addr.
-Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  contents' : Address.t;
-}.
-End def.
-End Addr.
-
-Section instances.
-Context `{ffi_syntax}.
-
-Global Instance settable_Addr : Settable Addr.t :=
-  settable! Addr.mk < Addr.contents' >.
-Global Instance into_val_Addr : IntoVal Addr.t :=
-  {| to_val_def v :=
-    struct.val_aux main.Addr [
-    "contents" ::= #(Addr.contents' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_Addr : IntoValTyped Addr.t main.Addr :=
-{|
-  default_val := Addr.mk (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_Addr_contents : IntoValStructField "contents" main.Addr Addr.contents'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_Addr contents':
-  PureWp True
-    (struct.make #main.Addr (alist_val [
-      "contents" ::= #contents'
-    ]))%struct
-    #(Addr.mk contents').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance Addr_struct_fields_split dq l (v : Addr.t) :
-  StructFieldsSplit dq l v (
-    "Hcontents" ∷ l ↦s[main.Addr :: "contents"]{dq} v.(Addr.contents')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type main.iQuery *)
-Module iQuery.
-Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  query' : go_string;
-  corpus' : iCorpus.t;
-}.
-End def.
-End iQuery.
-
-Section instances.
-Context `{ffi_syntax}.
-
-Global Instance settable_iQuery : Settable iQuery.t :=
-  settable! iQuery.mk < iQuery.query'; iQuery.corpus' >.
-Global Instance into_val_iQuery : IntoVal iQuery.t :=
-  {| to_val_def v :=
-    struct.val_aux main.iQuery [
-    "query" ::= #(iQuery.query' v);
-    "corpus" ::= #(iQuery.corpus' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_iQuery : IntoValTyped iQuery.t main.iQuery :=
-{|
-  default_val := iQuery.mk (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_iQuery_query : IntoValStructField "query" main.iQuery iQuery.query'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_iQuery_corpus : IntoValStructField "corpus" main.iQuery iQuery.corpus'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_iQuery query' corpus':
-  PureWp True
-    (struct.make #main.iQuery (alist_val [
-      "query" ::= #query';
-      "corpus" ::= #corpus'
-    ]))%struct
-    #(iQuery.mk query' corpus').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance iQuery_struct_fields_split dq l (v : iQuery.t) :
-  StructFieldsSplit dq l v (
-    "Hquery" ∷ l ↦s[main.iQuery :: "query"]{dq} v.(iQuery.query') ∗
-    "Hcorpus" ∷ l ↦s[main.iQuery :: "corpus"]{dq} v.(iQuery.corpus')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (iQuery.query' v)) main.iQuery "query"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
 (* type main.TimeStamp *)
 Module TimeStamp.
 Section def.
@@ -548,6 +86,91 @@ Qed.
 
 End instances.
 
+(* type main.Event *)
+Module Event.
+Section def.
+Context `{ffi_syntax}.
+Record t := mk {
+  id' : w32;
+  name' : go_string;
+  startTime' : TimeStamp.t;
+  endTime' : TimeStamp.t;
+}.
+End def.
+End Event.
+
+Section instances.
+Context `{ffi_syntax}.
+
+Global Instance settable_Event : Settable Event.t :=
+  settable! Event.mk < Event.id'; Event.name'; Event.startTime'; Event.endTime' >.
+Global Instance into_val_Event : IntoVal Event.t :=
+  {| to_val_def v :=
+    struct.val_aux main.Event [
+    "id" ::= #(Event.id' v);
+    "name" ::= #(Event.name' v);
+    "startTime" ::= #(Event.startTime' v);
+    "endTime" ::= #(Event.endTime' v)
+    ]%struct
+  |}.
+
+Global Program Instance into_val_typed_Event : IntoValTyped Event.t main.Event :=
+{|
+  default_val := Event.mk (default_val _) (default_val _) (default_val _) (default_val _);
+|}.
+Next Obligation. solve_to_val_type. Qed.
+Next Obligation. solve_zero_val. Qed.
+Next Obligation. solve_to_val_inj. Qed.
+Final Obligation. solve_decision. Qed.
+
+Global Instance into_val_struct_field_Event_id : IntoValStructField "id" main.Event Event.id'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_Event_name : IntoValStructField "name" main.Event Event.name'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_Event_startTime : IntoValStructField "startTime" main.Event Event.startTime'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_Event_endTime : IntoValStructField "endTime" main.Event Event.endTime'.
+Proof. solve_into_val_struct_field. Qed.
+
+
+Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
+Global Instance wp_struct_make_Event id' name' startTime' endTime':
+  PureWp True
+    (struct.make #main.Event (alist_val [
+      "id" ::= #id';
+      "name" ::= #name';
+      "startTime" ::= #startTime';
+      "endTime" ::= #endTime'
+    ]))%struct
+    #(Event.mk id' name' startTime' endTime').
+Proof. solve_struct_make_pure_wp. Qed.
+
+
+Global Instance Event_struct_fields_split dq l (v : Event.t) :
+  StructFieldsSplit dq l v (
+    "Hid" ∷ l ↦s[main.Event :: "id"]{dq} v.(Event.id') ∗
+    "Hname" ∷ l ↦s[main.Event :: "name"]{dq} v.(Event.name') ∗
+    "HstartTime" ∷ l ↦s[main.Event :: "startTime"]{dq} v.(Event.startTime') ∗
+    "HendTime" ∷ l ↦s[main.Event :: "endTime"]{dq} v.(Event.endTime')
+  ).
+Proof.
+  rewrite /named.
+  apply struct_fields_split_intro.
+  unfold_typed_pointsto; split_pointsto_app.
+
+  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
+  simpl_one_flatten_struct (# (Event.id' v)) main.Event "id"%go.
+  simpl_one_flatten_struct (# (Event.name' v)) main.Event "name"%go.
+  simpl_one_flatten_struct (# (Event.startTime' v)) main.Event "startTime"%go.
+
+  solve_field_ref_f.
+Qed.
+
+End instances.
+
 Section names.
 
 Class GlobalAddrs :=
@@ -569,36 +192,12 @@ Global Instance is_pkg_defined_instance : IsPkgDefined main :=
 Definition own_allocated : iProp Σ :=
 True.
 
-Global Instance wp_func_call_MarshalEQuery :
-  WpFuncCall main "MarshalEQuery" _ (is_pkg_defined main) :=
+Global Instance wp_func_call_MarshalEvent :
+  WpFuncCall main "MarshalEvent" _ (is_pkg_defined main) :=
   ltac:(apply wp_func_call'; reflexivity).
 
-Global Instance wp_func_call_UnmarshalEQuery :
-  WpFuncCall main "UnmarshalEQuery" _ (is_pkg_defined main) :=
-  ltac:(apply wp_func_call'; reflexivity).
-
-Global Instance wp_func_call_MarshalAddress :
-  WpFuncCall main "MarshalAddress" _ (is_pkg_defined main) :=
-  ltac:(apply wp_func_call'; reflexivity).
-
-Global Instance wp_func_call_UnmarshalAddress :
-  WpFuncCall main "UnmarshalAddress" _ (is_pkg_defined main) :=
-  ltac:(apply wp_func_call'; reflexivity).
-
-Global Instance wp_func_call_MarshalBQuery :
-  WpFuncCall main "MarshalBQuery" _ (is_pkg_defined main) :=
-  ltac:(apply wp_func_call'; reflexivity).
-
-Global Instance wp_func_call_UnmarshalBQuery :
-  WpFuncCall main "UnmarshalBQuery" _ (is_pkg_defined main) :=
-  ltac:(apply wp_func_call'; reflexivity).
-
-Global Instance wp_func_call_MarshalIQuery :
-  WpFuncCall main "MarshalIQuery" _ (is_pkg_defined main) :=
-  ltac:(apply wp_func_call'; reflexivity).
-
-Global Instance wp_func_call_UnmarshalIQuery :
-  WpFuncCall main "UnmarshalIQuery" _ (is_pkg_defined main) :=
+Global Instance wp_func_call_UnmarshalEvent :
+  WpFuncCall main "UnmarshalEvent" _ (is_pkg_defined main) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 Global Instance wp_func_call_MarshalTimeStamp :
@@ -608,22 +207,6 @@ Global Instance wp_func_call_MarshalTimeStamp :
 Global Instance wp_func_call_UnmarshalTimeStamp :
   WpFuncCall main "UnmarshalTimeStamp" _ (is_pkg_defined main) :=
   ltac:(apply wp_func_call'; reflexivity).
-
-Global Instance wp_method_call_URL_isCorpus :
-  WpMethodCall main "URL" "isCorpus" _ (is_pkg_defined main) :=
-  ltac:(apply wp_method_call'; reflexivity).
-
-Global Instance wp_method_call_URL'ptr_isCorpus :
-  WpMethodCall main "URL'ptr" "isCorpus" _ (is_pkg_defined main) :=
-  ltac:(apply wp_method_call'; reflexivity).
-
-Global Instance wp_method_call_Addr_isCorpus :
-  WpMethodCall main "Addr" "isCorpus" _ (is_pkg_defined main) :=
-  ltac:(apply wp_method_call'; reflexivity).
-
-Global Instance wp_method_call_Addr'ptr_isCorpus :
-  WpMethodCall main "Addr'ptr" "isCorpus" _ (is_pkg_defined main) :=
-  ltac:(apply wp_method_call'; reflexivity).
 
 End names.
 End main.
