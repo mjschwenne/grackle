@@ -1,16 +1,30 @@
 package main
 
-import "github.com/tchajed/marshal"
+import (
+	"slices"
+
+	"github.com/tchajed/marshal"
+)
 
 type Corpus uint64
 
 // BEGIN : Const block style enum
 
 const (
-	CORPUS_UNSPECIFIED = iota
-	CORPUS_WEB
-	CORPUS_NEWS
+	CORPUS_UNSPECIFIED Corpus = 0
+	CORPUS_WEB         Corpus = 1
+	CORPUS_NEWS        Corpus = 2
 )
+
+type eCorpus struct {
+	corpus Corpus
+}
+
+func (*eCorpus) SetCorpus(c Corpus) {
+	if slices.Contains(c, []Corpus{CORPUS_UNSPECIFIED, CORPUS_WEB, CORPUS_NEW}) {
+		eCorpus.corpus = c
+	}
+}
 
 type eQuery struct {
 	query  string
