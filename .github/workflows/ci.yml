@@ -53,5 +53,5 @@ jobs:
 
       - name: Check goose output
         run: |
-          go run github.com/goose-lang/goose/cmd/goose@latest -out example/goose ./example
+          go run github.com/goose-lang/goose/cmd/goose@new -out example/goose ./example
           git diff --exit-code
