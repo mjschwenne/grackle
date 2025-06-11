@@ -5,11 +5,11 @@
 
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.structslice_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.structslice_gk.
 From Grackle.test Require Import completeslice_proof_gk.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 From Grackle.test Require Import completeint_proof_gk.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
 From Perennial.goose_lang Require Import lib.slice.pred_slice.
 
 Module structSlice.

@@ -15,9 +15,7 @@ type S struct {
 	Second uint64
 }
 
-func Marshal(prefix []byte, t S) []byte {
-	var enc = prefix
-
+func Marshal(enc []byte, t S) []byte {
 	enc = marshal.WriteInt32(enc, t.Hour)
 	enc = marshal.WriteInt32(enc, t.Minute)
 	enc = marshal.WriteInt(enc, t.Second)
@@ -26,18 +24,14 @@ func Marshal(prefix []byte, t S) []byte {
 }
 
 func Unmarshal(s []byte) (S, []byte) {
-	var enc = s // Needed for goose compatibility
-	var hour uint32
-	var minute uint32
-	var second uint64
 
-	hour, enc = marshal.ReadInt32(enc)
-	minute, enc = marshal.ReadInt32(enc)
-	second, enc = marshal.ReadInt(enc)
+	hour, s := marshal.ReadInt32(s)
+	minute, s := marshal.ReadInt32(s)
+	second, s := marshal.ReadInt(s)
 
 	return S{
 		Hour:   hour,
 		Minute: minute,
 		Second: second,
-	}, enc
+	}, s
 }

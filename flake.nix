@@ -27,8 +27,8 @@
           src = pkgs.fetchFromGitHub {
             owner = "goose-lang";
             repo = "goose";
-            rev = "d3a52bb20408699c9eef8cae73a43e4698594663"; # new
-            sha256 = "1alkj89nx342qvixfq9r5qiipwb54lb4p8j3chqi64h9i4cc5prb";
+            rev = "2249e1811cc6b39bc3dc03604ec915ab532e391c"; # new
+            sha256 = "0rib03751rad8x8n1jcq925yw2ccfhns426f8mfnzq8hsq9mbn08";
           };
           proxyVendor = true;
           vendorHash = "sha256-MHo+sm5MUP5NVn128vu02zVcs2gpg24zC8o+UvBOnpI=";

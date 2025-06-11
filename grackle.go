@@ -19,6 +19,8 @@ import (
 	"text/template"
 
 	"github.com/goose-lang/goose"
+	"github.com/goose-lang/goose/proofgen"
+	pg "github.com/goose-lang/goose/util"
 	"github.com/mjschwenne/grackle/internal/util"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -259,10 +261,9 @@ func getMessageOptions(message *descriptorpb.DescriptorProto, fileOpts *filePara
 	return messageOpts
 }
 
-func gooseTranslate(gooseOutput *string, goRoot string, goDirectory string) {
-	gooseConfig := goose.TranslationConfig{TypeCheck: false, AddSourceFileComments: false, SkipInterfaces: false}
+func gooseTranslate(gooseOutput *string, proofGenPath *string, goRoot string, goDirectory string) {
 	goAbs, err := filepath.Abs(goDirectory)
-	gooseFiles, gooseErrs, err := gooseConfig.TranslatePackages(goRoot, goAbs)
+	gooseFiles, gooseErrs, err := goose.TranslatePackages(goRoot, goAbs)
 	if err != nil {
 		log.Fatalf("Could not generate goose code: %v\n", err)
 	}
@@ -273,6 +274,10 @@ func gooseTranslate(gooseOutput *string, goRoot string, goDirectory string) {
 		}
 	}
 
+	if proofGenPath != nil {
+		pg.Translate(proofgen.Package, []string{}, *proofGenPath, goAbs, *gooseOutput)
+	}
+
 	for _, gf := range gooseFiles {
 		gooseFilePath := util.GetGooseOutputPath(gooseOutput, gf.PkgPath)
 		gooseFile := util.OpenGrackleFile(&gooseFilePath)
@@ -281,7 +286,15 @@ func gooseTranslate(gooseOutput *string, goRoot string, goDirectory string) {
 	}
 }
 
-func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, goPackage *string, debug io.Writer) {
+func Grackle(protoDir *string,
+	gooseOutput *string,
+	coqLogicalPath *string,
+	coqPhysicalPath *string,
+	proofGenOutput *string,
+	goOutputPath *string,
+	goPackage *string,
+	debug io.Writer) {
+
 	descriptorSet := generateDescirptor(protoDir)
 	tmpl := setupTemplates(descriptorSet)
 	util.CreateOutputDirectories(gooseOutput, coqPhysicalPath, goOutputPath)
@@ -290,7 +303,6 @@ func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqP
 	for _, file := range descriptorSet.File {
 		fileOpts := getFileOptions(file, gooseOutput, coqLogicalPath, coqPhysicalPath, goOutputPath, goPackage)
 		for _, enum := range file.EnumType {
-			// log.Printf("Found enum: %s\n", enum.GetName())
 			var goOut io.Writer
 			goPhysicalPath := util.GetGoOutputPath(goOutputPath, enum.Name)
 			if *goOutputPath != "" {
@@ -311,7 +323,7 @@ func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqP
 
 				formattedGo, err := format.Source(goBuffer.Bytes())
 				if err != nil {
-					log.Printf(goBuffer.String())
+					log.Printf("Could not format code:\n%s\n", goBuffer.String())
 					log.Fatalf("Error formatting go code: %v\n", err)
 				}
 
@@ -365,7 +377,7 @@ func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqP
 
 				formattedGo, err := format.Source(goBuffer.Bytes())
 				if err != nil {
-					log.Printf(goBuffer.String())
+					log.Printf("Could not format code:\n%s\n", goBuffer.String())
 					log.Fatalf("Error formatting go code: %v\n", err)
 				}
 
@@ -381,8 +393,11 @@ func Grackle(protoDir *string, gooseOutput *string, coqLogicalPath *string, coqP
 
 			// Goose Translation, but only if the user wants and we have real go output
 			if debug == nil && *gooseOutput != "" && *goOutputPath != "" {
+				if *proofGenOutput == "" {
+					log.Printf("Warning: proofgen output path not set, skipping proofgen generation!\n")
+				}
 				_, goRoot := util.FindGoModuleName(*goOutputPath)
-				gooseTranslate(gooseOutput, goRoot, filepath.Dir(*msg.GoPhysicalPath))
+				gooseTranslate(gooseOutput, proofGenOutput, goRoot, filepath.Dir(*msg.GoPhysicalPath))
 			}
 		}
 	}

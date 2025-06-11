@@ -18,9 +18,7 @@ type S struct {
 	EndTime   timestamp_gk.S
 }
 
-func Marshal(prefix []byte, e S) []byte {
-	var enc = prefix
-
+func Marshal(enc []byte, e S) []byte {
 	enc = marshal.WriteInt32(enc, e.Id)
 	nameBytes := []byte(e.Name)
 	enc = marshal.WriteInt(enc, uint64(len(nameBytes)))
@@ -32,25 +30,18 @@ func Marshal(prefix []byte, e S) []byte {
 }
 
 func Unmarshal(s []byte) (S, []byte) {
-	var enc = s // Needed for goose compatibility
-	var id uint32
-	var name string
-	var startTime timestamp_gk.S
-	var endTime timestamp_gk.S
 
-	id, enc = marshal.ReadInt32(enc)
-	var nameLen uint64
-	var nameBytes []byte
-	nameLen, enc = marshal.ReadInt(enc)
-	nameBytes, enc = marshal.ReadBytesCopy(enc, nameLen)
-	name = string(nameBytes)
-	startTime, enc = timestamp_gk.Unmarshal(enc)
-	endTime, enc = timestamp_gk.Unmarshal(enc)
+	id, s := marshal.ReadInt32(s)
+	nameLen, s := marshal.ReadInt(s)
+	nameBytes, s := marshal.ReadBytesCopy(s, nameLen)
+	name := string(nameBytes)
+	startTime, s := timestamp_gk.Unmarshal(s)
+	endTime, s := timestamp_gk.Unmarshal(s)
 
 	return S{
 		Id:        id,
 		Name:      name,
 		StartTime: startTime,
 		EndTime:   endTime,
-	}, enc
+	}, s
 }

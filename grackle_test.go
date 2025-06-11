@@ -27,7 +27,7 @@ func TestCalendarExample(t *testing.T) {
 	coqPhysicalPath := "testdata/out/coq"
 	goOutputPath := "testdata/out/go"
 	goPackage := "github.com/mjschwenne/grackle/testdata/out/go"
-	Grackle(&protoFiles, &gooseOutput, &coqLogicalPath, &coqPhysicalPath, &goOutputPath, &goPackage, grackleOutput)
+	Grackle(&protoFiles, &gooseOutput, &coqLogicalPath, &coqPhysicalPath, nil, &goOutputPath, &goPackage, grackleOutput)
 	grackleOutput.Flush()
 	golden.Assert(t, grackleBuffer.String(), "golden/calendar.golden")
 }
@@ -41,7 +41,7 @@ func TestCompleteExample(t *testing.T) {
 	coqPhysicalPath := "testdata/out/coq"
 	goOutputPath := "testdata/out/go"
 	goPackage := "github.com/mjschwenne/grackle/testdata/out/go"
-	Grackle(&protoFiles, &gooseOutput, &coqLogicalPath, &coqPhysicalPath, &goOutputPath, &goPackage, grackleOutput)
+	Grackle(&protoFiles, &gooseOutput, &coqLogicalPath, &coqPhysicalPath, nil, &goOutputPath, &goPackage, grackleOutput)
 	grackleOutput.Flush()
 	golden.Assert(t, grackleBuffer.String(), "golden/complete.golden")
 }

@@ -39,7 +39,7 @@ func (e E) String() string {
 
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
 From Perennial.goose_lang Require Import lib.slice.pred_slice.
 
 Module completeInt.
@@ -247,9 +247,7 @@ type S struct {
 	Six   uint64
 }
 
-func Marshal(prefix []byte, c S) []byte {
-	var enc = prefix
-
+func Marshal(enc []byte, c S) []byte {
 	enc = marshal.WriteInt32(enc, c.One)
 	enc = marshal.WriteInt32(enc, c.Two)
 	enc = marshal.WriteInt32(enc, c.Three)
@@ -261,20 +259,13 @@ func Marshal(prefix []byte, c S) []byte {
 }
 
 func Unmarshal(s []byte) (S, []byte) {
-	var enc = s // Needed for goose compatibility
-	var one uint32
-	var two uint32
-	var three uint32
-	var four uint64
-	var five uint64
-	var six uint64
 
-	one, enc = marshal.ReadInt32(enc)
-	two, enc = marshal.ReadInt32(enc)
-	three, enc = marshal.ReadInt32(enc)
-	four, enc = marshal.ReadInt(enc)
-	five, enc = marshal.ReadInt(enc)
-	six, enc = marshal.ReadInt(enc)
+	one, s := marshal.ReadInt32(s)
+	two, s := marshal.ReadInt32(s)
+	three, s := marshal.ReadInt32(s)
+	four, s := marshal.ReadInt(s)
+	five, s := marshal.ReadInt(s)
+	six, s := marshal.ReadInt(s)
 
 	return S{
 		One:   one,
@@ -283,7 +274,7 @@ func Unmarshal(s []byte) (S, []byte) {
 		Four:  four,
 		Five:  five,
 		Six:   six,
-	}, enc
+	}, s
 }
 --- End: testdata/out/go/completeint_gk/completeint_gk.go ---
 --- Begin: testdata/out/coq/completeslice_proof_gk.v ---
@@ -294,7 +285,7 @@ func Unmarshal(s []byte) (S, []byte) {
 
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 From Perennial.goose_lang Require Import lib.slice.pred_slice.
 
 Module completeSlice.
@@ -522,9 +513,7 @@ type S struct {
 	Bytes2 []byte
 }
 
-func Marshal(prefix []byte, c S) []byte {
-	var enc = prefix
-
+func Marshal(enc []byte, c S) []byte {
 	strgBytes := []byte(c.Strg)
 	enc = marshal.WriteInt(enc, uint64(len(strgBytes)))
 	enc = marshal.WriteBytes(enc, strgBytes)
@@ -540,39 +529,26 @@ func Marshal(prefix []byte, c S) []byte {
 }
 
 func Unmarshal(s []byte) (S, []byte) {
-	var enc = s // Needed for goose compatibility
-	var strg string
-	var strg2 string
-	var bytes []byte
-	var bytes2 []byte
 
-	var strgLen uint64
-	var strgBytes []byte
-	strgLen, enc = marshal.ReadInt(enc)
-	strgBytes, enc = marshal.ReadBytesCopy(enc, strgLen)
-	strg = string(strgBytes)
-	var strg2Len uint64
-	var strg2Bytes []byte
-	strg2Len, enc = marshal.ReadInt(enc)
-	strg2Bytes, enc = marshal.ReadBytesCopy(enc, strg2Len)
-	strg2 = string(strg2Bytes)
-	var bytesLen uint64
-	var bytesBytes []byte
-	bytesLen, enc = marshal.ReadInt(enc)
-	bytesBytes, enc = marshal.ReadBytesCopy(enc, bytesLen)
-	bytes = bytesBytes
-	var bytes2Len uint64
-	var bytes2Bytes []byte
-	bytes2Len, enc = marshal.ReadInt(enc)
-	bytes2Bytes, enc = marshal.ReadBytesCopy(enc, bytes2Len)
-	bytes2 = bytes2Bytes
+	strgLen, s := marshal.ReadInt(s)
+	strgBytes, s := marshal.ReadBytesCopy(s, strgLen)
+	strg := string(strgBytes)
+	strg2Len, s := marshal.ReadInt(s)
+	strg2Bytes, s := marshal.ReadBytesCopy(s, strg2Len)
+	strg2 := string(strg2Bytes)
+	bytesLen, s := marshal.ReadInt(s)
+	bytesBytes, s := marshal.ReadBytesCopy(s, bytesLen)
+	bytes := bytesBytes
+	bytes2Len, s := marshal.ReadInt(s)
+	bytes2Bytes, s := marshal.ReadBytesCopy(s, bytes2Len)
+	bytes2 := bytes2Bytes
 
 	return S{
 		Strg:   strg,
 		Strg2:  strg2,
 		Bytes:  bytes,
 		Bytes2: bytes2,
-	}, enc
+	}, s
 }
 --- End: testdata/out/go/completeslice_gk/completeslice_gk.go ---
 --- Begin: testdata/out/coq/structslice_proof_gk.v ---
@@ -583,11 +559,11 @@ func Unmarshal(s []byte) (S, []byte) {
 
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.structslice_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.structslice_gk.
 From Grackle.test Require Import completeslice_proof_gk.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 From Grackle.test Require Import completeint_proof_gk.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
 From Perennial.goose_lang Require Import lib.slice.pred_slice.
 
 Module structSlice.
@@ -812,34 +788,28 @@ type S struct {
 	Ints   []completeint_gk.S
 }
 
-func Marshal(prefix []byte, s S) []byte {
-	var enc = prefix
+func Marshal(enc []byte, s S) []byte {
 
 	enc = marshal.WriteInt(enc, uint64(len(s.Slices)))
-	enc = marshal.WriteSlice(enc, s.Slices, completeslice_gk.Marshal)
+	enc = marshal.WriteSlice[completeslice_gk.S](enc, s.Slices, completeslice_gk.Marshal)
 
 	enc = marshal.WriteInt(enc, uint64(len(s.Ints)))
-	enc = marshal.WriteSlice(enc, s.Ints, completeint_gk.Marshal)
+	enc = marshal.WriteSlice[completeint_gk.S](enc, s.Ints, completeint_gk.Marshal)
 
 	return enc
 }
 
 func Unmarshal(s []byte) (S, []byte) {
-	var enc = s // Needed for goose compatibility
-	var slices []completeslice_gk.S
-	var ints []completeint_gk.S
 
-	var slicesLen uint64
-	slicesLen, enc = marshal.ReadInt(enc)
-	slices, enc = marshal.ReadSlice(enc, slicesLen, completeslice_gk.Unmarshal)
-	var intsLen uint64
-	intsLen, enc = marshal.ReadInt(enc)
-	ints, enc = marshal.ReadSlice(enc, intsLen, completeint_gk.Unmarshal)
+	slicesLen, s := marshal.ReadInt(s)
+	slices, s := marshal.ReadSlice[completeslice_gk.S](s, slicesLen, completeslice_gk.Unmarshal)
+	intsLen, s := marshal.ReadInt(s)
+	ints, s := marshal.ReadSlice[completeint_gk.S](s, intsLen, completeint_gk.Unmarshal)
 
 	return S{
 		Slices: slices,
 		Ints:   ints,
-	}, enc
+	}, s
 }
 --- End: testdata/out/go/structslice_gk/structslice_gk.go ---
 --- Begin: testdata/out/coq/complete_proof_gk.v ---
@@ -850,13 +820,13 @@ func Unmarshal(s []byte) (S, []byte) {
 
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.complete_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.complete_gk.
 From Grackle.test Require Import completeint_proof_gk.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
 From Grackle.test Require Import completeslice_proof_gk.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 From Grackle.test Require Import structslice_proof_gk.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.structslice_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.structslice_gk.
 From Perennial.goose_lang Require Import lib.slice.pred_slice.
 
 Module complete.
@@ -1212,46 +1182,34 @@ type S struct {
 	Sints   []uint32
 }
 
-func Marshal(prefix []byte, c S) []byte {
-	var enc = prefix
-
+func Marshal(enc []byte, c S) []byte {
 	enc = completeint_gk.Marshal(enc, c.Int)
 	enc = completeslice_gk.Marshal(enc, c.Slc)
 	enc = marshal.WriteBool(enc, c.Success)
 
 	enc = marshal.WriteInt(enc, uint64(len(c.Sslice)))
-	enc = marshal.WriteSlice(enc, c.Sslice, structslice_gk.Marshal)
+	enc = marshal.WriteSlice[structslice_gk.S](enc, c.Sslice, structslice_gk.Marshal)
 
 	enc = marshal.WriteInt(enc, uint64(len(c.Iints)))
-	enc = marshal.WriteSlice(enc, c.Iints, marshal.WriteInt)
+	enc = marshal.WriteSlice[uint64](enc, c.Iints, marshal.WriteInt)
 
 	enc = marshal.WriteInt(enc, uint64(len(c.Sints)))
-	enc = marshal.WriteSlice(enc, c.Sints, marshal.WriteInt32)
+	enc = marshal.WriteSlice[uint32](enc, c.Sints, marshal.WriteInt32)
 
 	return enc
 }
 
 func Unmarshal(s []byte) (S, []byte) {
-	var enc = s // Needed for goose compatibility
-	var int completeint_gk.S
-	var slc completeslice_gk.S
-	var success bool
-	var sslice []structslice_gk.S
-	var iints []uint64
-	var sints []uint32
 
-	int, enc = completeint_gk.Unmarshal(enc)
-	slc, enc = completeslice_gk.Unmarshal(enc)
-	success, enc = marshal.ReadBool(enc)
-	var ssliceLen uint64
-	ssliceLen, enc = marshal.ReadInt(enc)
-	sslice, enc = marshal.ReadSlice(enc, ssliceLen, structslice_gk.Unmarshal)
-	var iintsLen uint64
-	iintsLen, enc = marshal.ReadInt(enc)
-	iints, enc = marshal.ReadSlice(enc, iintsLen, marshal.ReadInt)
-	var sintsLen uint64
-	sintsLen, enc = marshal.ReadInt(enc)
-	sints, enc = marshal.ReadSlice(enc, sintsLen, marshal.ReadInt32)
+	int, s := completeint_gk.Unmarshal(s)
+	slc, s := completeslice_gk.Unmarshal(s)
+	success, s := marshal.ReadBool(s)
+	ssliceLen, s := marshal.ReadInt(s)
+	sslice, s := marshal.ReadSlice[structslice_gk.S](s, ssliceLen, structslice_gk.Unmarshal)
+	iintsLen, s := marshal.ReadInt(s)
+	iints, s := marshal.ReadSlice[uint64](s, iintsLen, marshal.ReadInt)
+	sintsLen, s := marshal.ReadInt(s)
+	sints, s := marshal.ReadSlice[uint32](s, sintsLen, marshal.ReadInt32)
 
 	return S{
 		Int:     int,
@@ -1260,6 +1218,6 @@ func Unmarshal(s []byte) (S, []byte) {
 		Sslice:  sslice,
 		Iints:   iints,
 		Sints:   sints,
-	}, enc
+	}, s
 }
 --- End: testdata/out/go/complete_gk/complete_gk.go ---

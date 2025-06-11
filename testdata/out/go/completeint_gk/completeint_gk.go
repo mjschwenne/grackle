@@ -18,9 +18,7 @@ type S struct {
 	Six   uint64
 }
 
-func Marshal(prefix []byte, c S) []byte {
-	var enc = prefix
-
+func Marshal(enc []byte, c S) []byte {
 	enc = marshal.WriteInt32(enc, c.One)
 	enc = marshal.WriteInt32(enc, c.Two)
 	enc = marshal.WriteInt32(enc, c.Three)
@@ -32,20 +30,13 @@ func Marshal(prefix []byte, c S) []byte {
 }
 
 func Unmarshal(s []byte) (S, []byte) {
-	var enc = s // Needed for goose compatibility
-	var one uint32
-	var two uint32
-	var three uint32
-	var four uint64
-	var five uint64
-	var six uint64
 
-	one, enc = marshal.ReadInt32(enc)
-	two, enc = marshal.ReadInt32(enc)
-	three, enc = marshal.ReadInt32(enc)
-	four, enc = marshal.ReadInt(enc)
-	five, enc = marshal.ReadInt(enc)
-	six, enc = marshal.ReadInt(enc)
+	one, s := marshal.ReadInt32(s)
+	two, s := marshal.ReadInt32(s)
+	three, s := marshal.ReadInt32(s)
+	four, s := marshal.ReadInt(s)
+	five, s := marshal.ReadInt(s)
+	six, s := marshal.ReadInt(s)
 
 	return S{
 		One:   one,
@@ -54,5 +45,5 @@ func Unmarshal(s []byte) (S, []byte) {
 		Four:  four,
 		Five:  five,
 		Six:   six,
-	}, enc
+	}, s
 }

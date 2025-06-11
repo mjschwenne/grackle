@@ -6,7 +6,7 @@
 
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
 From Perennial.goose_lang Require Import lib.slice.pred_slice.
 
 Module TimeStamp.
@@ -178,9 +178,7 @@ type S struct {
 	Second uint64
 }
 
-func Marshal(prefix []byte, t S) []byte {
-	var enc = prefix
-
+func Marshal(enc []byte, t S) []byte {
 	enc = marshal.WriteInt32(enc, t.Hour)
 	enc = marshal.WriteInt32(enc, t.Minute)
 	enc = marshal.WriteInt(enc, t.Second)
@@ -189,20 +187,16 @@ func Marshal(prefix []byte, t S) []byte {
 }
 
 func Unmarshal(s []byte) (S, []byte) {
-	var enc = s // Needed for goose compatibility
-	var hour uint32
-	var minute uint32
-	var second uint64
 
-	hour, enc = marshal.ReadInt32(enc)
-	minute, enc = marshal.ReadInt32(enc)
-	second, enc = marshal.ReadInt(enc)
+	hour, s := marshal.ReadInt32(s)
+	minute, s := marshal.ReadInt32(s)
+	second, s := marshal.ReadInt(s)
 
 	return S{
 		Hour:   hour,
 		Minute: minute,
 		Second: second,
-	}, enc
+	}, s
 }
 --- End: testdata/out/go/timestamp_gk/timestamp_gk.go ---
 --- Begin: testdata/out/coq/event_proof_gk.v ---
@@ -213,9 +207,9 @@ func Unmarshal(s []byte) (S, []byte) {
 
 From Perennial.program_proof Require Import grove_prelude.
 From Perennial.program_proof Require Import marshal_stateless_proof.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.event_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.event_gk.
 From Grackle.test Require Import timestamp_proof_gk.
-From Goose Require Import github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
 From Perennial.goose_lang Require Import lib.slice.pred_slice.
 
 Module Event.
@@ -456,9 +450,7 @@ type S struct {
 	EndTime   timestamp_gk.S
 }
 
-func Marshal(prefix []byte, e S) []byte {
-	var enc = prefix
-
+func Marshal(enc []byte, e S) []byte {
 	enc = marshal.WriteInt32(enc, e.Id)
 	nameBytes := []byte(e.Name)
 	enc = marshal.WriteInt(enc, uint64(len(nameBytes)))
@@ -470,26 +462,19 @@ func Marshal(prefix []byte, e S) []byte {
 }
 
 func Unmarshal(s []byte) (S, []byte) {
-	var enc = s // Needed for goose compatibility
-	var id uint32
-	var name string
-	var startTime timestamp_gk.S
-	var endTime timestamp_gk.S
 
-	id, enc = marshal.ReadInt32(enc)
-	var nameLen uint64
-	var nameBytes []byte
-	nameLen, enc = marshal.ReadInt(enc)
-	nameBytes, enc = marshal.ReadBytesCopy(enc, nameLen)
-	name = string(nameBytes)
-	startTime, enc = timestamp_gk.Unmarshal(enc)
-	endTime, enc = timestamp_gk.Unmarshal(enc)
+	id, s := marshal.ReadInt32(s)
+	nameLen, s := marshal.ReadInt(s)
+	nameBytes, s := marshal.ReadBytesCopy(s, nameLen)
+	name := string(nameBytes)
+	startTime, s := timestamp_gk.Unmarshal(s)
+	endTime, s := timestamp_gk.Unmarshal(s)
 
 	return S{
 		Id:        id,
 		Name:      name,
 		StartTime: startTime,
 		EndTime:   endTime,
-	}, enc
+	}, s
 }
 --- End: testdata/out/go/event_gk/event_gk.go ---

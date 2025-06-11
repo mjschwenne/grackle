@@ -17,32 +17,26 @@ type S struct {
 	Ints   []completeint_gk.S
 }
 
-func Marshal(prefix []byte, s S) []byte {
-	var enc = prefix
+func Marshal(enc []byte, s S) []byte {
 
 	enc = marshal.WriteInt(enc, uint64(len(s.Slices)))
-	enc = marshal.WriteSlice(enc, s.Slices, completeslice_gk.Marshal)
+	enc = marshal.WriteSlice[completeslice_gk.S](enc, s.Slices, completeslice_gk.Marshal)
 
 	enc = marshal.WriteInt(enc, uint64(len(s.Ints)))
-	enc = marshal.WriteSlice(enc, s.Ints, completeint_gk.Marshal)
+	enc = marshal.WriteSlice[completeint_gk.S](enc, s.Ints, completeint_gk.Marshal)
 
 	return enc
 }
 
 func Unmarshal(s []byte) (S, []byte) {
-	var enc = s // Needed for goose compatibility
-	var slices []completeslice_gk.S
-	var ints []completeint_gk.S
 
-	var slicesLen uint64
-	slicesLen, enc = marshal.ReadInt(enc)
-	slices, enc = marshal.ReadSlice(enc, slicesLen, completeslice_gk.Unmarshal)
-	var intsLen uint64
-	intsLen, enc = marshal.ReadInt(enc)
-	ints, enc = marshal.ReadSlice(enc, intsLen, completeint_gk.Unmarshal)
+	slicesLen, s := marshal.ReadInt(s)
+	slices, s := marshal.ReadSlice[completeslice_gk.S](s, slicesLen, completeslice_gk.Unmarshal)
+	intsLen, s := marshal.ReadInt(s)
+	ints, s := marshal.ReadSlice[completeint_gk.S](s, intsLen, completeint_gk.Unmarshal)
 
 	return S{
 		Slices: slices,
 		Ints:   ints,
-	}, enc
+	}, s
 }

@@ -22,46 +22,34 @@ type S struct {
 	Sints   []uint32
 }
 
-func Marshal(prefix []byte, c S) []byte {
-	var enc = prefix
-
+func Marshal(enc []byte, c S) []byte {
 	enc = completeint_gk.Marshal(enc, c.Int)
 	enc = completeslice_gk.Marshal(enc, c.Slc)
 	enc = marshal.WriteBool(enc, c.Success)
 
 	enc = marshal.WriteInt(enc, uint64(len(c.Sslice)))
-	enc = marshal.WriteSlice(enc, c.Sslice, structslice_gk.Marshal)
+	enc = marshal.WriteSlice[structslice_gk.S](enc, c.Sslice, structslice_gk.Marshal)
 
 	enc = marshal.WriteInt(enc, uint64(len(c.Iints)))
-	enc = marshal.WriteSlice(enc, c.Iints, marshal.WriteInt)
+	enc = marshal.WriteSlice[uint64](enc, c.Iints, marshal.WriteInt)
 
 	enc = marshal.WriteInt(enc, uint64(len(c.Sints)))
-	enc = marshal.WriteSlice(enc, c.Sints, marshal.WriteInt32)
+	enc = marshal.WriteSlice[uint32](enc, c.Sints, marshal.WriteInt32)
 
 	return enc
 }
 
 func Unmarshal(s []byte) (S, []byte) {
-	var enc = s // Needed for goose compatibility
-	var int completeint_gk.S
-	var slc completeslice_gk.S
-	var success bool
-	var sslice []structslice_gk.S
-	var iints []uint64
-	var sints []uint32
 
-	int, enc = completeint_gk.Unmarshal(enc)
-	slc, enc = completeslice_gk.Unmarshal(enc)
-	success, enc = marshal.ReadBool(enc)
-	var ssliceLen uint64
-	ssliceLen, enc = marshal.ReadInt(enc)
-	sslice, enc = marshal.ReadSlice(enc, ssliceLen, structslice_gk.Unmarshal)
-	var iintsLen uint64
-	iintsLen, enc = marshal.ReadInt(enc)
-	iints, enc = marshal.ReadSlice(enc, iintsLen, marshal.ReadInt)
-	var sintsLen uint64
-	sintsLen, enc = marshal.ReadInt(enc)
-	sints, enc = marshal.ReadSlice(enc, sintsLen, marshal.ReadInt32)
+	int, s := completeint_gk.Unmarshal(s)
+	slc, s := completeslice_gk.Unmarshal(s)
+	success, s := marshal.ReadBool(s)
+	ssliceLen, s := marshal.ReadInt(s)
+	sslice, s := marshal.ReadSlice[structslice_gk.S](s, ssliceLen, structslice_gk.Unmarshal)
+	iintsLen, s := marshal.ReadInt(s)
+	iints, s := marshal.ReadSlice[uint64](s, iintsLen, marshal.ReadInt)
+	sintsLen, s := marshal.ReadInt(s)
+	sints, s := marshal.ReadSlice[uint32](s, sintsLen, marshal.ReadInt32)
 
 	return S{
 		Int:     int,
@@ -70,5 +58,5 @@ func Unmarshal(s []byte) (S, []byte) {
 		Sslice:  sslice,
 		Iints:   iints,
 		Sints:   sints,
-	}, enc
+	}, s
 }

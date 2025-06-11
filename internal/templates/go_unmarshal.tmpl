@@ -1,30 +1,23 @@
 func Unmarshal(s []byte) (S, []byte) {
-    var enc = s // Needed for goose compatibility
-    << range .Fields ->>
-    var << .Name >> << if isSliceType . >>[]<< end >><< goType . >>
-    << end >>
     << range .Fields ->>
     <<- if and (isMessage .) (not (isRepeatedType .)) >>
-    << .Name >>, enc = << goModuleName . >>.Unmarshal(enc)
+    << .Name >>, s := << goModuleName . >>.Unmarshal(s)
     <<- else if isGoType . "enum" >>
-    << .Name >>, enc = marshal.ReadInt32(enc)
+    << .Name >>, s := marshal.ReadInt32(s)
     <<- else if or (isGoType . "string") (and (isSliceType . ) (isGoType . "byte")) >>
-    var << .Name >>Len uint64
-    var << .Name >>Bytes []byte
-    << .Name >>Len, enc = marshal.ReadInt(enc)
-    << .Name >>Bytes, enc = marshal.ReadBytesCopy(enc, << .Name >>Len)
-    << .Name >> = << if isGoType . "string" >>string(<< end >><< .Name >>Bytes<< if isGoType . "string" >>)<< end >>
+    << .Name >>Len, s := marshal.ReadInt(s)
+    << .Name >>Bytes, s := marshal.ReadBytesCopy(s, << .Name >>Len)
+    << .Name >> := << if isGoType . "string" >>string(<< end >><< .Name >>Bytes<< if isGoType . "string" >>)<< end >>
     <<- else if isSliceType . >>
-    var << .Name >>Len uint64
-    << .Name >>Len, enc = marshal.ReadInt(enc)
-    << .Name >>, enc = marshal.ReadSlice(enc, << .Name >>Len, << if isMessage . >><< goModuleName . >>.Unmarshal<< else >>marshal.Read<< marshalType . >><< end >>)
+    << .Name >>Len, s := marshal.ReadInt(s)
+    << .Name >>, s := marshal.ReadSlice[<< goType . >>](s, << .Name >>Len, << if isMessage . >><< goModuleName . >>.Unmarshal<< else >>marshal.Read<< marshalType . >><< end >>)
     <<- else >>
-    << .Name >>, enc = marshal.Read<<- marshalType . ->>(enc)
+    << .Name >>, s := marshal.Read<<- marshalType . ->>(s)
     <<- end ->> <<- end >>
 
     return S{
         << range .Fields ->>
         << goName .Name >>: << .Name >>,
         << end >>
-    }, enc
+    }, s
 }

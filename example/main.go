@@ -1,5 +1,3 @@
-//go:build !goose
-
 package main
 
 import (

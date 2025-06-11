@@ -1,7 +1,10 @@
 # Grackle 
 -Q example Grackle.example
 -Q new_example Grackle.new_ex
--Q testdata/out/goose Goose 
+
+# Grackle tests 
+-Q testdata/out/pg New.generatedproof
+-Q testdata/out/goose New.code
 -Q testdata/out/coq Grackle.test
 
 -arg -w -arg -ssr-search-moved
