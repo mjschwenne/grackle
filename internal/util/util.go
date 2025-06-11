@@ -332,10 +332,10 @@ func FindGoModuleName(goDirectory string) (string, string) {
 
 func GetModulePath(suffix string) string {
 	_, b, _, _ := runtime.Caller(0)
-	log.Printf(b)
+	log.Printf("%s\n", b)
 	a, _ := filepath.Split(b)
 	_, r := FindGoModuleName(a)
-	log.Printf(r)
+	log.Printf("%s\n", r)
 	return path.Join(filepath.Dir(r), suffix)
 }
 
