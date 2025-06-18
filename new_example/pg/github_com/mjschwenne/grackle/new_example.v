@@ -9,6 +9,67 @@ Set Default Proof Using "Type".
 
 Module main.
 
+(* type main.Calendar *)
+Module Calendar.
+Section def.
+Context `{ffi_syntax}.
+Record t := mk {
+  events' : slice.t;
+}.
+End def.
+End Calendar.
+
+Section instances.
+Context `{ffi_syntax}.
+
+Global Instance settable_Calendar : Settable Calendar.t :=
+  settable! Calendar.mk < Calendar.events' >.
+Global Instance into_val_Calendar : IntoVal Calendar.t :=
+  {| to_val_def v :=
+    struct.val_aux main.Calendar [
+    "events" ::= #(Calendar.events' v)
+    ]%struct
+  |}.
+
+Global Program Instance into_val_typed_Calendar : IntoValTyped Calendar.t main.Calendar :=
+{|
+  default_val := Calendar.mk (default_val _);
+|}.
+Next Obligation. solve_to_val_type. Qed.
+Next Obligation. solve_zero_val. Qed.
+Next Obligation. solve_to_val_inj. Qed.
+Final Obligation. solve_decision. Qed.
+
+Global Instance into_val_struct_field_Calendar_events : IntoValStructField "events" main.Calendar Calendar.events'.
+Proof. solve_into_val_struct_field. Qed.
+
+
+Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
+Global Instance wp_struct_make_Calendar events':
+  PureWp True
+    (struct.make #main.Calendar (alist_val [
+      "events" ::= #events'
+    ]))%struct
+    #(Calendar.mk events').
+Proof. solve_struct_make_pure_wp. Qed.
+
+
+Global Instance Calendar_struct_fields_split dq l (v : Calendar.t) :
+  StructFieldsSplit dq l v (
+    "Hevents" ∷ l ↦s[main.Calendar :: "events"]{dq} v.(Calendar.events')
+  ).
+Proof.
+  rewrite /named.
+  apply struct_fields_split_intro.
+  unfold_typed_pointsto; split_pointsto_app.
+
+  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
+
+  solve_field_ref_f.
+Qed.
+
+End instances.
+
 (* type main.TimeStamp *)
 Module TimeStamp.
 Section def.
@@ -191,6 +252,14 @@ Global Instance is_pkg_defined_instance : IsPkgDefined main :=
 
 Definition own_allocated : iProp Σ :=
 True.
+
+Global Instance wp_func_call_MarshalCalendar :
+  WpFuncCall main "MarshalCalendar" _ (is_pkg_defined main) :=
+  ltac:(apply wp_func_call'; reflexivity).
+
+Global Instance wp_func_call_UnmarshalCalendar :
+  WpFuncCall main "UnmarshalCalendar" _ (is_pkg_defined main) :=
+  ltac:(apply wp_func_call'; reflexivity).
 
 Global Instance wp_func_call_MarshalEvent :
   WpFuncCall main "MarshalEvent" _ (is_pkg_defined main) :=

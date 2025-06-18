@@ -3,62 +3,39 @@
 (*    DO NOT MANUALLY EDIT THIS FILE     *)
 (*****************************************)
 
-From Perennial.program_proof Require Import grove_prelude.
-From Perennial.program_proof Require Import marshal_stateless_proof.
+From New.proof Require Import proof_prelude.
+From New.proof Require Import github_com.tchajed.marshal.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
-From Perennial.goose_lang Require Import lib.slice.pred_slice.
+From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 
-Module completeSlice.
-Section completeSlice.
+Module completeSlice_gk.
+Section completeSlice_gk.
 
-Typeclasses Opaque app.
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context `{!goGlobalsGS Σ}.
 
-Context `{!heapGS Σ}.
+#[global]
+Program Instance : IsPkgInit completeslice_gk :=
+  ltac2:(build_pkg_init ()).
 
-Record C :=
-    mkC {
-        strg :  byte_string;
-        strg2 :  byte_string;
-        bytes : list u8;
-        bytes2 : list u8;
-        }.
+Definition has_encoding (encoded:list u8) (args:completeslice_gk.completeSlice.t) : Prop :=
+  encoded = (u64_le $ length $ args.(completeslice_gk.completeSlice.strg')) ++ args.(completeslice.completeSlice.strg') ++
+              (u64_le $ length $ args.(completeslice_gk.completeSlice.strg2')) ++ args.(completeslice.completeSlice.strg2') ++
+              (u64_le $ length $ args.(completeslice_gk.completeSlice.bytes')) ++ args.(completeslice.completeSlice.bytes') ++
+              (u64_le $ length $ args.(completeslice_gk.completeSlice.bytes2')) ++ args.(completeslice.completeSlice.bytes2').
 
-Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-  encoded = (u64_le $ length $ args.(strg)) ++ args.(strg) ++
-              (u64_le $ length $ args.(strg2)) ++ args.(strg2) ++
-              (u64_le $ length $ args.(bytes)) ++ args.(bytes) ++
-              (u64_le $ length $ args.(bytes2)) ++ args.(bytes2).
-
-Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  ∃ (bytes_sl bytes2_sl : Slice.t), 
-  "%Hown_struct" ∷ ⌜ args__v = (#(str args__c.(strg)), (#(str args__c.(strg2)), (slice_val bytes_sl, (slice_val bytes2_sl, #()))))%V ⌝ ∗
-  "Hown_bytes" ∷ own_slice_small bytes_sl byteT dq args__c.(bytes) ∗
-  "Hown_bytes2" ∷ own_slice_small bytes2_sl byteT dq args__c.(bytes2).
-
-
-Lemma own_val_ty :
-  ∀ (v : val) (x : C) (dq : dfrac), own v x dq -∗ ⌜val_ty v (struct.t completeslice_gk.S)⌝.
-Proof.
-  iIntros (???) "Hown".
-  unfold own. iNamed "Hown".
-  
-  iPureIntro.
-  subst.
-  repeat constructor.
-  all: by val_ty.
-Qed.
-
-Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
+Lemma wp_Encode (args__c : completeslice_gk.completeSlice.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
-        own args__v args__c dq ∗
-        own_slice pre_sl byteT (DfracOwn 1) prefix
+        is_pkg_init completeslice_gk ∗
+        own_slice pre_sl (DfracOwn 1) prefix ∗
+        own_slice_cap w8 pre_sl
   }}}
-    completeslice_gk.Marshal (slice_val pre_sl) args__v
+    completeslice_gk @ "Marshal" #pre_sl #args__c
   {{{
-        enc enc_sl, RET (slice_val enc_sl);
+        enc enc_sl, RET #enc_sl;
         ⌜ has_encoding enc args__c ⌝ ∗
-        own args__v args__c dq ∗
-        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
+        own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
+        own_slice_cap w8 enc_sl
   }}}.
 
 Proof.
@@ -116,16 +93,16 @@ Proof.
   } done.
 Qed.
 
-Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : completeslice_gk.completeSlice.t) (suffix : list u8) (dq : dfrac):
   {{{
+        is_pkg_init completeslice_gk ∗
         ⌜ has_encoding enc args__c ⌝ ∗
-        own_slice_small enc_sl byteT dq (enc ++ suffix)
+        own_slice enc_sl dq (enc ++ suffix)
   }}}
-    completeslice_gk.Unmarshal (slice_val enc_sl)
+    completeslice_gk @ "Unmarshal" #enc_sl
   {{{
-        args__v suff_sl, RET (args__v, suff_sl);
-        own args__v args__c (DfracOwn 1) ∗
-        own_slice_small suff_sl byteT dq suffix
+        suff_sl, RET (#args__c, suff_sl);
+        own_slice suff_sl dq suffix
   }}}.
 
 Proof.
@@ -210,6 +187,6 @@ Proof.
   iPureIntro. reflexivity.
 Qed.
 
-End completeSlice.
-End completeSlice.
+End completeSlice_gk.
+End completeSlice_gk.
 

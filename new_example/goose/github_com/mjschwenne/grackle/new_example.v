@@ -9,6 +9,10 @@ Section code.
 Context `{ffi_syntax}.
 
 
+Definition Calendar : go_type := structT [
+  "events" :: sliceT
+].
+
 Definition TimeStamp : go_type := structT [
   "hour" :: uint32T;
   "minute" :: uint32T;
@@ -21,6 +25,46 @@ Definition Event : go_type := structT [
   "startTime" :: TimeStamp;
   "endTime" :: TimeStamp
 ].
+
+(* go: calendar.go:9:6 *)
+Definition MarshalCalendar : val :=
+  rec: "MarshalCalendar" "enc" "c" :=
+    exception_do (let: "c" := (mem.alloc "c") in
+    let: "enc" := (mem.alloc "enc") in
+    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
+    let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] (struct.field_ref #Calendar #"events"%go "c")) in
+    slice.len "$a0")) in
+    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
+    do:  ("enc" <-[#sliceT] "$r0");;;
+    return: (let: "$a0" := (![#sliceT] "enc") in
+     let: "$a1" := (![#sliceT] (struct.field_ref #Calendar #"events"%go "c")) in
+     let: "$a2" := (func_call #new_example.main #"MarshalEvent"%go) in
+     (func_call #marshal.marshal #"WriteSlice"%go #Event) "$a0" "$a1" "$a2")).
+
+(* go: calendar.go:14:6 *)
+Definition UnmarshalCalendar : val :=
+  rec: "UnmarshalCalendar" "s" :=
+    exception_do (let: "s" := (mem.alloc "s") in
+    let: "eventsLen" := (mem.alloc (type.zero_val #uint64T)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("eventsLen" <-[#uint64T] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
+    let: "events" := (mem.alloc (type.zero_val #sliceT)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    let: "$a1" := (![#uint64T] "eventsLen") in
+    let: "$a2" := (func_call #new_example.main #"UnmarshalEvent"%go) in
+    (func_call #marshal.marshal #"ReadSlice"%go #Event) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("events" <-[#sliceT] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
+    return: (let: "$events" := (![#sliceT] "events") in
+     struct.make #Calendar [{
+       "events" ::= "$events"
+     }], ![#sliceT] "s")).
 
 (* go: event.go:14:6 *)
 Definition MarshalEvent : val :=
@@ -143,9 +187,9 @@ Definition UnmarshalTimeStamp : val :=
 
 Definition vars' : list (go_string * go_type) := [].
 
-Definition functions' : list (go_string * val) := [("MarshalEvent"%go, MarshalEvent); ("UnmarshalEvent"%go, UnmarshalEvent); ("MarshalTimeStamp"%go, MarshalTimeStamp); ("UnmarshalTimeStamp"%go, UnmarshalTimeStamp)].
+Definition functions' : list (go_string * val) := [("MarshalCalendar"%go, MarshalCalendar); ("UnmarshalCalendar"%go, UnmarshalCalendar); ("MarshalEvent"%go, MarshalEvent); ("UnmarshalEvent"%go, UnmarshalEvent); ("MarshalTimeStamp"%go, MarshalTimeStamp); ("UnmarshalTimeStamp"%go, UnmarshalTimeStamp)].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [("Event"%go, []); ("Event'ptr"%go, []); ("TimeStamp"%go, []); ("TimeStamp'ptr"%go, [])].
+Definition msets' : list (go_string * (list (go_string * val))) := [("Calendar"%go, []); ("Calendar'ptr"%go, []); ("Event"%go, []); ("Event'ptr"%go, []); ("TimeStamp"%go, []); ("TimeStamp'ptr"%go, [])].
 
 #[global] Instance info' : PkgInfo new_example.main :=
   {|

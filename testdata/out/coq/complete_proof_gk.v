@@ -3,90 +3,56 @@
 (*    DO NOT MANUALLY EDIT THIS FILE     *)
 (*****************************************)
 
-From Perennial.program_proof Require Import grove_prelude.
-From Perennial.program_proof Require Import marshal_stateless_proof.
+From New.proof Require Import proof_prelude.
+From New.proof Require Import github_com.tchajed.marshal.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.complete_gk.
+From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.complete_gk.
 From Grackle.test Require Import completeint_proof_gk.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
 From Grackle.test Require Import completeslice_proof_gk.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 From Grackle.test Require Import structslice_proof_gk.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.structslice_gk.
-From Perennial.goose_lang Require Import lib.slice.pred_slice.
 
-Module complete.
-Section complete.
+Module complete_gk.
+Section complete_gk.
 
-Typeclasses Opaque app.
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context `{!goGlobalsGS Σ}.
 
-Context `{!heapGS Σ}.
+#[global]
+Program Instance : IsPkgInit complete_gk :=
+  ltac2:(build_pkg_init ()).
 
-Record C :=
-    mkC {
-        int :  completeInt.C;
-        slc :  completeSlice.C;
-        success :  bool;
-        sslice : list structSlice.C;
-        iints : list u64;
-        sints : list u32;
-        }.
-
-Definition has_encoding (encoded:list u8) (args:C) : Prop :=
+Definition has_encoding (encoded:list u8) (args:complete_gk.complete.t) : Prop :=
   ∃ (int_enc slc_enc sslice_enc iints_enc sints_enc : list u8), 
   encoded = int_enc ++
               slc_enc ++
-              [if args.(success) then W8 1 else W8 0] ++
-              (u64_le $ length $ args.(sslice)) ++ sslice_enc ++
-              (u64_le $ length $ args.(iints)) ++ iints_enc ++
-              (u64_le $ length $ args.(sints)) ++ sints_enc
-  /\ completeInt.has_encoding int_enc args.(int)
-  /\ completeSlice.has_encoding slc_enc args.(slc)
-  /\ encodes sslice_enc args.(sslice) structSlice.has_encoding
-  /\ length args.(sslice) < 2^64
-  /\ encodes iints_enc args.(iints) uint64_has_encoding
-  /\ length args.(iints) < 2^64
-  /\ encodes sints_enc args.(sints) uint32_has_encoding
-  /\ length args.(sints) < 2^64.
+              [if args.(complete_gk.complete.success') then W8 1 else W8 0] ++
+              (u64_le $ length $ args.(complete_gk.complete.sslice')) ++ sslice_enc ++
+              (u64_le $ length $ args.(complete_gk.complete.iints')) ++ iints_enc ++
+              (u64_le $ length $ args.(complete_gk.complete.sints')) ++ sints_enc
+  /\ completeInt_gk.has_encoding int_enc args.(int)
+  /\ completeSlice_gk.has_encoding slc_enc args.(slc)
+  /\ encodes sslice_enc args.(complete_gk.complete.sslice) structSlice_gk.has_encoding
+  /\ length args.(complete_gk.complete.sslice) < 2^64
+  /\ encodes iints_enc args.(complete_gk.complete.iints) uint64_has_encoding
+  /\ length args.(complete_gk.complete.iints) < 2^64
+  /\ encodes sints_enc args.(complete_gk.complete.sints) uint32_has_encoding
+  /\ length args.(complete_gk.complete.sints) < 2^64.
 
-Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  ∃(int__v slc__v : val) (sslice_sl iints_sl sints_sl : Slice.t), 
-  "%Hown_struct" ∷ ⌜ args__v = (int__v, (slc__v, (#args__c.(success), (slice_val sslice_sl, (slice_val iints_sl, (slice_val sints_sl, #()))))))%V ⌝ ∗
-  "Hown_sslice" ∷ is_pred_slice structSlice.own sslice_sl (struct.t structslice_gk.S) dq args__c.(sslice) ∗
-  "Hown_iints" ∷ is_pred_slice own_val iints_sl uint64T dq args__c.(iints) ∗
-  "Hown_sints" ∷ is_pred_slice own_val sints_sl uint32T dq args__c.(sints) ∗
-  "Hown_int" ∷ completeInt.own int__v args__c.(int) dq ∗
-  "Hown_slc" ∷ completeSlice.own slc__v args__c.(slc) dq.
-
-
-Lemma own_val_ty :
-  ∀ (v : val) (x : C) (dq : dfrac), own v x dq -∗ ⌜val_ty v (struct.t complete_gk.S)⌝.
-Proof.
-  iIntros (???) "Hown".
-  unfold own. iNamed "Hown".
-  
-  unfold completeint_proof_gk.completeInt.own.
-  unfold completeslice_proof_gk.completeSlice.own.
-  unfold structslice_proof_gk.structSlice.own.
-  iNamed "Hown_int".
-  iNamed "Hown_slc".
-  iNamed "Hown_sslice".
-  iPureIntro.
-  subst.
-  repeat constructor.
-  all: by val_ty.
-Qed.
-
-Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
+Lemma wp_Encode (args__c : complete_gk.complete.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
-        own args__v args__c dq ∗
-        own_slice pre_sl byteT (DfracOwn 1) prefix
+        is_pkg_init complete_gk ∗
+        own_slice pre_sl (DfracOwn 1) prefix ∗
+        own_slice_cap w8 pre_sl
   }}}
-    complete_gk.Marshal (slice_val pre_sl) args__v
+    complete_gk @ "Marshal" #pre_sl #args__c
   {{{
-        enc enc_sl, RET (slice_val enc_sl);
+        enc enc_sl, RET #enc_sl;
         ⌜ has_encoding enc args__c ⌝ ∗
-        own args__v args__c dq ∗
-        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
+        own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
+        own_slice_cap w8 enc_sl
   }}}.
 
 Proof.
@@ -189,16 +155,16 @@ Proof.
   } done.
 Qed.
 
-Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : complete_gk.complete.t) (suffix : list u8) (dq : dfrac):
   {{{
+        is_pkg_init complete_gk ∗
         ⌜ has_encoding enc args__c ⌝ ∗
-        own_slice_small enc_sl byteT dq (enc ++ suffix)
+        own_slice enc_sl dq (enc ++ suffix)
   }}}
-    complete_gk.Unmarshal (slice_val enc_sl)
+    complete_gk @ "Unmarshal" #enc_sl
   {{{
-        args__v suff_sl, RET (args__v, suff_sl);
-        own args__v args__c (DfracOwn 1) ∗
-        own_slice_small suff_sl byteT dq suffix
+        suff_sl, RET (#args__c, suff_sl);
+        own_slice suff_sl dq suffix
   }}}.
 
 Proof.
@@ -338,6 +304,6 @@ Proof.
   iPureIntro. reflexivity.
 Qed.
 
-End complete.
-End complete.
+End complete_gk.
+End complete_gk.
 

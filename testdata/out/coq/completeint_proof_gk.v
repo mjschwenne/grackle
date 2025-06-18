@@ -3,97 +3,41 @@
 (*    DO NOT MANUALLY EDIT THIS FILE     *)
 (*****************************************)
 
-From Perennial.program_proof Require Import grove_prelude.
-From Perennial.program_proof Require Import marshal_stateless_proof.
+From New.proof Require Import proof_prelude.
+From New.proof Require Import github_com.tchajed.marshal.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
-From Perennial.goose_lang Require Import lib.slice.pred_slice.
+From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
 
-Module completeInt.
-Section completeInt.
+Module completeInt_gk.
+Section completeInt_gk.
 
-Typeclasses Opaque app.
-
-Context `{!heapGS Σ}.
-
-Record C :=
-    mkC {
-        one :  u32;
-        two :  u32;
-        three :  u32;
-        four :  u64;
-        five :  u64;
-        six :  u64;
-        }.
-
-Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-  encoded = (u32_le args.(one)) ++
-              (u32_le args.(two)) ++
-              (u32_le args.(three)) ++
-              (u64_le args.(four)) ++
-              (u64_le args.(five)) ++
-              (u64_le args.(six)).
-
-Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  "%Hown_struct" ∷ ⌜ args__v = (#args__c.(one), (#args__c.(two), (#args__c.(three), (#args__c.(four), (#args__c.(five), (#args__c.(six), #()))))))%V ⌝.
-
-
-Definition to_val' (c : C) : val :=
-  (#c.(one), (#c.(two), (#c.(three), (#c.(four), (#c.(five), (#c.(six), #())))))).
-
-Definition from_val' (v : val) : option C :=
-  match v with
-  | (#(LitInt32 one), (#(LitInt32 two), (#(LitInt32 three), (#(LitInt four), (#(LitInt five), (#(LitInt six), #()))))))%V =>
-    Some (mkC one two three four five six)
-  | _ => None
-  end.
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context `{!goGlobalsGS Σ}.
 
 #[global]
-Instance completeInt_into_val : IntoVal C.
-Proof.
-  refine {|
-    to_val := to_val';
-    from_val := from_val';
-    IntoVal_def := (mkC (W32 0) (W32 0) (W32 0) (W64 0) (W64 0) (W64 0))
-  |}.
-  intros v. 
-  destruct v as [one two three four five six]; done.
-Defined.
+Program Instance : IsPkgInit completeint_gk :=
+  ltac2:(build_pkg_init ()).
 
-#[global]
-Instance completeInt_into_val_for_type : IntoValForType C (struct.t completeint_gk.S).
-Proof. constructor; auto 10. Defined.
+Definition has_encoding (encoded:list u8) (args:completeint_gk.completeInt.t) : Prop :=
+  encoded = (u32_le args.(completeint_gk.completeInt.one)) ++
+              (u32_le args.(completeint_gk.completeInt.two)) ++
+              (u32_le args.(completeint_gk.completeInt.three)) ++
+              (u64_le args.(completeint_gk.completeInt.four)) ++
+              (u64_le args.(completeint_gk.completeInt.five)) ++
+              (u64_le args.(completeint_gk.completeInt.six)).
 
-Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
-  own v c dq -∗ ⌜ v = to_val c ⌝.
-Proof.
-  iIntros "%Hown_struct".
-  
-  subst. done.
-Qed.
-
-
-Lemma own_val_ty :
-  ∀ (v : val) (x : C) (dq : dfrac), own v x dq -∗ ⌜val_ty v (struct.t completeint_gk.S)⌝.
-Proof.
-  iIntros (???) "Hown".
-  unfold own. iNamed "Hown".
-  
-  iPureIntro.
-  subst.
-  repeat constructor.
-Qed.
-
-Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
+Lemma wp_Encode (args__c : completeint_gk.completeInt.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
-        own args__v args__c dq ∗
-        own_slice pre_sl byteT (DfracOwn 1) prefix
+        is_pkg_init completeint_gk ∗
+        own_slice pre_sl (DfracOwn 1) prefix ∗
+        own_slice_cap w8 pre_sl
   }}}
-    completeint_gk.Marshal (slice_val pre_sl) args__v
+    completeint_gk @ "Marshal" #pre_sl #args__c
   {{{
-        enc enc_sl, RET (slice_val enc_sl);
+        enc enc_sl, RET #enc_sl;
         ⌜ has_encoding enc args__c ⌝ ∗
-        own args__v args__c dq ∗
-        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
+        own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
+        own_slice_cap w8 enc_sl
   }}}.
 
 Proof.
@@ -128,16 +72,16 @@ Proof.
   done.
 Qed.
 
-Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : completeint_gk.completeInt.t) (suffix : list u8) (dq : dfrac):
   {{{
+        is_pkg_init completeint_gk ∗
         ⌜ has_encoding enc args__c ⌝ ∗
-        own_slice_small enc_sl byteT dq (enc ++ suffix)
+        own_slice enc_sl dq (enc ++ suffix)
   }}}
-    completeint_gk.Unmarshal (slice_val enc_sl)
+    completeint_gk @ "Unmarshal" #enc_sl
   {{{
-        args__v suff_sl, RET (args__v, suff_sl);
-        own args__v args__c (DfracOwn 1) ∗
-        own_slice_small suff_sl byteT dq suffix
+        suff_sl, RET (#args__c, suff_sl);
+        own_slice suff_sl dq suffix
   }}}.
 
 Proof.
@@ -188,6 +132,6 @@ Proof.
   iPureIntro. reflexivity.
 Qed.
 
-End completeInt.
-End completeInt.
+End completeInt_gk.
+End completeInt_gk.
 

@@ -3,91 +3,38 @@
 (*    DO NOT MANUALLY EDIT THIS FILE     *)
 (*****************************************)
 
-From Perennial.program_proof Require Import grove_prelude.
-From Perennial.program_proof Require Import marshal_stateless_proof.
+From New.proof Require Import proof_prelude.
+From New.proof Require Import github_com.tchajed.marshal.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
-From Perennial.goose_lang Require Import lib.slice.pred_slice.
+From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
 
-Module TimeStamp.
-Section TimeStamp.
+Module TimeStamp_gk.
+Section TimeStamp_gk.
 
-Typeclasses Opaque app.
-
-Context `{!heapGS Σ}.
-
-Record C :=
-    mkC {
-        hour :  u32;
-        minute :  u32;
-        second :  u64;
-        }.
-
-Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-  encoded = (u32_le args.(hour)) ++
-              (u32_le args.(minute)) ++
-              (u64_le args.(second)).
-
-Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  "%Hown_struct" ∷ ⌜ args__v = (#args__c.(hour), (#args__c.(minute), (#args__c.(second), #())))%V ⌝.
-
-
-Definition to_val' (c : C) : val :=
-  (#c.(hour), (#c.(minute), (#c.(second), #()))).
-
-Definition from_val' (v : val) : option C :=
-  match v with
-  | (#(LitInt32 hour), (#(LitInt32 minute), (#(LitInt second), #())))%V =>
-    Some (mkC hour minute second)
-  | _ => None
-  end.
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context `{!goGlobalsGS Σ}.
 
 #[global]
-Instance TimeStamp_into_val : IntoVal C.
-Proof.
-  refine {|
-    to_val := to_val';
-    from_val := from_val';
-    IntoVal_def := (mkC (W32 0) (W32 0) (W64 0))
-  |}.
-  intros v. 
-  destruct v as [hour minute second]; done.
-Defined.
+Program Instance : IsPkgInit timestamp_gk :=
+  ltac2:(build_pkg_init ()).
 
-#[global]
-Instance TimeStamp_into_val_for_type : IntoValForType C (struct.t timestamp_gk.S).
-Proof. constructor; auto 10. Defined.
+Definition has_encoding (encoded:list u8) (args:timestamp_gk.TimeStamp.t) : Prop :=
+  encoded = (u32_le args.(timestamp_gk.TimeStamp.hour)) ++
+              (u32_le args.(timestamp_gk.TimeStamp.minute)) ++
+              (u64_le args.(timestamp_gk.TimeStamp.second)).
 
-Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
-  own v c dq -∗ ⌜ v = to_val c ⌝.
-Proof.
-  iIntros "%Hown_struct".
-  
-  subst. done.
-Qed.
-
-
-Lemma own_val_ty :
-  ∀ (v : val) (x : C) (dq : dfrac), own v x dq -∗ ⌜val_ty v (struct.t timestamp_gk.S)⌝.
-Proof.
-  iIntros (???) "Hown".
-  unfold own. iNamed "Hown".
-  
-  iPureIntro.
-  subst.
-  repeat constructor.
-Qed.
-
-Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
+Lemma wp_Encode (args__c : timestamp_gk.TimeStamp.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
-        own args__v args__c dq ∗
-        own_slice pre_sl byteT (DfracOwn 1) prefix
+        is_pkg_init timestamp_gk ∗
+        own_slice pre_sl (DfracOwn 1) prefix ∗
+        own_slice_cap w8 pre_sl
   }}}
-    timestamp_gk.Marshal (slice_val pre_sl) args__v
+    timestamp_gk @ "Marshal" #pre_sl #args__c
   {{{
-        enc enc_sl, RET (slice_val enc_sl);
+        enc enc_sl, RET #enc_sl;
         ⌜ has_encoding enc args__c ⌝ ∗
-        own args__v args__c dq ∗
-        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
+        own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
+        own_slice_cap w8 enc_sl
   }}}.
 
 Proof.
@@ -113,16 +60,16 @@ Proof.
   done.
 Qed.
 
-Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : timestamp_gk.TimeStamp.t) (suffix : list u8) (dq : dfrac):
   {{{
+        is_pkg_init timestamp_gk ∗
         ⌜ has_encoding enc args__c ⌝ ∗
-        own_slice_small enc_sl byteT dq (enc ++ suffix)
+        own_slice enc_sl dq (enc ++ suffix)
   }}}
-    timestamp_gk.Unmarshal (slice_val enc_sl)
+    timestamp_gk @ "Unmarshal" #enc_sl
   {{{
-        args__v suff_sl, RET (args__v, suff_sl);
-        own args__v args__c (DfracOwn 1) ∗
-        own_slice_small suff_sl byteT dq suffix
+        suff_sl, RET (#args__c, suff_sl);
+        own_slice suff_sl dq suffix
   }}}.
 
 Proof.
@@ -155,6 +102,6 @@ Proof.
   iPureIntro. reflexivity.
 Qed.
 
-End TimeStamp.
-End TimeStamp.
+End TimeStamp_gk.
+End TimeStamp_gk.
 

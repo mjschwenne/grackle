@@ -1,4 +1,4 @@
-Definition has_encoding (encoded:list u8) (args:C) : Prop :=
+Definition has_encoding (encoded:list u8) (args:<< lower .Name >>_gk.<< .Name >>.t) : Prop :=
   <<- $extEncs := (extEncFields .Fields) ->>
   <<- range $idx, $field := $extEncs ->>
   <<- if not $idx >>
@@ -11,19 +11,19 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               <<- if and (isMessage .) (not (isSliceType .)) ->>
               << $field.Name ->>_enc
               <<- else if isCoqType . "byte_string|u8" ->>
-              (u64_le $ length $ args.(<< $field.Name >>)) ++ args.(<< $field.Name >>)
+              (u64_le $ length $ args.(<< lower $.Name >>_gk.<< $.Name >>.<< $field.Name >>')) ++ args.(<< lower $.Name >>.<< $.Name >>.<< $field.Name >>')
               <<- else if isSliceType . ->>
-              (u64_le $ length $ args.(<< $field.Name >>)) ++ << $field.Name >>_enc
+              (u64_le $ length $ args.(<< lower $.Name >>_gk.<< $.Name >>.<< $field.Name >>')) ++ << $field.Name >>_enc
               <<- else if (isCoqType . "bool") ->>
-              [if args.(<< $field.Name >>) then W8 1 else W8 0]
+              [if args.(<< lower $.Name >>_gk.<< $.Name >>.<< $field.Name >>') then W8 1 else W8 0]
               <<- else ->>
-              (<<- coqType $field >>_le args.(<<- $field.Name ->>))
+              (<<- coqType $field >>_le args.(<< lower $.Name >>_gk.<< $.Name >>.<<- $field.Name ->>))
               <<- end ->><<- end ->>
   <<- range $idx, $field := $extEncs >>
   <<- if isSliceType . >>
-  /\ encodes << $field.Name >>_enc args.(<< $field.Name >>) << if isMessage . >><< $field.TypeName >>.has_encoding<< else >><< goType . >>_has_encoding<< end >>
-  /\ length args.(<< $field.Name >>) < 2^64
+  /\ encodes << $field.Name >>_enc args.(<< lower $.Name >>_gk.<< $.Name >>.<< $field.Name >>) << if isMessage . >><< $field.TypeName >>_gk.has_encoding<< else >><< goType . >>_has_encoding<< end >>
+  /\ length args.(<< lower $.Name >>_gk.<< $.Name >>.<< $field.Name >>) < 2^64
   <<- else >>
-  /\ << $field.TypeName ->>.has_encoding << $field.Name ->>_enc args.(<<- $field.Name ->>)
+  /\ << $field.TypeName ->>_gk.has_encoding << $field.Name ->>_enc args.(<<- $field.Name ->>)
   <<- end ->>
   <<- end ->>.

@@ -3,71 +3,46 @@
 (*    DO NOT MANUALLY EDIT THIS FILE     *)
 (*****************************************)
 
-From Perennial.program_proof Require Import grove_prelude.
-From Perennial.program_proof Require Import marshal_stateless_proof.
+From New.proof Require Import proof_prelude.
+From New.proof Require Import github_com.tchajed.marshal.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.structslice_gk.
+From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.structslice_gk.
 From Grackle.test Require Import completeslice_proof_gk.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 From Grackle.test Require Import completeint_proof_gk.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.
-From Perennial.goose_lang Require Import lib.slice.pred_slice.
 
-Module structSlice.
-Section structSlice.
+Module structSlice_gk.
+Section structSlice_gk.
 
-Typeclasses Opaque app.
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context `{!goGlobalsGS Σ}.
 
-Context `{!heapGS Σ}.
+#[global]
+Program Instance : IsPkgInit structslice_gk :=
+  ltac2:(build_pkg_init ()).
 
-Record C :=
-    mkC {
-        slices : list completeSlice.C;
-        ints : list completeInt.C;
-        }.
-
-Definition has_encoding (encoded:list u8) (args:C) : Prop :=
+Definition has_encoding (encoded:list u8) (args:structslice_gk.structSlice.t) : Prop :=
   ∃ (slices_enc ints_enc : list u8), 
-  encoded = (u64_le $ length $ args.(slices)) ++ slices_enc ++
-              (u64_le $ length $ args.(ints)) ++ ints_enc
-  /\ encodes slices_enc args.(slices) completeSlice.has_encoding
-  /\ length args.(slices) < 2^64
-  /\ encodes ints_enc args.(ints) completeInt.has_encoding
-  /\ length args.(ints) < 2^64.
+  encoded = (u64_le $ length $ args.(structslice_gk.structSlice.slices')) ++ slices_enc ++
+              (u64_le $ length $ args.(structslice_gk.structSlice.ints')) ++ ints_enc
+  /\ encodes slices_enc args.(structslice_gk.structSlice.slices) completeSlice_gk.has_encoding
+  /\ length args.(structslice_gk.structSlice.slices) < 2^64
+  /\ encodes ints_enc args.(structslice_gk.structSlice.ints) completeInt_gk.has_encoding
+  /\ length args.(structslice_gk.structSlice.ints) < 2^64.
 
-Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  ∃ (slices_sl ints_sl : Slice.t), 
-  "%Hown_struct" ∷ ⌜ args__v = (slice_val slices_sl, (slice_val ints_sl, #()))%V ⌝ ∗
-  "Hown_slices" ∷ is_pred_slice completeSlice.own slices_sl (struct.t completeslice_gk.S) dq args__c.(slices) ∗
-  "Hown_ints" ∷ is_pred_slice completeInt.own ints_sl (struct.t completeint_gk.S) dq args__c.(ints).
-
-
-Lemma own_val_ty :
-  ∀ (v : val) (x : C) (dq : dfrac), own v x dq -∗ ⌜val_ty v (struct.t structslice_gk.S)⌝.
-Proof.
-  iIntros (???) "Hown".
-  unfold own. iNamed "Hown".
-  
-  unfold completeslice_proof_gk.completeSlice.own.
-  unfold completeint_proof_gk.completeInt.own.
-  iNamed "Hown_slices".
-  iNamed "Hown_ints".
-  iPureIntro.
-  subst.
-  repeat constructor.
-  all: by val_ty.
-Qed.
-
-Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
+Lemma wp_Encode (args__c : structslice_gk.structSlice.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
-        own args__v args__c dq ∗
-        own_slice pre_sl byteT (DfracOwn 1) prefix
+        is_pkg_init structslice_gk ∗
+        own_slice pre_sl (DfracOwn 1) prefix ∗
+        own_slice_cap w8 pre_sl
   }}}
-    structslice_gk.Marshal (slice_val pre_sl) args__v
+    structslice_gk @ "Marshal" #pre_sl #args__c
   {{{
-        enc enc_sl, RET (slice_val enc_sl);
+        enc enc_sl, RET #enc_sl;
         ⌜ has_encoding enc args__c ⌝ ∗
-        own args__v args__c dq ∗
-        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
+        own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
+        own_slice_cap w8 enc_sl
   }}}.
 
 Proof.
@@ -128,16 +103,16 @@ Proof.
   } done.
 Qed.
 
-Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : structslice_gk.structSlice.t) (suffix : list u8) (dq : dfrac):
   {{{
+        is_pkg_init structslice_gk ∗
         ⌜ has_encoding enc args__c ⌝ ∗
-        own_slice_small enc_sl byteT dq (enc ++ suffix)
+        own_slice enc_sl dq (enc ++ suffix)
   }}}
-    structslice_gk.Unmarshal (slice_val enc_sl)
+    structslice_gk @ "Unmarshal" #enc_sl
   {{{
-        args__v suff_sl, RET (args__v, suff_sl);
-        own args__v args__c (DfracOwn 1) ∗
-        own_slice_small suff_sl byteT dq suffix
+        suff_sl, RET (#args__c, suff_sl);
+        own_slice suff_sl dq suffix
   }}}.
 
 Proof.
@@ -210,6 +185,6 @@ Proof.
   iPureIntro. reflexivity.
 Qed.
 
-End structSlice.
-End structSlice.
+End structSlice_gk.
+End structSlice_gk.
 
