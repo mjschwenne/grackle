@@ -6,7 +6,7 @@
   rewrite ?w64_to_nat_id.
 << end >>
 
-  wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
+  iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
   << $eenc := (extEncFields .Fields) ->>

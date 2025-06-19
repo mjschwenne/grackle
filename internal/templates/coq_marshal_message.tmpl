@@ -1,4 +1,3 @@
 
-  wp_load. wp_pures. wp_apply (<<- .TypeName ->>.wp_Encode with "[$Hown_<< .Name >> $Hsl]").
-  iIntros (<<- .Name ->>_enc << .Name ->>_sl) "(%Hargs_<< .Name >>_enc & Hargs_<< .Name >>_own & Hsl)".
-  wp_store.
+  wp_apply (<<- .TypeName ->>_gk.wp_Encode with "[$Hsl $Hcap]"); first trivial.
+  iIntros (<< .Name >>_enc ?) "(%Hargs_<< .Name >>_enc & Hsl & Hcap)". wp_auto.

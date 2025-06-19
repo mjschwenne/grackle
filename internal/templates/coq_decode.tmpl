@@ -1,4 +1,4 @@
-Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : << lower .Name >>_gk.<< .Name >>.t) (suffix : list u8) (dq : dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : << lower .Name >>_gk.S.t) (suffix : list u8) (dq : dfrac):
   {{{
         is_pkg_init << lower .Name >>_gk ∗
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -6,6 +6,6 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : << lower .Name >>_
   }}}
     << lower .Name >>_gk @ "Unmarshal" #enc_sl
   {{{
-        suff_sl, RET (#args__c, suff_sl);
+        suff_sl, RET (#args__c, #suff_sl);
         own_slice suff_sl dq suffix
   }}}.

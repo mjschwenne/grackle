@@ -60,7 +60,7 @@ Module Event_Proof.
 
       iApply "HΦ". rewrite -?app_assoc. iFrame.
       iPureIntro. unfold has_encoding. exists enc, enc0.
-      split; first reflexivity. auto.
+      split; first reflexivity. done.
     Qed.
 
     Lemma wp_Decode (enc: list u8) (enc_sl: slice.t) (args__c:main.Event.t) (suffix: list u8) (dq: dfrac):

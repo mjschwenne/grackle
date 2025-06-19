@@ -22,16 +22,14 @@ Context `{!goGlobalsGS Σ}.
 Program Instance : IsPkgInit structslice_gk :=
   ltac2:(build_pkg_init ()).
 
-Definition has_encoding (encoded:list u8) (args:structslice_gk.structSlice.t) : Prop :=
+Definition has_encoding (encoded:list u8) (args:structslice_gk.S.t) : Prop :=
   ∃ (slices_enc ints_enc : list u8), 
-  encoded = (u64_le $ length $ args.(structslice_gk.structSlice.slices')) ++ slices_enc ++
-              (u64_le $ length $ args.(structslice_gk.structSlice.ints')) ++ ints_enc
-  /\ encodes slices_enc args.(structslice_gk.structSlice.slices) completeSlice_gk.has_encoding
-  /\ length args.(structslice_gk.structSlice.slices) < 2^64
-  /\ encodes ints_enc args.(structslice_gk.structSlice.ints) completeInt_gk.has_encoding
-  /\ length args.(structslice_gk.structSlice.ints) < 2^64.
+  encoded = (u64_le $ length $ args.(structslice_gk.S.Slices')) ++ slices_enc ++
+              (u64_le $ length $ args.(structslice_gk.S.Ints')) ++ ints_enc
+  /\ completeSlice_gk.has_encoding slices_enc args.(structslice_gk.S.Slices')
+  /\ completeInt_gk.has_encoding ints_enc args.(structslice_gk.S.Ints').
 
-Lemma wp_Encode (args__c : structslice_gk.structSlice.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
+Lemma wp_Encode (args__c : structslice_gk.S.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
         is_pkg_init structslice_gk ∗
         own_slice pre_sl (DfracOwn 1) prefix ∗
@@ -46,13 +44,7 @@ Lemma wp_Encode (args__c : structslice_gk.structSlice.t) (pre_sl : slice.t) (pre
   }}}.
 
 Proof.
-  iIntros (?) "[Hown Hsl] HΦ".
-  wp_rec. wp_pures.
-  iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
-  iDestruct (pred_slice_sz with "Hown_slices") as "%Hargs_slices_sz".
-  iDestruct (pred_slice_sz with "Hown_ints") as "%Hargs_ints_sz".
-  wp_apply (wp_ref_to); first by val_ty.
-  iIntros (?) "Hptr". wp_pures.
+  wp_start as "[Hsl Hcap]". wp_auto.
 
   wp_apply (wp_slice_len).
   wp_load. wp_apply (wp_WriteInt with "[$Hsl]").
@@ -87,7 +79,7 @@ Proof.
   wp_pures. wp_store.
 
 
-  wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
+  iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
   unfold has_encoding. split.
@@ -103,7 +95,7 @@ Proof.
   } done.
 Qed.
 
-Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : structslice_gk.structSlice.t) (suffix : list u8) (dq : dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : structslice_gk.S.t) (suffix : list u8) (dq : dfrac):
   {{{
         is_pkg_init structslice_gk ∗
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -111,21 +103,12 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : structslice_gk.str
   }}}
     structslice_gk @ "Unmarshal" #enc_sl
   {{{
-        suff_sl, RET (#args__c, suff_sl);
+        suff_sl, RET (#args__c, #suff_sl);
         own_slice suff_sl dq suffix
   }}}.
 
 Proof.
-  iIntros (?) "[%Henc Hsl] HΦ". wp_rec.
-  wp_apply wp_ref_to; first done.
-  iIntros (l__s) "Hs". wp_pures.
-  
-  wp_apply wp_ref_of_zero; first done.
-  iIntros (l__slices) "Hslices". wp_pures.
-  
-  wp_apply wp_ref_of_zero; first done.
-  iIntros (l__ints) "Hints". wp_pures.
-  
+  wp_start as "[%Henc Hsl]". wp_auto.
   unfold has_encoding in Henc.
   destruct Henc as ( slices_enc & ints_enc & Henc & Henc_slices & Hslices_sz & Henc_ints & Hints_sz ).
   rewrite Henc. rewrite -?app_assoc.
@@ -180,9 +163,11 @@ Proof.
   iIntros (??) "[Hpsl_ints Hsl]".
   wp_pures. wp_store. wp_store.
 
-  wp_load. wp_load. wp_load.
-  wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
-  iPureIntro. reflexivity.
+  replace {|
+    structslice_gk.S.Slices' := args__c.(structslice_gk.S.Slices');
+    structslice_gk.S.Ints' := args__c.(structslice_gk.S.Ints')
+  |} with args__c; last (destruct args__c; reflexivity).
+  iApply "HΦ". iFrame.
 Qed.
 
 End structSlice_gk.

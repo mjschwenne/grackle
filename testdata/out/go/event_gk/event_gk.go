@@ -20,9 +20,7 @@ type S struct {
 
 func Marshal(enc []byte, e S) []byte {
 	enc = marshal.WriteInt32(enc, e.Id)
-	nameBytes := []byte(e.Name)
-	enc = marshal.WriteInt(enc, uint64(len(nameBytes)))
-	enc = marshal.WriteBytes(enc, nameBytes)
+	enc = marshal.WriteLenPrefixedBytes(enc, []byte(e.Name))
 	enc = timestamp_gk.Marshal(enc, e.StartTime)
 	enc = timestamp_gk.Marshal(enc, e.EndTime)
 

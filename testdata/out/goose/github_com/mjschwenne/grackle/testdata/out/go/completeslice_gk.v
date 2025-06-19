@@ -21,29 +21,13 @@ Definition Marshal : val :=
   rec: "Marshal" "enc" "c" :=
     exception_do (let: "c" := (mem.alloc "c") in
     let: "enc" := (mem.alloc "enc") in
-    let: "strgBytes" := (mem.alloc (type.zero_val #sliceT)) in
-    let: "$r0" := (string.to_bytes (![#stringT] (struct.field_ref #S #"Strg"%go "c"))) in
-    do:  ("strgBytes" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
-    let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] "strgBytes") in
-    slice.len "$a0")) in
-    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
+    let: "$a1" := (string.to_bytes (![#stringT] (struct.field_ref #S #"Strg"%go "c"))) in
+    (func_call #marshal.marshal #"WriteLenPrefixedBytes"%go) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
-    let: "$a1" := (![#sliceT] "strgBytes") in
-    (func_call #marshal.marshal #"WriteBytes"%go) "$a0" "$a1") in
-    do:  ("enc" <-[#sliceT] "$r0");;;
-    let: "strg2Bytes" := (mem.alloc (type.zero_val #sliceT)) in
-    let: "$r0" := (string.to_bytes (![#stringT] (struct.field_ref #S #"Strg2"%go "c"))) in
-    do:  ("strg2Bytes" <-[#sliceT] "$r0");;;
-    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
-    let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] "strg2Bytes") in
-    slice.len "$a0")) in
-    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
-    do:  ("enc" <-[#sliceT] "$r0");;;
-    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
-    let: "$a1" := (![#sliceT] "strg2Bytes") in
-    (func_call #marshal.marshal #"WriteBytes"%go) "$a0" "$a1") in
+    let: "$a1" := (string.to_bytes (![#stringT] (struct.field_ref #S #"Strg2"%go "c"))) in
+    (func_call #marshal.marshal #"WriteLenPrefixedBytes"%go) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] (struct.field_ref #S #"Bytes"%go "c")) in
@@ -65,7 +49,7 @@ Definition Marshal : val :=
     do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
-(* go: completeslice_gk.go:34:6 *)
+(* go: completeslice_gk.go:30:6 *)
 Definition Unmarshal : val :=
   rec: "Unmarshal" "s" :=
     exception_do (let: "s" := (mem.alloc "s") in

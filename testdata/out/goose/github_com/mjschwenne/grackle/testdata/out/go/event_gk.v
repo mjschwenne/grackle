@@ -26,17 +26,9 @@ Definition Marshal : val :=
     let: "$a1" := (![#uint32T] (struct.field_ref #S #"Id"%go "e")) in
     (func_call #marshal.marshal #"WriteInt32"%go) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
-    let: "nameBytes" := (mem.alloc (type.zero_val #sliceT)) in
-    let: "$r0" := (string.to_bytes (![#stringT] (struct.field_ref #S #"Name"%go "e"))) in
-    do:  ("nameBytes" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
-    let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] "nameBytes") in
-    slice.len "$a0")) in
-    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
-    do:  ("enc" <-[#sliceT] "$r0");;;
-    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
-    let: "$a1" := (![#sliceT] "nameBytes") in
-    (func_call #marshal.marshal #"WriteBytes"%go) "$a0" "$a1") in
+    let: "$a1" := (string.to_bytes (![#stringT] (struct.field_ref #S #"Name"%go "e"))) in
+    (func_call #marshal.marshal #"WriteLenPrefixedBytes"%go) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#timestamp_gk.S] (struct.field_ref #S #"StartTime"%go "e")) in
@@ -48,7 +40,7 @@ Definition Marshal : val :=
     do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
-(* go: event_gk.go:32:6 *)
+(* go: event_gk.go:30:6 *)
 Definition Unmarshal : val :=
   rec: "Unmarshal" "s" :=
     exception_do (let: "s" := (mem.alloc "s") in

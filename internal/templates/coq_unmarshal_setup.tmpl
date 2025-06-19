@@ -1,11 +1,5 @@
 Proof.
-  iIntros (?) "[%Henc Hsl] HΦ". wp_rec.
-  wp_apply wp_ref_to; first done.
-  iIntros (l__s) "Hs". wp_pures.
-  << range .Fields >>
-  wp_apply wp_ref_of_zero; first done.
-  iIntros (l__<< .Name >>) "H<< .Name >>". wp_pures.
-  << end >>
+  wp_start as "[%Henc Hsl]". wp_auto.
   << $refs := (extValFields .Fields) ->>
   << $psls := (predSliceFields .Fields) ->>
   << if or (len $psls) (len $refs)  ->>

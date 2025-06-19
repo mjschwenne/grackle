@@ -93,11 +93,12 @@ var TypeMap = map[fieldType]TypeData{
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_STRING: {
 		ProtoType:   "string",
-		CoqType:     "byte_string",
+		CoqType:     "go_string",
 		GoType:      "string",
 		MarshalType: "String", // Not technically true, but it helps on the coq side
 		SliceType:   false,    // Not really true, but it all works out.
 		ToValFunc:   "str",
+		ValType:     true,
 	},
 	descriptorpb.FieldDescriptorProto_TYPE_ENUM: {
 		ProtoType:   "enum",

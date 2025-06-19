@@ -1,9 +1,4 @@
 Proof.
-  iIntros (?) "[Hown Hsl] HΦ".
-  wp_rec. wp_pures.
-  iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
-  <<- range (predSliceFields .Fields) >>
-  iDestruct (pred_slice_sz with "Hown_<< .Name >>") as "%Hargs_<< .Name >>_sz".
-  <<- end >>
-  wp_apply (wp_ref_to); first by val_ty.
-  iIntros (?) "Hptr". wp_pures.
+  <<- with filterByCoqType .Fields "go_string|u8" >>
+  intros << range . >>H<< .Name >>len<< end >>.<< end >>
+  wp_start as "[Hsl Hcap]". wp_auto.

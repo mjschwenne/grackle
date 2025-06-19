@@ -17,12 +17,8 @@ type S struct {
 }
 
 func Marshal(enc []byte, c S) []byte {
-	strgBytes := []byte(c.Strg)
-	enc = marshal.WriteInt(enc, uint64(len(strgBytes)))
-	enc = marshal.WriteBytes(enc, strgBytes)
-	strg2Bytes := []byte(c.Strg2)
-	enc = marshal.WriteInt(enc, uint64(len(strg2Bytes)))
-	enc = marshal.WriteBytes(enc, strg2Bytes)
+	enc = marshal.WriteLenPrefixedBytes(enc, []byte(c.Strg))
+	enc = marshal.WriteLenPrefixedBytes(enc, []byte(c.Strg2))
 	enc = marshal.WriteInt(enc, uint64(len(c.Bytes)))
 	enc = marshal.WriteBytes(enc, c.Bytes)
 	enc = marshal.WriteInt(enc, uint64(len(c.Bytes2)))

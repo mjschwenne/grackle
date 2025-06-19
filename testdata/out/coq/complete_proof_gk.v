@@ -24,24 +24,19 @@ Context `{!goGlobalsGS Σ}.
 Program Instance : IsPkgInit complete_gk :=
   ltac2:(build_pkg_init ()).
 
-Definition has_encoding (encoded:list u8) (args:complete_gk.complete.t) : Prop :=
+Definition has_encoding (encoded:list u8) (args:complete_gk.S.t) : Prop :=
   ∃ (int_enc slc_enc sslice_enc iints_enc sints_enc : list u8), 
   encoded = int_enc ++
               slc_enc ++
-              [if args.(complete_gk.complete.success') then W8 1 else W8 0] ++
-              (u64_le $ length $ args.(complete_gk.complete.sslice')) ++ sslice_enc ++
-              (u64_le $ length $ args.(complete_gk.complete.iints')) ++ iints_enc ++
-              (u64_le $ length $ args.(complete_gk.complete.sints')) ++ sints_enc
-  /\ completeInt_gk.has_encoding int_enc args.(int)
-  /\ completeSlice_gk.has_encoding slc_enc args.(slc)
-  /\ encodes sslice_enc args.(complete_gk.complete.sslice) structSlice_gk.has_encoding
-  /\ length args.(complete_gk.complete.sslice) < 2^64
-  /\ encodes iints_enc args.(complete_gk.complete.iints) uint64_has_encoding
-  /\ length args.(complete_gk.complete.iints) < 2^64
-  /\ encodes sints_enc args.(complete_gk.complete.sints) uint32_has_encoding
-  /\ length args.(complete_gk.complete.sints) < 2^64.
+              [if args.(complete_gk.S.Success') then W8 1 else W8 0] ++
+              (u64_le $ length $ args.(complete_gk.S.Sslice')) ++ sslice_enc ++
+              (u64_le $ length $ args.(complete_gk.S.Iints')) ++ iints_enc ++
+              (u64_le $ length $ args.(complete_gk.S.Sints')) ++ sints_enc
+  /\ completeInt_gk.has_encoding int_enc args.(complete_gk.S.Int')
+  /\ completeSlice_gk.has_encoding slc_enc args.(complete_gk.S.Slc')
+  /\ structSlice_gk.has_encoding sslice_enc args.(complete_gk.S.Sslice').
 
-Lemma wp_Encode (args__c : complete_gk.complete.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
+Lemma wp_Encode (args__c : complete_gk.S.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
         is_pkg_init complete_gk ∗
         own_slice pre_sl (DfracOwn 1) prefix ∗
@@ -56,22 +51,13 @@ Lemma wp_Encode (args__c : complete_gk.complete.t) (pre_sl : slice.t) (prefix : 
   }}}.
 
 Proof.
-  iIntros (?) "[Hown Hsl] HΦ".
-  wp_rec. wp_pures.
-  iUnfold own in "Hown". iNamed "Hown". rewrite Hown_struct.
-  iDestruct (pred_slice_sz with "Hown_sslice") as "%Hargs_sslice_sz".
-  iDestruct (pred_slice_sz with "Hown_iints") as "%Hargs_iints_sz".
-  iDestruct (pred_slice_sz with "Hown_sints") as "%Hargs_sints_sz".
-  wp_apply (wp_ref_to); first by val_ty.
-  iIntros (?) "Hptr". wp_pures.
+  wp_start as "[Hsl Hcap]". wp_auto.
 
-  wp_load. wp_pures. wp_apply (completeInt.wp_Encode with "[$Hown_int $Hsl]").
-  iIntros (int_enc int_sl) "(%Hargs_int_enc & Hargs_int_own & Hsl)".
-  wp_store.
+  wp_apply (completeInt_gk.wp_Encode with "[$Hsl $Hcap]"); first trivial.
+  iIntros (int_enc ?) "(%Hargs_int_enc & Hsl & Hcap)". wp_auto.
 
-  wp_load. wp_pures. wp_apply (completeSlice.wp_Encode with "[$Hown_slc $Hsl]").
-  iIntros (slc_enc slc_sl) "(%Hargs_slc_enc & Hargs_slc_own & Hsl)".
-  wp_store.
+  wp_apply (completeSlice_gk.wp_Encode with "[$Hsl $Hcap]"); first trivial.
+  iIntros (slc_enc ?) "(%Hargs_slc_enc & Hsl & Hcap)". wp_auto.
 
   wp_load. wp_apply (wp_WriteBool with "[$Hsl]").
   iIntros (?) "Hsl". wp_store.
@@ -135,7 +121,7 @@ Proof.
   wp_pures. wp_store.
 
 
-  wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
+  iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
   unfold has_encoding. split.
@@ -155,7 +141,7 @@ Proof.
   } done.
 Qed.
 
-Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : complete_gk.complete.t) (suffix : list u8) (dq : dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : complete_gk.S.t) (suffix : list u8) (dq : dfrac):
   {{{
         is_pkg_init complete_gk ∗
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -163,33 +149,12 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : complete_gk.comple
   }}}
     complete_gk @ "Unmarshal" #enc_sl
   {{{
-        suff_sl, RET (#args__c, suff_sl);
+        suff_sl, RET (#args__c, #suff_sl);
         own_slice suff_sl dq suffix
   }}}.
 
 Proof.
-  iIntros (?) "[%Henc Hsl] HΦ". wp_rec.
-  wp_apply wp_ref_to; first done.
-  iIntros (l__s) "Hs". wp_pures.
-  
-  wp_apply wp_ref_of_zero; first done.
-  iIntros (l__int) "Hint". wp_pures.
-  
-  wp_apply wp_ref_of_zero; first done.
-  iIntros (l__slc) "Hslc". wp_pures.
-  
-  wp_apply wp_ref_of_zero; first done.
-  iIntros (l__success) "Hsuccess". wp_pures.
-  
-  wp_apply wp_ref_of_zero; first done.
-  iIntros (l__sslice) "Hsslice". wp_pures.
-  
-  wp_apply wp_ref_of_zero; first done.
-  iIntros (l__iints) "Hiints". wp_pures.
-  
-  wp_apply wp_ref_of_zero; first done.
-  iIntros (l__sints) "Hsints". wp_pures.
-  
+  wp_start as "[%Henc Hsl]". wp_auto.
   unfold has_encoding in Henc.
   destruct Henc as ( int_enc & slc_enc & sslice_enc & iints_enc & sints_enc & Henc & Henc_int & Henc_slc & Henc_sslice & Hsslice_sz & Henc_iints & Hiints_sz & Henc_sints & Hsints_sz ).
   rewrite Henc. rewrite -?app_assoc.
@@ -299,9 +264,15 @@ Proof.
   iIntros (??) "[Hpsl_sints Hsl]".
   wp_pures. wp_store. wp_store.
 
-  wp_load. wp_load. wp_load. wp_load. wp_load. wp_load. wp_load.
-  wp_pures. iApply "HΦ". iModIntro. rewrite ?string_to_bytes_to_string. iFrame.
-  iPureIntro. reflexivity.
+  replace {|
+    complete_gk.S.Int' := args__c.(complete_gk.S.Int');
+    complete_gk.S.Slc' := args__c.(complete_gk.S.Slc');
+    complete_gk.S.Success' := args__c.(complete_gk.S.Success');
+    complete_gk.S.Sslice' := args__c.(complete_gk.S.Sslice');
+    complete_gk.S.Iints' := args__c.(complete_gk.S.Iints');
+    complete_gk.S.Sints' := args__c.(complete_gk.S.Sints')
+  |} with args__c; last (destruct args__c; reflexivity).
+  iApply "HΦ". iFrame.
 Qed.
 
 End complete_gk.
