@@ -1,15 +1,5 @@
 
-  wp_apply wp_ref_of_zero; first done. iIntros (<< .Name >>Len) "H<< .Name >>Len". wp_pures.
-  wp_apply wp_ref_of_zero; first done. iIntros (<< .Name >>Bytes) "H<< .Name >>Bytes". wp_pures.
-  wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
-  iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
-
-  iDestruct (own_slice_small_sz with "Hsl") as %H<< .Name >>_sz.
-  wp_apply (wp_ReadBytesCopy with "[$]").
-  { rewrite length_app in H<< .Name >>_sz. word. }
-  iIntros (??) "[H<< .Name >>' Hsl]".
-
-  wp_pures. wp_store. wp_store. wp_load.
-  iApply own_slice_to_small in "H<< .Name >>'".
-  wp_apply (wp_StringFromBytes with "[$H<< .Name >>']"). iIntros "_".
-  wp_store.
+  wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
+  iIntros (??) "[H<< .Name >>_byt Hsl]". wp_auto.
+  wp_apply (wp_StringFromBytes with "[$H<< .Name >>_byt]").
+  iIntros "H<< .Name >>_byt". wp_auto.

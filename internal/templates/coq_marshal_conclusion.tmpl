@@ -10,15 +10,14 @@
   iFrame. iPureIntro.
 
   << $eenc := (extEncFields .Fields) ->>
-  << $sob  := (filterByCoqType .Fields "byte_string|list") ->>
+  << $sob  := (filterByCoqType .Fields "go_string|list") ->>
   << if (or (gt (len $sob) 0) (gt (len $eenc) 0)) ->>
-  unfold has_encoding. split.
-  {
+  unfold has_encoding.
   << if gt (len $eenc) 0 >>exists << range $idx, $field := $eenc ->>
   <<- if $idx >>, << end ->>
   <<- .Name ->>_enc
   <<- end ->>. << range $idx, $field := $eenc >>
-  << if not $idx >><< template "string_and_bytes" $sob >>
+  << if not $idx >>split; first reflexivity.
   <<- if len (predSliceFields $.Fields) >>
   repeat split.
   all: word || done.
@@ -26,7 +25,7 @@
   done.
   << end ->>
   <<- end ->>
-  <<- end >>} done.
+  <<- end >>
   <<- else if gt (len $sob) 0 >>
   << template "string_and_bytes" $sob >>
   <<- if len (predSliceFields .Fields) >>

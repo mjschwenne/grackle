@@ -51,17 +51,9 @@ Definition Unmarshal : val :=
     let: "$r1" := "$ret1" in
     do:  ("id" <-[#uint32T] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
-    let: "nameLen" := (mem.alloc (type.zero_val #uint64T)) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("nameLen" <-[#uint64T] "$r0");;;
-    do:  ("s" <-[#sliceT] "$r1");;;
     let: "nameBytes" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    let: "$a1" := (![#uint64T] "nameLen") in
-    (func_call #marshal.marshal #"ReadBytesCopy"%go) "$a0" "$a1") in
+    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("nameBytes" <-[#sliceT] "$r0");;;

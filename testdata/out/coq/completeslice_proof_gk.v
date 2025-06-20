@@ -76,10 +76,11 @@ Proof.
   iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  unfold has_encoding. split.
-  {
+  unfold has_encoding.
   
   rewrite ?string_bytes_length.
+  rewrite Hargs_strg_sz.
+  rewrite Hargs_strg2_sz.
   rewrite Hargs_bytes_sz.
   rewrite Hargs_bytes2_sz.
   rewrite ?w64_to_nat_id.
@@ -103,38 +104,18 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : completeslice_gk.S
 Proof.
   wp_start as "[%Henc Hsl]". wp_auto.
   unfold has_encoding in Henc.
-  destruct Henc as (& Henc ).
+  destruct Henc as (& Henc & Hlen_strg & Hlen_strg2 ).
   rewrite Henc. rewrite -?app_assoc.
 
-  wp_apply wp_ref_of_zero; first done. iIntros (strgLen) "HstrgLen". wp_pures.
-  wp_apply wp_ref_of_zero; first done. iIntros (strgBytes) "HstrgBytes". wp_pures.
-  wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
-  iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
+  wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
+  iIntros (??) "[Hstrg_byt Hsl]". wp_auto.
+  wp_apply (wp_StringFromBytes with "[$Hstrg_byt]").
+  iIntros "Hstrg_byt". wp_auto.
 
-  iDestruct (own_slice_small_sz with "Hsl") as %Hstrg_sz.
-  wp_apply (wp_ReadBytesCopy with "[$]").
-  { rewrite length_app in Hstrg_sz. word. }
-  iIntros (??) "[Hstrg' Hsl]".
-
-  wp_pures. wp_store. wp_store. wp_load.
-  iApply own_slice_to_small in "Hstrg'".
-  wp_apply (wp_StringFromBytes with "[$Hstrg']"). iIntros "_".
-  wp_store.
-
-  wp_apply wp_ref_of_zero; first done. iIntros (strg2Len) "Hstrg2Len". wp_pures.
-  wp_apply wp_ref_of_zero; first done. iIntros (strg2Bytes) "Hstrg2Bytes". wp_pures.
-  wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
-  iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
-
-  iDestruct (own_slice_small_sz with "Hsl") as %Hstrg2_sz.
-  wp_apply (wp_ReadBytesCopy with "[$]").
-  { rewrite length_app in Hstrg2_sz. word. }
-  iIntros (??) "[Hstrg2' Hsl]".
-
-  wp_pures. wp_store. wp_store. wp_load.
-  iApply own_slice_to_small in "Hstrg2'".
-  wp_apply (wp_StringFromBytes with "[$Hstrg2']"). iIntros "_".
-  wp_store.
+  wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
+  iIntros (??) "[Hstrg2_byt Hsl]". wp_auto.
+  wp_apply (wp_StringFromBytes with "[$Hstrg2_byt]").
+  iIntros "Hstrg2_byt". wp_auto.
 
   wp_apply wp_allocN; first done; first by val_ty.
   iIntros (?) "HbytesLen". iApply array_singleton in "HbytesLen". wp_pures.

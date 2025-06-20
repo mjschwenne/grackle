@@ -5,8 +5,7 @@ func Unmarshal(s []byte) (S, []byte) {
     <<- else if isGoType . "enum" >>
     << .Name >>, s := marshal.ReadInt32(s)
     <<- else if or (isGoType . "string") (and (isSliceType . ) (isGoType . "byte")) >>
-    << .Name >>Len, s := marshal.ReadInt(s)
-    << .Name >>Bytes, s := marshal.ReadBytesCopy(s, << .Name >>Len)
+    << .Name >>Bytes, s := marshal.ReadLenPrefixedBytes(s)
     << .Name >> := << if isGoType . "string" >>string(<< end >><< .Name >>Bytes<< if isGoType . "string" >>)<< end >>
     <<- else if isSliceType . >>
     << .Name >>Len, s := marshal.ReadInt(s)

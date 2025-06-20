@@ -30,8 +30,7 @@ func Marshal(enc []byte, e S) []byte {
 func Unmarshal(s []byte) (S, []byte) {
 
 	id, s := marshal.ReadInt32(s)
-	nameLen, s := marshal.ReadInt(s)
-	nameBytes, s := marshal.ReadBytesCopy(s, nameLen)
+	nameBytes, s := marshal.ReadLenPrefixedBytes(s)
 	name := string(nameBytes)
 	startTime, s := timestamp_gk.Unmarshal(s)
 	endTime, s := timestamp_gk.Unmarshal(s)

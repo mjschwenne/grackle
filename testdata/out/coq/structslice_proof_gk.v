@@ -82,17 +82,12 @@ Proof.
   iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  unfold has_encoding. split.
-  {
+  unfold has_encoding.
   exists slices_enc, ints_enc. 
-  rewrite ?string_bytes_length.
-  rewrite Hargs_slices_sz.
-  rewrite Hargs_ints_sz.
-  rewrite ?w64_to_nat_id.
-
+  split; first reflexivity.
   repeat split.
   all: word || done.
-  } done.
+  
 Qed.
 
 Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : structslice_gk.S.t) (suffix : list u8) (dq : dfrac):

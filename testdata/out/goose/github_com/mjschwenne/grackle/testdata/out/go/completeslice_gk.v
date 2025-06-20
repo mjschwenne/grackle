@@ -53,17 +53,9 @@ Definition Marshal : val :=
 Definition Unmarshal : val :=
   rec: "Unmarshal" "s" :=
     exception_do (let: "s" := (mem.alloc "s") in
-    let: "strgLen" := (mem.alloc (type.zero_val #uint64T)) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("strgLen" <-[#uint64T] "$r0");;;
-    do:  ("s" <-[#sliceT] "$r1");;;
     let: "strgBytes" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    let: "$a1" := (![#uint64T] "strgLen") in
-    (func_call #marshal.marshal #"ReadBytesCopy"%go) "$a0" "$a1") in
+    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("strgBytes" <-[#sliceT] "$r0");;;
@@ -71,17 +63,9 @@ Definition Unmarshal : val :=
     let: "strg" := (mem.alloc (type.zero_val #stringT)) in
     let: "$r0" := (string.from_bytes (![#sliceT] "strgBytes")) in
     do:  ("strg" <-[#stringT] "$r0");;;
-    let: "strg2Len" := (mem.alloc (type.zero_val #uint64T)) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("strg2Len" <-[#uint64T] "$r0");;;
-    do:  ("s" <-[#sliceT] "$r1");;;
     let: "strg2Bytes" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    let: "$a1" := (![#uint64T] "strg2Len") in
-    (func_call #marshal.marshal #"ReadBytesCopy"%go) "$a0" "$a1") in
+    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("strg2Bytes" <-[#sliceT] "$r0");;;
@@ -89,17 +73,9 @@ Definition Unmarshal : val :=
     let: "strg2" := (mem.alloc (type.zero_val #stringT)) in
     let: "$r0" := (string.from_bytes (![#sliceT] "strg2Bytes")) in
     do:  ("strg2" <-[#stringT] "$r0");;;
-    let: "bytesLen" := (mem.alloc (type.zero_val #uint64T)) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("bytesLen" <-[#uint64T] "$r0");;;
-    do:  ("s" <-[#sliceT] "$r1");;;
     let: "bytesBytes" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    let: "$a1" := (![#uint64T] "bytesLen") in
-    (func_call #marshal.marshal #"ReadBytesCopy"%go) "$a0" "$a1") in
+    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("bytesBytes" <-[#sliceT] "$r0");;;
@@ -107,17 +83,9 @@ Definition Unmarshal : val :=
     let: "bytes" := (mem.alloc (type.zero_val #sliceT)) in
     let: "$r0" := (![#sliceT] "bytesBytes") in
     do:  ("bytes" <-[#sliceT] "$r0");;;
-    let: "bytes2Len" := (mem.alloc (type.zero_val #uint64T)) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("bytes2Len" <-[#uint64T] "$r0");;;
-    do:  ("s" <-[#sliceT] "$r1");;;
     let: "bytes2Bytes" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    let: "$a1" := (![#uint64T] "bytes2Len") in
-    (func_call #marshal.marshal #"ReadBytesCopy"%go) "$a0" "$a1") in
+    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("bytes2Bytes" <-[#sliceT] "$r0");;;

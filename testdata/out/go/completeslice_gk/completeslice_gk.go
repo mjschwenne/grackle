@@ -29,17 +29,13 @@ func Marshal(enc []byte, c S) []byte {
 
 func Unmarshal(s []byte) (S, []byte) {
 
-	strgLen, s := marshal.ReadInt(s)
-	strgBytes, s := marshal.ReadBytesCopy(s, strgLen)
+	strgBytes, s := marshal.ReadLenPrefixedBytes(s)
 	strg := string(strgBytes)
-	strg2Len, s := marshal.ReadInt(s)
-	strg2Bytes, s := marshal.ReadBytesCopy(s, strg2Len)
+	strg2Bytes, s := marshal.ReadLenPrefixedBytes(s)
 	strg2 := string(strg2Bytes)
-	bytesLen, s := marshal.ReadInt(s)
-	bytesBytes, s := marshal.ReadBytesCopy(s, bytesLen)
+	bytesBytes, s := marshal.ReadLenPrefixedBytes(s)
 	bytes := bytesBytes
-	bytes2Len, s := marshal.ReadInt(s)
-	bytes2Bytes, s := marshal.ReadBytesCopy(s, bytes2Len)
+	bytes2Bytes, s := marshal.ReadLenPrefixedBytes(s)
 	bytes2 := bytes2Bytes
 
 	return S{

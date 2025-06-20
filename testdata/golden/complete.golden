@@ -275,10 +275,11 @@ Proof.
   iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  unfold has_encoding. split.
-  {
+  unfold has_encoding.
   
   rewrite ?string_bytes_length.
+  rewrite Hargs_strg_sz.
+  rewrite Hargs_strg2_sz.
   rewrite Hargs_bytes_sz.
   rewrite Hargs_bytes2_sz.
   rewrite ?w64_to_nat_id.
@@ -302,38 +303,18 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : completeslice_gk.S
 Proof.
   wp_start as "[%Henc Hsl]". wp_auto.
   unfold has_encoding in Henc.
-  destruct Henc as (& Henc ).
+  destruct Henc as (& Henc & Hlen_strg & Hlen_strg2 ).
   rewrite Henc. rewrite -?app_assoc.
 
-  wp_apply wp_ref_of_zero; first done. iIntros (strgLen) "HstrgLen". wp_pures.
-  wp_apply wp_ref_of_zero; first done. iIntros (strgBytes) "HstrgBytes". wp_pures.
-  wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
-  iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
+  wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
+  iIntros (??) "[Hstrg_byt Hsl]". wp_auto.
+  wp_apply (wp_StringFromBytes with "[$Hstrg_byt]").
+  iIntros "Hstrg_byt". wp_auto.
 
-  iDestruct (own_slice_small_sz with "Hsl") as %Hstrg_sz.
-  wp_apply (wp_ReadBytesCopy with "[$]").
-  { rewrite length_app in Hstrg_sz. word. }
-  iIntros (??) "[Hstrg' Hsl]".
-
-  wp_pures. wp_store. wp_store. wp_load.
-  iApply own_slice_to_small in "Hstrg'".
-  wp_apply (wp_StringFromBytes with "[$Hstrg']"). iIntros "_".
-  wp_store.
-
-  wp_apply wp_ref_of_zero; first done. iIntros (strg2Len) "Hstrg2Len". wp_pures.
-  wp_apply wp_ref_of_zero; first done. iIntros (strg2Bytes) "Hstrg2Bytes". wp_pures.
-  wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
-  iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
-
-  iDestruct (own_slice_small_sz with "Hsl") as %Hstrg2_sz.
-  wp_apply (wp_ReadBytesCopy with "[$]").
-  { rewrite length_app in Hstrg2_sz. word. }
-  iIntros (??) "[Hstrg2' Hsl]".
-
-  wp_pures. wp_store. wp_store. wp_load.
-  iApply own_slice_to_small in "Hstrg2'".
-  wp_apply (wp_StringFromBytes with "[$Hstrg2']"). iIntros "_".
-  wp_store.
+  wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
+  iIntros (??) "[Hstrg2_byt Hsl]". wp_auto.
+  wp_apply (wp_StringFromBytes with "[$Hstrg2_byt]").
+  iIntros "Hstrg2_byt". wp_auto.
 
   wp_apply wp_allocN; first done; first by val_ty.
   iIntros (?) "HbytesLen". iApply array_singleton in "HbytesLen". wp_pures.
@@ -408,17 +389,13 @@ func Marshal(enc []byte, c S) []byte {
 
 func Unmarshal(s []byte) (S, []byte) {
 
-	strgLen, s := marshal.ReadInt(s)
-	strgBytes, s := marshal.ReadBytesCopy(s, strgLen)
+	strgBytes, s := marshal.ReadLenPrefixedBytes(s)
 	strg := string(strgBytes)
-	strg2Len, s := marshal.ReadInt(s)
-	strg2Bytes, s := marshal.ReadBytesCopy(s, strg2Len)
+	strg2Bytes, s := marshal.ReadLenPrefixedBytes(s)
 	strg2 := string(strg2Bytes)
-	bytesLen, s := marshal.ReadInt(s)
-	bytesBytes, s := marshal.ReadBytesCopy(s, bytesLen)
+	bytesBytes, s := marshal.ReadLenPrefixedBytes(s)
 	bytes := bytesBytes
-	bytes2Len, s := marshal.ReadInt(s)
-	bytes2Bytes, s := marshal.ReadBytesCopy(s, bytes2Len)
+	bytes2Bytes, s := marshal.ReadLenPrefixedBytes(s)
 	bytes2 := bytes2Bytes
 
 	return S{
@@ -514,17 +491,12 @@ Proof.
   iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  unfold has_encoding. split.
-  {
+  unfold has_encoding.
   exists slices_enc, ints_enc. 
-  rewrite ?string_bytes_length.
-  rewrite Hargs_slices_sz.
-  rewrite Hargs_ints_sz.
-  rewrite ?w64_to_nat_id.
-
+  split; first reflexivity.
   repeat split.
   all: word || done.
-  } done.
+  
 Qed.
 
 Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : structslice_gk.S.t) (suffix : list u8) (dq : dfrac):
@@ -777,21 +749,15 @@ Proof.
   iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  unfold has_encoding. split.
-  {
+  unfold has_encoding.
   exists int_enc, slc_enc, sslice_enc, iints_enc, sints_enc. 
-  rewrite ?string_bytes_length.
-  rewrite Hargs_sslice_sz.
-  rewrite Hargs_iints_sz.
-  rewrite Hargs_sints_sz.
-  rewrite ?w64_to_nat_id.
-
+  split; first reflexivity.
   repeat split.
   all: word || done.
   
   
   
-  } done.
+  
 Qed.
 
 Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : complete_gk.S.t) (suffix : list u8) (dq : dfrac):
@@ -812,15 +778,11 @@ Proof.
   destruct Henc as ( int_enc & slc_enc & sslice_enc & iints_enc & sints_enc & Henc & Henc_int & Henc_slc & Henc_sslice & Hsslice_sz & Henc_iints & Hiints_sz & Henc_sints & Hsints_sz ).
   rewrite Henc. rewrite -?app_assoc.
 
-  wp_load. wp_apply (completeInt.wp_Decode int_enc with "[$Hsl //]").
-  iIntros (int__v ?) "[Hown_int Hsl]".
-  iDestruct (completeInt.own_val_ty with "Hown_int") as "%Hval_int".
-  wp_pures. wp_store. wp_store.
+  wp_apply (completeInt_gk.wp_Decode int_enc with "[$Hsl]"); first done.
+  iIntros (int__v) "Hsl". wp_auto.
 
-  wp_load. wp_apply (completeSlice.wp_Decode slc_enc with "[$Hsl //]").
-  iIntros (slc__v ?) "[Hown_slc Hsl]".
-  iDestruct (completeSlice.own_val_ty with "Hown_slc") as "%Hval_slc".
-  wp_pures. wp_store. wp_store.
+  wp_apply (completeSlice_gk.wp_Decode slc_enc with "[$Hsl]"); first done.
+  iIntros (slc__v) "Hsl". wp_auto.
 
   wp_load. wp_apply (wp_ReadBool with "[Hsl]").
   { simpl. iFrame. }

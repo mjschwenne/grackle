@@ -124,21 +124,15 @@ Proof.
   iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  unfold has_encoding. split.
-  {
+  unfold has_encoding.
   exists int_enc, slc_enc, sslice_enc, iints_enc, sints_enc. 
-  rewrite ?string_bytes_length.
-  rewrite Hargs_sslice_sz.
-  rewrite Hargs_iints_sz.
-  rewrite Hargs_sints_sz.
-  rewrite ?w64_to_nat_id.
-
+  split; first reflexivity.
   repeat split.
   all: word || done.
   
   
   
-  } done.
+  
 Qed.
 
 Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : complete_gk.S.t) (suffix : list u8) (dq : dfrac):
@@ -159,15 +153,11 @@ Proof.
   destruct Henc as ( int_enc & slc_enc & sslice_enc & iints_enc & sints_enc & Henc & Henc_int & Henc_slc & Henc_sslice & Hsslice_sz & Henc_iints & Hiints_sz & Henc_sints & Hsints_sz ).
   rewrite Henc. rewrite -?app_assoc.
 
-  wp_load. wp_apply (completeInt.wp_Decode int_enc with "[$Hsl //]").
-  iIntros (int__v ?) "[Hown_int Hsl]".
-  iDestruct (completeInt.own_val_ty with "Hown_int") as "%Hval_int".
-  wp_pures. wp_store. wp_store.
+  wp_apply (completeInt_gk.wp_Decode int_enc with "[$Hsl]"); first done.
+  iIntros (int__v) "Hsl". wp_auto.
 
-  wp_load. wp_apply (completeSlice.wp_Decode slc_enc with "[$Hsl //]").
-  iIntros (slc__v ?) "[Hown_slc Hsl]".
-  iDestruct (completeSlice.own_val_ty with "Hown_slc") as "%Hval_slc".
-  wp_pures. wp_store. wp_store.
+  wp_apply (completeSlice_gk.wp_Decode slc_enc with "[$Hsl]"); first done.
+  iIntros (slc__v) "Hsl". wp_auto.
 
   wp_load. wp_apply (wp_ReadBool with "[Hsl]").
   { simpl. iFrame. }
