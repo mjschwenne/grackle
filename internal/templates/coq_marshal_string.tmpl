@@ -1,4 +1,5 @@
 
+  wp_apply wp_AssumeNoStringOverflow. iIntros "%H<< .Name >>Len". wp_auto.
   wp_apply wp_StringToBytes. iIntros (?) "H<< .Name >>Bytes". wp_auto.
   wp_apply (wp_WriteLenPrefixedBytes with "[$Hsl $Hcap $H<< .Name >>Bytes]").
   iIntros (?) "(Hsl & Hcap & H<< .Name >>Bytes)". wp_auto.

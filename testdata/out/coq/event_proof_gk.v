@@ -5,6 +5,7 @@
 
 From New.proof Require Import proof_prelude.
 From New.proof Require Import github_com.tchajed.marshal.
+From New.proof Require Import github_com.goose_lang.primitive.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.event_gk.
 From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.event_gk.
 From Grackle.test Require Import timestamp_proof_gk.
@@ -52,6 +53,7 @@ Proof.
   wp_apply (wp_WriteInt32 with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
+  wp_apply wp_AssumeNoStringOverflow. iIntros "%HnameLen". wp_auto.
   wp_apply wp_StringToBytes. iIntros (?) "HnameBytes". wp_auto.
   wp_apply (wp_WriteLenPrefixedBytes with "[$Hsl $Hcap $HnameBytes]").
   iIntros (?) "(Hsl & Hcap & HnameBytes)". wp_auto.

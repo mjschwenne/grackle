@@ -4,6 +4,9 @@ import (
     <<- if ne (len (extValFields .Fields)) (len .Fields) >>
     "github.com/tchajed/marshal"
     <<- end >>
+    <<- if (filterByGoType .Fields "string") >>
+    "github.com/goose-lang/primitive"
+    <<- end >>
     << range .NestedMessages >>
     "<< $.GoPackage >>/<<- lower . ->>_gk"
     <<- end >>

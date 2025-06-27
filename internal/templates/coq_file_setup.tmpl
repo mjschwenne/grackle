@@ -1,5 +1,8 @@
 From New.proof Require Import proof_prelude.
 From New.proof Require Import github_com.tchajed.marshal.
+<<- if (filterByGoType .Fields "string") >>
+From New.proof Require Import github_com.goose_lang.primitive. 
+<<- end >>
 From New.code Require Import << cleanCoqName .GoPackage >>.<< lower .Name >>_gk.
 From New.generatedproof Require Import << cleanCoqName .GoPackage >>.<< lower .Name >>_gk.
 <<- range .NestedMessages >>

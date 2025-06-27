@@ -5,6 +5,7 @@
 
 From New.proof Require Import proof_prelude.
 From New.proof Require Import github_com.tchajed.marshal.
+From New.proof Require Import github_com.goose_lang.primitive.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 
@@ -50,10 +51,12 @@ Proof.
   intros HstrglenHstrg2lenHbyteslenHbytes2len.
   wp_start as "[Hsl Hcap]". wp_auto.
 
+  wp_apply wp_AssumeNoStringOverflow. iIntros "%HstrgLen". wp_auto.
   wp_apply wp_StringToBytes. iIntros (?) "HstrgBytes". wp_auto.
   wp_apply (wp_WriteLenPrefixedBytes with "[$Hsl $Hcap $HstrgBytes]").
   iIntros (?) "(Hsl & Hcap & HstrgBytes)". wp_auto.
 
+  wp_apply wp_AssumeNoStringOverflow. iIntros "%Hstrg2Len". wp_auto.
   wp_apply wp_StringToBytes. iIntros (?) "Hstrg2Bytes". wp_auto.
   wp_apply (wp_WriteLenPrefixedBytes with "[$Hsl $Hcap $Hstrg2Bytes]").
   iIntros (?) "(Hsl & Hcap & Hstrg2Bytes)". wp_auto.

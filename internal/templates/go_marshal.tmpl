@@ -5,6 +5,7 @@ func Marshal(enc []byte, <<- param .Name >> S) []byte {
     << else if isGoType . "enum" ->>
     enc = marshal.WriteInt32(enc, uint32(<< param $.Name >>.<< goName .Name >>))
     << else if isGoType . "string" ->>
+    primitive.AssumeNoStringOverflow(<< param $.Name >>.<< goName .Name >>)
     enc = marshal.WriteLenPrefixedBytes(enc, []byte(<< param $.Name >>.<< goName .Name >>))
     << else if (and (isGoType . "byte") (isSliceType .)) ->>
     enc = marshal.WriteInt(enc, uint64(len(<< param $.Name >>.<< goName .Name >>)))

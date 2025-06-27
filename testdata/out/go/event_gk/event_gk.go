@@ -6,6 +6,7 @@
 package event_gk
 
 import (
+	"github.com/goose-lang/primitive"
 	"github.com/tchajed/marshal"
 
 	"github.com/mjschwenne/grackle/testdata/out/go/timestamp_gk"
@@ -20,6 +21,7 @@ type S struct {
 
 func Marshal(enc []byte, e S) []byte {
 	enc = marshal.WriteInt32(enc, e.Id)
+	primitive.AssumeNoStringOverflow(e.Name)
 	enc = marshal.WriteLenPrefixedBytes(enc, []byte(e.Name))
 	enc = timestamp_gk.Marshal(enc, e.StartTime)
 	enc = timestamp_gk.Marshal(enc, e.EndTime)

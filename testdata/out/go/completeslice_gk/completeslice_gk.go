@@ -6,6 +6,7 @@
 package completeslice_gk
 
 import (
+	"github.com/goose-lang/primitive"
 	"github.com/tchajed/marshal"
 )
 
@@ -17,7 +18,9 @@ type S struct {
 }
 
 func Marshal(enc []byte, c S) []byte {
+	primitive.AssumeNoStringOverflow(c.Strg)
 	enc = marshal.WriteLenPrefixedBytes(enc, []byte(c.Strg))
+	primitive.AssumeNoStringOverflow(c.Strg2)
 	enc = marshal.WriteLenPrefixedBytes(enc, []byte(c.Strg2))
 	enc = marshal.WriteInt(enc, uint64(len(c.Bytes)))
 	enc = marshal.WriteBytes(enc, c.Bytes)
