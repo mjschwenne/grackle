@@ -3,6 +3,7 @@ From Grackle.new_ex Require Import goose.github_com.mjschwenne.grackle.new_examp
 From Grackle.new_ex Require Import pg.github_com.mjschwenne.grackle.new_example.
 From New.proof Require Import github_com.tchajed.marshal.
 From Grackle.new_ex Require Import timestamp_proof.
+From New.proof.github_com.goose_lang Require Import primitive.
 
 Module Event_Proof.
   Section Event_Proof.
@@ -25,7 +26,6 @@ Module Event_Proof.
         /\ TimeStamp_Proof.has_encoding end_enc args.(main.Event.endTime').
 
     Lemma wp_Encode (args__c:main.Event.t) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac):
-      length args__c.(main.Event.name') < 2^64 ->
       {{{
             is_pkg_init main ∗
             own_slice pre_sl (DfracOwn 1) prefix ∗
@@ -40,12 +40,13 @@ Module Event_Proof.
       }}}.
 
     Proof.
-      intros Hnlen.
       wp_start as "[Hsl Hcap]". wp_auto.
 
       wp_apply (wp_WriteInt32 with "[$Hsl $Hcap]").
       iIntros (?) "[Hsl Hcap]". wp_auto.
 
+      wp_apply wp_AssumeNoStringOverflow.
+      iIntros "%HnameLen". wp_auto.
       wp_apply wp_StringToBytes.
       iIntros (?) "Hsl'". wp_auto.
 

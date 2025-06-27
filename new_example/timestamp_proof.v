@@ -44,8 +44,7 @@ Module TimeStamp_Proof.
         wp_apply (wp_WriteInt32 with "[$Hsl $Hcap]").
         iIntros (?) "[Hsl Hcap]". wp_auto.
 
-        iApply "HΦ". rewrite -?app_assoc. iFrame.
-        iPureIntro. done.
+        iApply "HΦ". rewrite -?app_assoc. iFrame. done.
     Qed.
 
     Lemma wp_Decode (enc: list u8) (enc_sl: slice.t) (args__c: main.TimeStamp.t) (suffix: list u8) (dq: dfrac):

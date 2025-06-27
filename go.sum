@@ -10,6 +10,8 @@ github.com/goose-lang/goose v0.9.2 h1:GKNuet2ks7nGOb2QtMFeYsJoX/bc+NOVh7RskoNcXp
 github.com/goose-lang/goose v0.9.2/go.mod h1:LkjsVhQx8bjA/p3Z2uNc+pFnjN3KaTaLEoj+kD6Eal8=
 github.com/goose-lang/primitive v0.1.0 h1:JReOdFzUdGD7f8nWTC/uOlNpBdVFU4q8HzMSgn8edaY=
 github.com/goose-lang/primitive v0.1.0/go.mod h1:sDE72zVH81ASwPXc1m9OgSfaaY0aZHu4Ty19FgONpOc=
+github.com/goose-lang/primitive v0.2.0 h1:EmQ/hz1q8XyjZmcEHXHPCbCJ46Ye4HCrl0O33DLBxKg=
+github.com/goose-lang/primitive v0.2.0/go.mod h1:sDE72zVH81ASwPXc1m9OgSfaaY0aZHu4Ty19FgONpOc=
 github.com/goose-lang/std v0.6.1 h1:fShymy3KEyVkf6Q26Z24W4aBXQD+Qu6XIORuqAdTwK0=
 github.com/goose-lang/std v0.6.1/go.mod h1:bnKHDHwU0lHf99eMI5PVM77UweRyu6qgM/h43qGBRto=
 github.com/mattn/go-colorable v0.1.14 h1:9A9LHSqF/7dyVVX6g0U9cwm9pG3kP9gSzcuIPHPsaIE=

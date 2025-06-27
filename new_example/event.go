@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/goose-lang/primitive"
 	"github.com/tchajed/marshal"
 )
 
@@ -13,6 +14,7 @@ type Event struct {
 
 func MarshalEvent(enc []byte, e Event) []byte {
 	enc = marshal.WriteInt32(enc, e.id)
+	primitive.AssumeNoStringOverflow(e.name)
 	enc = marshal.WriteLenPrefixedBytes(enc, []byte(e.name))
 	enc = MarshalTimeStamp(enc, e.startTime)
 	enc = MarshalTimeStamp(enc, e.endTime)
