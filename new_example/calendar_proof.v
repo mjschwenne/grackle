@@ -14,30 +14,111 @@ Module Calendar_Proof.
       Program Instance : IsPkgInit main :=
         ltac2:(build_pkg_init ()).
 
-    (* TODO: Figure out the impacts of not having pred_slice ported. *)
-    Definition has_encoding (encoded:list u8) (args:main.Calendar.t) : Prop :=
-      ∃ (events : list main.Event.t) (events__enc : list u8),
-        encoded = (u64_le $ args.(main.Calendar.events').(slice.len_f)) ++ events__enc /\
-        encodes events__enc events Event_Proof.has_encoding /\
-        length events < 2^64.
+    (*
+       I could flatten this own and require the caller to pass each "predslice"
+       individually to wp_Encode.
+     *)
+    Record C := mkC {
+       events : list Event_Proof.C; 
+      }.
 
-    Lemma wp_Encode (args__c:main.Calendar.t) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac):
-      uint.nat args__c.(main.Calendar.events').(slice.len_f) < 2^64 ->
+    Definition has_encoding (encoded:list u8) (args__t:main.Calendar.t) (args__c:C) : Prop :=
+      ∃ (events__enc : list u8),
+        encoded = (u64_le $ args__t.(main.Calendar.events').(slice.len_f)) ++ events__enc /\
+        encodes events__enc args__c.(events) Event_Proof.has_encoding' /\
+        length args__c.(events) < 2^64.
+
+    Definition has_encoding' (encoded:list u8) (args__c:C) : Prop :=
+      ∃ (events__enc : list u8),
+        encoded = (u64_le $ length args__c.(events)) ++ events__enc /\
+        encodes events__enc args__c.(events) Event_Proof.has_encoding' /\
+        length args__c.(events) < 2^64.
+
+    Definition own (v:main.Calendar.t) (c:C) (dq:dfrac) : iProp Σ :=
+      ∃ e:list main.Event.t,
+        own_slice v.(main.Calendar.events') dq e ∗
+        [∗ list] x;s ∈ e;c.(events), Event_Proof.own x s dq.
+
+    Lemma wp_Encode (args__t:main.Calendar.t) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac) (args__c:C):
+      length args__c.(events) < 2^64 ->
       {{{
             is_pkg_init main ∗
+            own args__t args__c dq ∗
             own_slice pre_sl (DfracOwn 1) prefix ∗
             own_slice_cap w8 pre_sl 
       }}}
-        main @ "MarshalCalendar" #pre_sl #args__c
+        main @ "MarshalCalendar" #pre_sl #args__t
       {{{
             enc enc_sl, RET #enc_sl;
-            ⌜ has_encoding enc args__c ⌝ ∗
+            ⌜ has_encoding' enc args__c ⌝ ∗
             own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
             own_slice_cap w8 enc_sl
       }}}.
 
       Proof.
-      Admitted.
+        intros HeventsLen.
+        wp_start as "(Hown & Hsl & Hcap)". wp_auto.
+
+        wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
+        iIntros (?) "[Hsl Hcap]". wp_auto.
+
+        iDestruct "Hown" as "(%events & HeventsSl & HeventsPd)".
+        iDestruct (own_slice_len with "HeventsSl") as "%HeventsSz".
+        iDestruct (big_sepL2_length with "HeventsPd") as "%HeventsSz'".
+        rewrite HeventsSz' in HeventsSz.
+        wp_apply (wp_WriteSlice with "[$Hsl $HeventsSl $HeventsPd]"). 
+        {
+          iIntros (????) "!>".
+          iIntros (?) "[Hsl Hcap] HΦ".
+          wp_apply (Event_Proof.wp_Encode with "[$Hsl $Hcap]").
+          iApply "HΦ".
+        }
+        iIntros (??) "(Hevents & %HeventsEnc & Hsl)". wp_auto.
+
+        iApply "HΦ". rewrite -?app_assoc. iFrame.
+        iPureIntro. unfold has_encoding'.
+        exists enc. split.
+        {
+          rewrite HeventsSz.
+          rewrite ?w64_to_nat_id.
+          done.
+        } done.
+    Qed.
+
+    Lemma wp_Decode (enc:list u8) (enc_sl:slice.t) (args__c:C) (suffix:list u8) (dq: dfrac):
+      {{{
+            is_pkg_init main ∗
+            own_slice enc_sl dq (enc ++ suffix) ∗
+            ⌜ has_encoding' enc args__c ⌝
+      }}}     
+        main @ "UnmarshalCalendar" #enc_sl
+      {{{
+            suff_sl args__t (events:list main.Event.t), RET (#args__t, #suff_sl);
+            own_slice suff_sl dq suffix ∗
+            own_slice args__t.(main.Calendar.events') (DfracOwn 1) events
+      }}}.
+    Proof.
+      wp_start as "[Hsl %Henc]". wp_auto.
+      unfold has_encoding in Henc.
+      destruct Henc as (events__enc & Henc & HeventsEncodes & HeventsLen).
+      rewrite Henc. rewrite -?app_assoc.
+
+      wp_apply (wp_ReadInt with "[$Hsl]").
+      iIntros (?) "Hsl". wp_auto.
+
+      wp_apply (wp_ReadSlice _ _ args__c.(Calendar_Proof.events) with "[$Hsl]").
+      {
+        iSplit; auto.
+        iSplit; first word.
+        iIntros (????) "!>".
+        iIntros (?) "[Hsl' Henc'] HΦ".
+        wp_apply (Event_Proof.wp_Decode with "[$Hsl' $Henc']").
+        iApply "HΦ".
+      } 
+      iIntros (???) "(Hevent & HeventPred & Hsl)". wp_auto.
+
+      iApply "HΦ". iFrame.
+    Qed.
   End Calendar_Proof.
 End Calendar_Proof.
     
