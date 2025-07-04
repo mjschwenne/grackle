@@ -19,7 +19,9 @@ Context `{!goGlobalsGS Σ}.
 Program Instance : IsPkgInit completeslice_gk :=
   ltac2:(build_pkg_init ()).
 
-Definition has_encoding (encoded:list u8) (args:completeslice_gk.S.t) : Prop :=
+Definition C := completeslice_gk.S.t.
+
+Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   encoded = (u64_le $ length $ args.(completeslice_gk.S.Strg')) ++ args.(completeslice_gk.S.Strg') ++
               (u64_le $ length $ args.(completeslice_gk.S.Strg2')) ++ args.(completeslice_gk.S.Strg2') ++
               (u64_le $ length $ args.(completeslice_gk.S.Bytes')) ++ args.(completeslice_gk.S.Bytes') ++
@@ -28,6 +30,12 @@ Definition has_encoding (encoded:list u8) (args:completeslice_gk.S.t) : Prop :=
   /\ length args.(completeslice_gk.S.Strg2') < 2^64
   /\ length args.(completeslice_gk.S.Bytes') < 2^64
   /\ length args.(completeslice_gk.S.Bytes2') < 2^64.
+
+Definition own (args__v: completeslice_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
+  "Hown_strg" ∷ ⌜ args__v.(completeslice_gk.S.Strg') = args__c.(completeslice_gk.S.Strg') ⌝ ∗
+  "Hown_strg2" ∷ ⌜ args__v.(completeslice_gk.S.Strg2') = args__c.(completeslice_gk.S.Strg2') ⌝ ∗
+  "Hown_bytes" ∷ own_slice args__v.(completeslice_gk.S.Bytes') dq args__c.(completeslice_gk.S.Bytes') ∗
+  "Hown_bytes2" ∷ own_slice args__v.(completeslice_gk.S.Bytes2') dq args__c.(completeslice_gk.S.Bytes2').
 
 Lemma wp_Encode (args__c : completeslice_gk.S.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   length args__c.(completeslice_gk.S.Strg') < 2^64 ->

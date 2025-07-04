@@ -24,17 +24,41 @@ Context `{!goGlobalsGS Σ}.
 Program Instance : IsPkgInit complete_gk :=
   ltac2:(build_pkg_init ()).
 
-Definition has_encoding (encoded:list u8) (args:complete_gk.S.t) : Prop :=
+Record C :=
+    mkC {
+        int' :  completeInt_gk.C;
+        slc' :  completeSlice_gk.C;
+        success' :  bool;
+        sslice' : list structSlice_gk.C;
+        iints' : list u64;
+        sints' : list u32;
+        }.
+
+Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   ∃ (int_enc slc_enc sslice_enc iints_enc sints_enc : list u8), 
   encoded = int_enc ++
               slc_enc ++
-              [if args.(complete_gk.S.Success') then W8 1 else W8 0] ++
-              (u64_le $ length $ args.(complete_gk.S.Sslice')) ++ sslice_enc ++
-              (u64_le $ length $ args.(complete_gk.S.Iints')) ++ iints_enc ++
-              (u64_le $ length $ args.(complete_gk.S.Sints')) ++ sints_enc
-  /\ completeInt_gk.has_encoding int_enc args.(complete_gk.S.Int')
-  /\ completeSlice_gk.has_encoding slc_enc args.(complete_gk.S.Slc')
-  /\ structSlice_gk.has_encoding sslice_enc args.(complete_gk.S.Sslice').
+              [if args.(success') then W8 1 else W8 0] ++
+              (u64_le $ length $ args.(sslice')) ++ sslice_enc ++
+              (u64_le $ length $ args.(iints')) ++ iints_enc ++
+              (u64_le $ length $ args.(sints')) ++ sints_enc
+  /\ completeInt_gk.has_encoding int_enc args.(int')
+  /\ completeSlice_gk.has_encoding slc_enc args.(slc')
+  /\ length args.(sslice') < 2^64
+  /\ length args.(iints') < 2^64
+  /\ length args.(sints') < 2^64.
+
+Definition own (args__v: complete_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
+  ∃ (l__sslice : list structslice_gk.S.t)(l__iints : list uint64.t)(l__sints : list uint32.t), 
+  "Hown_int" ∷ completeInt_gk.own args__v.(complete_gk.S.Int') args__c.(int') dq ∗
+  "Hown_slc" ∷ completeSlice_gk.own args__v.(complete_gk.S.Slc') args__c.(slc') dq ∗
+  "Hown_success" ∷ ⌜ args__v.(complete_gk.S.Success') = args__c.(success') ⌝ ∗
+  "Hown_sslice_sl" ∷ own_slice args__v.(complete_gk.S.Sslice') dq args__c.(sslice') ∗
+  "Hown_sslice_own" ∷ ([∗ list] x;c ∈ l__sslice;args__c.(sslice'), structSlice_gk.own x c dq) ∗
+  "Hown_iints_sl" ∷ own_slice args__v.(complete_gk.S.Iints') dq args__c.(iints') ∗
+  "Hown_iints_own" ∷ ([∗ list] x;c ∈ l__iints;args__c.(iints'), <nil>_gk.own x c dq) ∗
+  "Hown_sints_sl" ∷ own_slice args__v.(complete_gk.S.Sints') dq args__c.(sints') ∗
+  "Hown_sints_own" ∷ ([∗ list] x;c ∈ l__sints;args__c.(sints'), <nil>_gk.own x c dq).
 
 Lemma wp_Encode (args__c : complete_gk.S.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{

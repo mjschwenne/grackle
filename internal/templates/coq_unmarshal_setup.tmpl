@@ -1,7 +1,7 @@
 Proof.
   wp_start as "[%Henc Hsl]". wp_auto.
   << $refs := (extValFields .Fields) ->>
-  << $psls := (predSliceFields .Fields) ->>
+  << $psls := (repeatedFields .Fields) ->>
   << if or (len $psls) (len $refs)  ->>
   unfold has_encoding in Henc.
   destruct Henc as (

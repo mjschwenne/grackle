@@ -8,7 +8,7 @@ go run ./cmd/grackle/ -coq-logical-path Grackle.test -coq-physical-path testdata
 echo "Checking grackle go..."
 go build (find ./testdata/out/go/ -mindepth 1 -maxdepth 1 -type d)
 echo "Checking grackle coq..."
-rm .coqdeps.d
+rm .rocqdeps.d
 make -j(nproc) -s (find testdata/out/coq -name "*.v" | sed -e "s/\.v\$/\.vo/g")
 echo "Running grackle tests..."
 go test .

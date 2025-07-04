@@ -1,39 +1,28 @@
-<<- define "coq_own_struct" ->>
-  <<- if eq (len .) 0 ->>
-  #()
-  <<- else ->>
-  (<<- with $valF := index . 0 ->>
-  <<- if and (isExtValType $valF) (not (isRepeatedType .)) ->> << $valF.Name >>__v
-  <<- else if valFunc $valF ->>
-  <<- if not (isSliceType .) >>#(<< end >><< valFunc $valF >> << else >>#
-  <<- end >><< if isSliceType . >><< .Name >>_sl<< else if not (isExtValType .) >>args__c.(<<- $valF.Name ->>)<< end >>
-  <<- if and (not (or (isExtValType .) (isSliceType .))) (valFunc $valF) >>)<< end >>, << end ->>
-  << template "coq_own_struct" (slice . 1) ->>)
-  <<- end ->>
+<< define "rocq_own_field_name" >>
+<<- if .Simple ->>
+<< lower .Name >>_gk.S.<< goName .Field.Name >>'
+<<- else ->>
+<< .Field.Name >>'
 <<- end ->>
-Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  <<- $extval := (extValFields .Fields) ->>
-  <<- $lists := (sliceFields .Fields) ->>
-  <<- if (or (gt (len $extval) 0) (gt (len $lists) 0)) >>
-  ∃ 
-  <<- if len $extval ->>
-  (<<- range $idx, $field := $extval ->>
-  <<- $field.Name ->>__v << end ->>: val)
-  <<- end >> << if len $lists ->>
-  (<<- range $idx, $field := $lists ->>
-  <<- $field.Name ->>_sl << end ->>: Slice.t)
-  <<- end ->>
+<<- end ->>
+
+Definition own (args__v: << lower .Name >>_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
+  <<- $reps := (repeatedFields .Fields) ->>
+  <<- if (len $reps) >>
+  ∃ << range $idx, $field := $reps ->>
+  (l__<< $field.Name >> : list << goType . >>.t)
+    <<- end ->>
   , << end >>
-  "%Hown_struct" ∷ ⌜ args__v = << template "coq_own_struct" .Fields >>%V ⌝
-  <<- range $lists >> ∗
-  <<- if isCoqType . "message" >>
-  "Hown_<< .Name >>" ∷ is_pred_slice << .TypeName >>.own << .Name >>_sl (struct.t << goType . >>) dq args__c.(<< .Name >>)
-  <<- else if isCoqType . "u8|byte_string" >>
-  "Hown_<< .Name >>" ∷ own_slice_small << .Name >>_sl << goType . >>T dq args__c.(<< .Name >>)
+  <<- range $idx, $field := .Fields >>
+  <<- if $idx >> ∗<< end ->>
+  <<- if isRepeatedType . >>
+  "Hown_<< .Name >>_sl" ∷ own_slice args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') dq args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) ∗
+  "Hown_<< .Name >>_own" ∷ ([∗ list] x;c ∈ l__<< .Name >>;args__c.(<< .Name >>'), << .TypeName >>_gk.own x c dq)
+  <<- else if isCoqType . "u8" >>
+  "Hown_<< .Name >>" ∷ own_slice args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') dq args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>)
+  <<- else if isCoqType . "message" >>
+  "Hown_<< .Name >>" ∷ << .TypeName >>_gk.own args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) dq
   <<- else >>
-  "Hown_<< .Name >>" ∷ is_pred_slice own_val << .Name >>_sl << goType . >>T dq args__c.(<< .Name >>)
+  "Hown_<< .Name >>" ∷ ⌜ args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') = args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) ⌝
   <<- end >>
-  <<- end >>
-  <<- range $extval >> ∗
-  "Hown_<< .Name >>" ∷ << .TypeName >>.own << .Name >>__v args__c.(<< .Name >>) dq
-  <<- end ->>.
+  <<- end >>.

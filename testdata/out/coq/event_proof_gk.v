@@ -21,7 +21,9 @@ Context `{!goGlobalsGS Σ}.
 Program Instance : IsPkgInit event_gk :=
   ltac2:(build_pkg_init ()).
 
-Definition has_encoding (encoded:list u8) (args:event_gk.S.t) : Prop :=
+Definition C := event_gk.S.t.
+
+Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   ∃ (startTime_enc endTime_enc : list u8), 
   encoded = (u32_le args.(event_gk.S.Id')) ++
               (u64_le $ length $ args.(event_gk.S.Name')) ++ args.(event_gk.S.Name') ++
@@ -30,6 +32,12 @@ Definition has_encoding (encoded:list u8) (args:event_gk.S.t) : Prop :=
   /\ length args.(event_gk.S.Name') < 2^64
   /\ TimeStamp_gk.has_encoding startTime_enc args.(event_gk.S.StartTime')
   /\ TimeStamp_gk.has_encoding endTime_enc args.(event_gk.S.EndTime').
+
+Definition own (args__v: event_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
+  "Hown_id" ∷ ⌜ args__v.(event_gk.S.Id') = args__c.(event_gk.S.Id') ⌝ ∗
+  "Hown_name" ∷ ⌜ args__v.(event_gk.S.Name') = args__c.(event_gk.S.Name') ⌝ ∗
+  "Hown_startTime" ∷ TimeStamp_gk.own args__v.(event_gk.S.StartTime') args__c.(event_gk.S.StartTime') dq ∗
+  "Hown_endTime" ∷ TimeStamp_gk.own args__v.(event_gk.S.EndTime') args__c.(event_gk.S.EndTime') dq.
 
 Lemma wp_Encode (args__c : event_gk.S.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   length args__c.(event_gk.S.Name') < 2^64 ->

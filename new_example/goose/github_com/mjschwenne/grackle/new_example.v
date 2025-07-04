@@ -11,6 +11,7 @@ Context `{ffi_syntax}.
 
 
 Definition Calendar : go_type := structT [
+  "hash" :: sliceT;
   "events" :: sliceT
 ].
 
@@ -27,11 +28,15 @@ Definition Event : go_type := structT [
   "endTime" :: TimeStamp
 ].
 
-(* go: calendar.go:9:6 *)
+(* go: calendar.go:10:6 *)
 Definition MarshalCalendar : val :=
   rec: "MarshalCalendar" "enc" "c" :=
     exception_do (let: "c" := (mem.alloc "c") in
     let: "enc" := (mem.alloc "enc") in
+    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
+    let: "$a1" := (![#sliceT] (struct.field_ref #Calendar #"hash"%go "c")) in
+    (func_call #marshal.marshal #"WriteLenPrefixedBytes"%go) "$a0" "$a1") in
+    do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] (struct.field_ref #Calendar #"events"%go "c")) in
     slice.len "$a0")) in
@@ -42,10 +47,17 @@ Definition MarshalCalendar : val :=
      let: "$a2" := (func_call #new_example.main #"MarshalEvent"%go) in
      (func_call #marshal.marshal #"WriteSlice"%go #Event) "$a0" "$a1" "$a2")).
 
-(* go: calendar.go:14:6 *)
+(* go: calendar.go:16:6 *)
 Definition UnmarshalCalendar : val :=
   rec: "UnmarshalCalendar" "s" :=
     exception_do (let: "s" := (mem.alloc "s") in
+    let: "hash" := (mem.alloc (type.zero_val #sliceT)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("hash" <-[#sliceT] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
     let: "eventsLen" := (mem.alloc (type.zero_val #uint64T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
     (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
@@ -62,8 +74,10 @@ Definition UnmarshalCalendar : val :=
     let: "$r1" := "$ret1" in
     do:  ("events" <-[#sliceT] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
-    return: (let: "$events" := (![#sliceT] "events") in
+    return: (let: "$hash" := (![#sliceT] "hash") in
+     let: "$events" := (![#sliceT] "events") in
      struct.make #Calendar [{
+       "hash" ::= "$hash";
        "events" ::= "$events"
      }], ![#sliceT] "s")).
 

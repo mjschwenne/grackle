@@ -18,7 +18,7 @@
   <<- .Name ->>_enc
   <<- end ->>. << range $idx, $field := $eenc >>
   << if not $idx >>split; first reflexivity.
-  <<- if len (predSliceFields $.Fields) >>
+  <<- if len (repeatedFields $.Fields) >>
   repeat split.
   all: word || done.
   <<- else >>
@@ -28,7 +28,7 @@
   <<- end >>
   <<- else if gt (len $sob) 0 >>
   << template "string_and_bytes" $sob >>
-  <<- if len (predSliceFields .Fields) >>
+  <<- if len (repeatedFields .Fields) >>
   repeat split.
   all: word || done.
   <<- else >>

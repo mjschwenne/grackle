@@ -12,9 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"slices"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -44,6 +42,7 @@ type messageParams struct {
 	CoqPhysicalPath *string
 	GoPhysicalPath  *string
 	GoPackage       *string
+	Simple          bool
 	NestedMessages  []string
 	Fields          []*field
 	MsgMap          map[string]*descriptorpb.DescriptorProto
@@ -139,9 +138,9 @@ func setupTemplates(files *descriptorpb.FileDescriptorSet) *template.Template {
 		"extEncFields": func(fields []*field) []*field {
 			return util.Filter(fields, func(f *field) bool { return util.IsMessageType(f) || util.IsRepeatedType(f) })
 		},
-		"allNestedMsgs":   func(m string) []string { return util.GetAllNestedMessages(m, []string{}, msgDict) },
-		"sliceFields":     func(fields []*field) []*field { return util.Filter(fields, util.IsSliceType) },
-		"predSliceFields": func(fields []*field) []*field { return util.Filter(fields, util.IsPredSliceType) },
+		"allNestedMsgs":  func(m string) []string { return util.GetAllNestedMessages(m, []string{}, msgDict) },
+		"sliceFields":    func(fields []*field) []*field { return util.Filter(fields, util.IsSliceType) },
+		"repeatedFields": func(fields []*field) []*field { return util.Filter(fields, util.IsRepeatedType) },
 		"sliceFieldsRecursive": func(m string) []*field {
 			return util.GetFieldsRecursive(m, func(fields []*field) []*field { return util.Filter(fields, util.IsSliceType) }, msgDict)
 		},
@@ -199,39 +198,9 @@ func setupTemplates(files *descriptorpb.FileDescriptorSet) *template.Template {
 	return tmpl
 }
 
-// Override options with file-specific values if needed
-func getFileOptions(file *descriptorpb.FileDescriptorProto, gooseOutput *string, coqLogicalPath *string, coqPhysicalPath *string, goOutputPath *string, goPackage *string) *fileParams {
-	const COQ_LOGICAL_PATH_FIELD_TAG = 50621
-	const COQ_PHYSICAL_PATH_FIELD_TAG = 50622
-	const GOOSE_OUTPUT_PATH = 50623
-
-	var fileCoqLogicalPath = coqLogicalPath
-	var fileCoqPhysicalPath = coqPhysicalPath
-	var fileGooseOutput = gooseOutput
-
-	if file.GetOptions() != nil {
-		regex := regexp.MustCompile(`(?<field>\d+):"(?<value>[^"]+)"`)
-		for _, match := range regex.FindAllStringSubmatch(file.GetOptions().String(), -1) {
-			field, _ := strconv.Atoi(match[1])
-			switch field {
-			case COQ_LOGICAL_PATH_FIELD_TAG:
-				fileCoqLogicalPath = &match[2]
-			case COQ_PHYSICAL_PATH_FIELD_TAG:
-				fileCoqPhysicalPath = &match[2]
-			}
-		}
-	}
-
-	return &fileParams{
-		GooseOutput:     fileGooseOutput,
-		CoqLogicalPath:  fileCoqLogicalPath,
-		CoqPhysicalPath: fileCoqPhysicalPath,
-		GoOutputPath:    goOutputPath,
-		GoPackage:       goPackage,
-	}
-}
-
-func getMessageOptions(message *descriptorpb.DescriptorProto, fileOpts *fileParams) messageParams {
+func generateMsg(message *descriptorpb.DescriptorProto, fileOpts *fileParams) messageParams {
+	// A message is simple if it has no repeated fields (or enums/oneof?)
+	simple := true
 	var fields []*field
 	var nested []string
 	for _, f := range message.GetField() {
@@ -240,6 +209,9 @@ func getMessageOptions(message *descriptorpb.DescriptorProto, fileOpts *filePara
 			f.TypeName = &realName
 			if !slices.Contains(nested, realName) {
 				nested = append(nested, realName)
+			}
+			if util.IsRepeatedType(f) {
+				simple = false
 			}
 		}
 		fields = append(fields, f)
@@ -254,6 +226,7 @@ func getMessageOptions(message *descriptorpb.DescriptorProto, fileOpts *filePara
 		CoqPhysicalPath: &coqOutputPath,
 		GoPhysicalPath:  &goOutputPath,
 		GoPackage:       fileOpts.GoPackage,
+		Simple:          simple,
 		NestedMessages:  nested,
 		Fields:          fields,
 	}
@@ -301,7 +274,13 @@ func Grackle(protoDir *string,
 
 	goFiles := make([]*string, 0, 10)
 	for _, file := range descriptorSet.File {
-		fileOpts := getFileOptions(file, gooseOutput, coqLogicalPath, coqPhysicalPath, goOutputPath, goPackage)
+		fileOpts := &fileParams{
+			GooseOutput:     gooseOutput,
+			CoqLogicalPath:  coqLogicalPath,
+			CoqPhysicalPath: coqPhysicalPath,
+			GoOutputPath:    goOutputPath,
+			GoPackage:       goPackage,
+		}
 		for _, enum := range file.EnumType {
 			var goOut io.Writer
 			goPhysicalPath := util.GetGoOutputPath(goOutputPath, enum.Name)
@@ -338,7 +317,7 @@ func Grackle(protoDir *string,
 			}
 		}
 		for _, message := range file.MessageType {
-			msg := getMessageOptions(message, fileOpts)
+			msg := generateMsg(message, fileOpts)
 			var coqOut io.Writer
 			var goOut io.Writer
 

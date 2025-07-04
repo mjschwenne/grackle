@@ -28,10 +28,10 @@ Module Event_Proof.
         /\ TimeStamp_Proof.has_encoding end_enc args.(main.Event.endTime').
 
     Definition own (v:main.Event.t) (c:C) (dq:dfrac) : iProp Σ :=
-      ⌜ v.(main.Event.id') = c.(main.Event.id') ⌝ ∗
-      ⌜ v.(main.Event.name') = c.(main.Event.name') ⌝ ∗
-      TimeStamp_Proof.own v.(main.Event.startTime') c.(main.Event.startTime') dq ∗
-      TimeStamp_Proof.own v.(main.Event.endTime') c.(main.Event.endTime') dq.
+      "%Hid" ∷ ⌜ v.(main.Event.id') = c.(main.Event.id') ⌝ ∗
+      "%Hname" ∷ ⌜ v.(main.Event.name') = c.(main.Event.name') ⌝ ∗
+      "HstartTime" ∷ TimeStamp_Proof.own v.(main.Event.startTime') c.(main.Event.startTime') dq ∗
+      "HendTime" ∷ TimeStamp_Proof.own v.(main.Event.endTime') c.(main.Event.endTime') dq.
 
     Lemma wp_Encode (args__t:main.Event.t) (args__c:C) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac):
       {{{
@@ -51,7 +51,7 @@ Module Event_Proof.
 
     Proof.
       wp_start as "(Hown & Hsl & Hcap)". wp_auto.
-      iDestruct "Hown" as "(%Hid & %Hname & HstartTime & HendTime)".
+      iNamed "Hown".
 
       wp_apply (wp_WriteInt32 with "[$Hsl $Hcap]").
       iIntros (?) "[Hsl Hcap]". wp_auto.

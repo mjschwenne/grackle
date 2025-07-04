@@ -163,7 +163,7 @@ func GetProtoTypeName(field *field) string {
 
 func GetCoqTypeName(field *field) string {
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		return field.GetTypeName() + ".C"
+		return field.GetTypeName() + "_gk.C"
 	}
 	return TypeMap[field.GetType()].CoqType
 }

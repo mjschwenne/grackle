@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+import "event.proto";
+
+message calendar {
+  bytes hash = 1;
+  repeated Event events = 2;
+}

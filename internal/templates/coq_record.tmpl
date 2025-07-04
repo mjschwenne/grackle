@@ -1,6 +1,10 @@
+<< if .Simple ->>
+Definition C := << lower .Name >>_gk.S.t.
+<< else ->>
 Record C :=
     mkC {
         << range .Fields ->>
-        <<- .Name >> : << if isSliceType . >>list<< end >> << coqType . ->>;
+        <<- .Name >>' : << if isSliceType . >>list<< end >> << coqType . ->>;
         << end ->>
     }.
+<< end ->>

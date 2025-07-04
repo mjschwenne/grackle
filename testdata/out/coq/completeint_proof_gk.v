@@ -18,13 +18,23 @@ Context `{!goGlobalsGS Σ}.
 Program Instance : IsPkgInit completeint_gk :=
   ltac2:(build_pkg_init ()).
 
-Definition has_encoding (encoded:list u8) (args:completeint_gk.S.t) : Prop :=
+Definition C := completeint_gk.S.t.
+
+Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   encoded = (u32_le args.(completeint_gk.S.One')) ++
               (u32_le args.(completeint_gk.S.Two')) ++
               (u32_le args.(completeint_gk.S.Three')) ++
               (u64_le args.(completeint_gk.S.Four')) ++
               (u64_le args.(completeint_gk.S.Five')) ++
               (u64_le args.(completeint_gk.S.Six')).
+
+Definition own (args__v: completeint_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
+  "Hown_one" ∷ ⌜ args__v.(completeint_gk.S.One') = args__c.(completeint_gk.S.One') ⌝ ∗
+  "Hown_two" ∷ ⌜ args__v.(completeint_gk.S.Two') = args__c.(completeint_gk.S.Two') ⌝ ∗
+  "Hown_three" ∷ ⌜ args__v.(completeint_gk.S.Three') = args__c.(completeint_gk.S.Three') ⌝ ∗
+  "Hown_four" ∷ ⌜ args__v.(completeint_gk.S.Four') = args__c.(completeint_gk.S.Four') ⌝ ∗
+  "Hown_five" ∷ ⌜ args__v.(completeint_gk.S.Five') = args__c.(completeint_gk.S.Five') ⌝ ∗
+  "Hown_six" ∷ ⌜ args__v.(completeint_gk.S.Six') = args__c.(completeint_gk.S.Six') ⌝.
 
 Lemma wp_Encode (args__c : completeint_gk.S.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{

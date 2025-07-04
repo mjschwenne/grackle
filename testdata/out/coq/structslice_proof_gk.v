@@ -22,12 +22,25 @@ Context `{!goGlobalsGS Σ}.
 Program Instance : IsPkgInit structslice_gk :=
   ltac2:(build_pkg_init ()).
 
-Definition has_encoding (encoded:list u8) (args:structslice_gk.S.t) : Prop :=
+Record C :=
+    mkC {
+        slices' : list completeSlice_gk.C;
+        ints' : list completeInt_gk.C;
+        }.
+
+Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   ∃ (slices_enc ints_enc : list u8), 
-  encoded = (u64_le $ length $ args.(structslice_gk.S.Slices')) ++ slices_enc ++
-              (u64_le $ length $ args.(structslice_gk.S.Ints')) ++ ints_enc
-  /\ completeSlice_gk.has_encoding slices_enc args.(structslice_gk.S.Slices')
-  /\ completeInt_gk.has_encoding ints_enc args.(structslice_gk.S.Ints').
+  encoded = (u64_le $ length $ args.(slices')) ++ slices_enc ++
+              (u64_le $ length $ args.(ints')) ++ ints_enc
+  /\ length args.(slices') < 2^64
+  /\ length args.(ints') < 2^64.
+
+Definition own (args__v: structslice_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
+  ∃ (l__slices : list completeslice_gk.S.t)(l__ints : list completeint_gk.S.t), 
+  "Hown_slices_sl" ∷ own_slice args__v.(structslice_gk.S.Slices') dq args__c.(slices') ∗
+  "Hown_slices_own" ∷ ([∗ list] x;c ∈ l__slices;args__c.(slices'), completeSlice_gk.own x c dq) ∗
+  "Hown_ints_sl" ∷ own_slice args__v.(structslice_gk.S.Ints') dq args__c.(ints') ∗
+  "Hown_ints_own" ∷ ([∗ list] x;c ∈ l__ints;args__c.(ints'), completeInt_gk.own x c dq).
 
 Lemma wp_Encode (args__c : structslice_gk.S.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{

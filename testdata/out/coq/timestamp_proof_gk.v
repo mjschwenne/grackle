@@ -18,10 +18,17 @@ Context `{!goGlobalsGS Σ}.
 Program Instance : IsPkgInit timestamp_gk :=
   ltac2:(build_pkg_init ()).
 
-Definition has_encoding (encoded:list u8) (args:timestamp_gk.S.t) : Prop :=
+Definition C := timestamp_gk.S.t.
+
+Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   encoded = (u32_le args.(timestamp_gk.S.Hour')) ++
               (u32_le args.(timestamp_gk.S.Minute')) ++
               (u64_le args.(timestamp_gk.S.Second')).
+
+Definition own (args__v: timestamp_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
+  "Hown_hour" ∷ ⌜ args__v.(timestamp_gk.S.Hour') = args__c.(timestamp_gk.S.Hour') ⌝ ∗
+  "Hown_minute" ∷ ⌜ args__v.(timestamp_gk.S.Minute') = args__c.(timestamp_gk.S.Minute') ⌝ ∗
+  "Hown_second" ∷ ⌜ args__v.(timestamp_gk.S.Second') = args__c.(timestamp_gk.S.Second') ⌝.
 
 Lemma wp_Encode (args__c : timestamp_gk.S.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
