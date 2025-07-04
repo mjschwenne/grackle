@@ -41,9 +41,9 @@
         devShells.default = with pkgs;
           mkShell {
             buildInputs = [
-              # Coq deps
-              coq
-              coqPackages.stdlib
+              # Rocq deps
+              rocq-core
+              rocqPackages.stdlib
 
               # Go deps
               go

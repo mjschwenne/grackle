@@ -22,16 +22,10 @@ Module Calendar_Proof.
        events : list Event_Proof.C; 
       }.
 
-    Definition has_encoding (encoded:list u8) (args__t:main.Calendar.t) (args__c:C) : Prop :=
-      ∃ (events__enc : list u8),
-        encoded = (u64_le $ args__t.(main.Calendar.events').(slice.len_f)) ++ events__enc /\
-        encodes events__enc args__c.(events) Event_Proof.has_encoding' /\
-        length args__c.(events) < 2^64.
-
-    Definition has_encoding' (encoded:list u8) (args__c:C) : Prop :=
+    Definition has_encoding (encoded:list u8) (args__c:C) : Prop :=
       ∃ (events__enc : list u8),
         encoded = (u64_le $ length args__c.(events)) ++ events__enc /\
-        encodes events__enc args__c.(events) Event_Proof.has_encoding' /\
+        encodes events__enc args__c.(events) Event_Proof.has_encoding /\
         length args__c.(events) < 2^64.
 
     Definition own (v:main.Calendar.t) (c:C) (dq:dfrac) : iProp Σ :=
@@ -39,7 +33,7 @@ Module Calendar_Proof.
         own_slice v.(main.Calendar.events') dq e ∗
         [∗ list] x;s ∈ e;c.(events), Event_Proof.own x s dq.
 
-    Lemma wp_Encode (args__t:main.Calendar.t) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac) (args__c:C):
+    Lemma wp_Encode (args__t:main.Calendar.t) (args__c:C) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac) :
       length args__c.(events) < 2^64 ->
       {{{
             is_pkg_init main ∗
@@ -50,7 +44,7 @@ Module Calendar_Proof.
         main @ "MarshalCalendar" #pre_sl #args__t
       {{{
             enc enc_sl, RET #enc_sl;
-            ⌜ has_encoding' enc args__c ⌝ ∗
+            ⌜ has_encoding enc args__c ⌝ ∗
             own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
             own_slice_cap w8 enc_sl
       }}}.

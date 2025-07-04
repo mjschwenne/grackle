@@ -27,6 +27,7 @@
 .nia.cache
 .nlia.cache
 .nra.cache
+.roqcdeps
 csdp.cache
 lia.cache
 nia.cache
@@ -46,3 +47,4 @@ time-of-build-pretty.log
 
 # nix flakes and direnv related stuff
 .direnv
+.envrc

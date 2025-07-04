@@ -15,39 +15,23 @@ Module Event_Proof.
       Program Instance : IsPkgInit main :=
         ltac2:(build_pkg_init ()).
 
-    Record C :=
-      mkC {
-          id: u32;
-          name: go_string;
-          startTime: TimeStamp_Proof.C;
-          endTime: TimeStamp_Proof.C;
-      }.
+    Definition C := main.Event.t.
 
-    (* Definition has_encoding (encoded:list u8) (args:main.Event.t) : Prop := *)
-    (*   ∃ start_enc end_enc, *)
-    (*     encoded = (u32_le args.(main.Event.id')) ++ *)
-    (*                 (u64_le $ length $ args.(main.Event.name')) ++ *)
-    (*                 args.(main.Event.name') ++ *)
-    (*                 start_enc ++ end_enc *)
-    (*     /\ length args.(main.Event.name') < 2^64 *)
-    (*     /\ TimeStamp_Proof.has_encoding start_enc args.(main.Event.startTime') *)
-    (*     /\ TimeStamp_Proof.has_encoding end_enc args.(main.Event.endTime'). *)
-
-    Definition has_encoding' (encoded:list u8) (args:C) : Prop :=
+    Definition has_encoding (encoded:list u8) (args:C) : Prop :=
       ∃ start_enc end_enc,
-        encoded = (u32_le args.(id)) ++
-                    (u64_le $ length $ args.(name)) ++
-                    args.(name) ++
-                           start_enc ++ end_enc
-        /\ length args.(name) < 2^64
-        /\ TimeStamp_Proof.has_encoding' start_enc args.(startTime)
-        /\ TimeStamp_Proof.has_encoding' end_enc args.(endTime).
+        encoded = (u32_le args.(main.Event.id')) ++
+                    (u64_le $ length $ args.(main.Event.name')) ++
+                    args.(main.Event.name') ++
+                    start_enc ++ end_enc
+        /\ length args.(main.Event.name') < 2^64
+        /\ TimeStamp_Proof.has_encoding start_enc args.(main.Event.startTime')
+        /\ TimeStamp_Proof.has_encoding end_enc args.(main.Event.endTime').
 
     Definition own (v:main.Event.t) (c:C) (dq:dfrac) : iProp Σ :=
-      ⌜ v.(main.Event.id') = c.(id) ⌝ ∗
-      ⌜ v.(main.Event.name') = c.(name) ⌝ ∗
-      TimeStamp_Proof.own v.(main.Event.startTime') c.(startTime) dq ∗
-      TimeStamp_Proof.own v.(main.Event.endTime') c.(endTime) dq.
+      ⌜ v.(main.Event.id') = c.(main.Event.id') ⌝ ∗
+      ⌜ v.(main.Event.name') = c.(main.Event.name') ⌝ ∗
+      TimeStamp_Proof.own v.(main.Event.startTime') c.(main.Event.startTime') dq ∗
+      TimeStamp_Proof.own v.(main.Event.endTime') c.(main.Event.endTime') dq.
 
     Lemma wp_Encode (args__t:main.Event.t) (args__c:C) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac):
       {{{
@@ -59,7 +43,7 @@ Module Event_Proof.
         main @ "MarshalEvent" #pre_sl #args__t
       {{{
             enc enc_sl, RET #enc_sl;
-            ⌜ has_encoding' enc args__c ⌝ ∗
+            ⌜ has_encoding enc args__c ⌝ ∗
             own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
             own_slice_cap w8 enc_sl ∗
             own args__t args__c dq
@@ -89,7 +73,7 @@ Module Event_Proof.
       iApply "HΦ". rewrite -?app_assoc. iFrame.
       iSplit.
       {
-      iPureIntro. unfold has_encoding'. exists enc, enc0.
+      iPureIntro. unfold has_encoding. exists enc, enc0.
       rewrite Hid. rewrite Hname.
       split; first reflexivity. done.
       }
@@ -100,7 +84,7 @@ Module Event_Proof.
       {{{
             is_pkg_init main ∗
             own_slice enc_sl dq (enc ++ suffix) ∗
-            ⌜ has_encoding' enc args__c ⌝
+            ⌜ has_encoding enc args__c ⌝
       }}}
         main @ "UnmarshalEvent" #enc_sl
       {{{
@@ -111,7 +95,7 @@ Module Event_Proof.
 
     Proof.
       wp_start as "[Hsl %Henc]". wp_auto.
-      unfold has_encoding' in Henc.
+      unfold has_encoding in Henc.
       destruct Henc as (start_enc & end_enc & Henc & Hnlen & Henc_st & Henc_et).
       rewrite Henc. rewrite -?app_assoc.
 
