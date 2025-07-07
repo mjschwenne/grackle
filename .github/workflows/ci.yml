@@ -19,7 +19,7 @@ jobs:
           ocaml_version: "default"
           install: ""
           before_script: |
-            sudo chown -R coq:coq .
+            sudo chown -R rocq:rocq .
           script: |
             startGroup Build
               make -j4 -k vok
