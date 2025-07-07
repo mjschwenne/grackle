@@ -1,15 +1,23 @@
-Lemma wp_Encode (args__c : << lower .Name >>_gk.S.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
-  << with filterByCoqType .Fields "go_string|u8" >><< range . >>length args__c.(<< lower $.Name >>_gk.S.<< goName .Name >>') < 2^64 ->
-  << end >><< end ->>
+<< define "rocq_encode_field_name" >>
+<<- if .Simple ->>
+<< lower .Name >>_gk.S.<< goName .Field.Name >>'
+<<- else ->>
+<< .Field.Name >>'
+<<- end ->>
+<<- end ->>
+
+Lemma wp_Encode (args__t : << lower .Name >>_gk.S.t) (args__c : C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
         is_pkg_init << lower .Name >>_gk ∗
+        own args__t args__c dq ∗ 
         own_slice pre_sl (DfracOwn 1) prefix ∗
         own_slice_cap w8 pre_sl
   }}}
-    << lower .Name >>_gk @ "Marshal" #pre_sl #args__c
+    << lower .Name >>_gk @ "Marshal" #pre_sl #args__t
   {{{
         enc enc_sl, RET #enc_sl;
         ⌜ has_encoding enc args__c ⌝ ∗
+        own args__t args__c dq ∗ 
         own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
         own_slice_cap w8 enc_sl
   }}}.

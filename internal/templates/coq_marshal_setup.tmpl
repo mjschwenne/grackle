@@ -1,4 +1,2 @@
 Proof.
-  <<- with filterByCoqType .Fields "go_string|u8" >>
-  intros << range . >>H<< .Name >>len<< end >>.<< end >>
-  wp_start as "[Hsl Hcap]". wp_auto.
+  wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.

@@ -16,13 +16,18 @@ Definition own (args__v: << lower .Name >>_gk.S.t) (args__c: C) (dq: dfrac) : iP
   <<- range $idx, $field := .Fields >>
   <<- if $idx >> ∗<< end ->>
   <<- if isRepeatedType . >>
-  "Hown_<< .Name >>_sl" ∷ own_slice args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') dq args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) ∗
-  "Hown_<< .Name >>_own" ∷ ([∗ list] x;c ∈ l__<< .Name >>;args__c.(<< .Name >>'), << .TypeName >>_gk.own x c dq)
+  "Hown_<< .Name >>_sl" ∷ own_slice args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') dq l__<< .Name >> ∗
+  "Hown_<< .Name >>_own" ∷ ([∗ list] x;c ∈ l__<< .Name >>;args__c.(<< .Name >>'), << .TypeName >>_gk.own x c dq) ∗
+  "%Hown_<< .Name >>_len" ∷ ⌜ length l__<< .Name >> < 2^64 ⌝
   <<- else if isCoqType . "u8" >>
-  "Hown_<< .Name >>" ∷ own_slice args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') dq args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>)
+  "Hown_<< .Name >>" ∷ own_slice args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') dq args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) ∗
+  "%Hown_<< .Name >>_len" ∷ ⌜ length args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) < 2^64 ⌝
   <<- else if isCoqType . "message" >>
   "Hown_<< .Name >>" ∷ << .TypeName >>_gk.own args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) dq
+  <<- else if isCoqType . "go_string" >>
+  "%Hown_<< .Name >>" ∷ ⌜ args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') = args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) ⌝ ∗
+  "%Hown_<< .Name >>_len" ∷ ⌜ length args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) < 2^64 ⌝
   <<- else >>
-  "Hown_<< .Name >>" ∷ ⌜ args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') = args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) ⌝
+  "%Hown_<< .Name >>" ∷ ⌜ args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') = args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) ⌝
   <<- end >>
   <<- end >>.

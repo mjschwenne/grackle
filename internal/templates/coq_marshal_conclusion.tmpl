@@ -1,40 +1,24 @@
-<< define "string_and_bytes" ->>
-  rewrite ?string_bytes_length.
-  <<- range . >>
-  rewrite Hargs_<< .Name >>_sz.
-  <<- end >>
-  rewrite ?w64_to_nat_id.
-<< end >>
 
   iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  << $eenc := (extEncFields .Fields) ->>
-  << $sob  := (filterByCoqType .Fields "go_string|list") ->>
-  << if (or (gt (len $sob) 0) (gt (len $eenc) 0)) ->>
   unfold has_encoding.
+  split; last done.
+  << $eenc := (extEncFields .Fields) ->>
   << if gt (len $eenc) 0 >>exists << range $idx, $field := $eenc ->>
   <<- if $idx >>, << end ->>
   <<- .Name ->>_enc
-  <<- end ->>. << range $idx, $field := $eenc >>
-  << if not $idx >>split; first reflexivity.
-  <<- if len (repeatedFields $.Fields) >>
-  repeat split.
-  all: word || done.
-  <<- else >>
-  done.
-  << end ->>
-  <<- end ->>
-  <<- end >>
-  <<- else if gt (len $sob) 0 >>
-  << template "string_and_bytes" $sob >>
-  <<- if len (repeatedFields .Fields) >>
-  repeat split.
-  all: word || done.
-  <<- else >>
-  done.
-  << end ->>
-  } done.
-  <<- end >><< else >>done.
-  <<- end >>
+  <<- end >>.<< end >>
+  << if gt (len $eenc) 0 >>split.
+  {
+     << range (filterByCoqType .Fields "u8|list") ->>
+     rewrite Hown_<< .Name >>_sz.
+     << end ->>
+     rewrite ?w64_to_nat_id.
+     congruence.
+  }
+  << range (filterByCoqType .Fields "message") ->><< if isRepeatedType . ->>
+  rewrite <- Hown_<< .Name >>_sz'.
+  << end >><< end ->>
+  done.<< else >>congruence.<< end >> 
 Qed.

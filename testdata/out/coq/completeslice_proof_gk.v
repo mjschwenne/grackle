@@ -32,32 +32,33 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   /\ length args.(completeslice_gk.S.Bytes2') < 2^64.
 
 Definition own (args__v: completeslice_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
-  "Hown_strg" ∷ ⌜ args__v.(completeslice_gk.S.Strg') = args__c.(completeslice_gk.S.Strg') ⌝ ∗
-  "Hown_strg2" ∷ ⌜ args__v.(completeslice_gk.S.Strg2') = args__c.(completeslice_gk.S.Strg2') ⌝ ∗
+  "%Hown_strg" ∷ ⌜ args__v.(completeslice_gk.S.Strg') = args__c.(completeslice_gk.S.Strg') ⌝ ∗
+  "%Hown_strg_len" ∷ ⌜ length args__c.(completeslice_gk.S.Strg') < 2^64 ⌝ ∗
+  "%Hown_strg2" ∷ ⌜ args__v.(completeslice_gk.S.Strg2') = args__c.(completeslice_gk.S.Strg2') ⌝ ∗
+  "%Hown_strg2_len" ∷ ⌜ length args__c.(completeslice_gk.S.Strg2') < 2^64 ⌝ ∗
   "Hown_bytes" ∷ own_slice args__v.(completeslice_gk.S.Bytes') dq args__c.(completeslice_gk.S.Bytes') ∗
-  "Hown_bytes2" ∷ own_slice args__v.(completeslice_gk.S.Bytes2') dq args__c.(completeslice_gk.S.Bytes2').
+  "%Hown_bytes_len" ∷ ⌜ length args__c.(completeslice_gk.S.Bytes') < 2^64 ⌝ ∗
+  "Hown_bytes2" ∷ own_slice args__v.(completeslice_gk.S.Bytes2') dq args__c.(completeslice_gk.S.Bytes2') ∗
+  "%Hown_bytes2_len" ∷ ⌜ length args__c.(completeslice_gk.S.Bytes2') < 2^64 ⌝.
 
-Lemma wp_Encode (args__c : completeslice_gk.S.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
-  length args__c.(completeslice_gk.S.Strg') < 2^64 ->
-  length args__c.(completeslice_gk.S.Strg2') < 2^64 ->
-  length args__c.(completeslice_gk.S.Bytes') < 2^64 ->
-  length args__c.(completeslice_gk.S.Bytes2') < 2^64 ->
+Lemma wp_Encode (args__t : completeslice_gk.S.t) (args__c : C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
         is_pkg_init completeslice_gk ∗
+        own args__t args__c dq ∗ 
         own_slice pre_sl (DfracOwn 1) prefix ∗
         own_slice_cap w8 pre_sl
   }}}
-    completeslice_gk @ "Marshal" #pre_sl #args__c
+    completeslice_gk @ "Marshal" #pre_sl #args__t
   {{{
         enc enc_sl, RET #enc_sl;
         ⌜ has_encoding enc args__c ⌝ ∗
+        own args__t args__c dq ∗ 
         own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
         own_slice_cap w8 enc_sl
   }}}.
 
 Proof.
-  intros HstrglenHstrg2lenHbyteslenHbytes2len.
-  wp_start as "[Hsl Hcap]". wp_auto.
+  wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
 
   wp_apply wp_AssumeNoStringOverflow. iIntros "%HstrgLen". wp_auto.
   wp_apply wp_StringToBytes. iIntros (?) "HstrgBytes". wp_auto.
@@ -69,38 +70,26 @@ Proof.
   wp_apply (wp_WriteLenPrefixedBytes with "[$Hsl $Hcap $Hstrg2Bytes]").
   iIntros (?) "(Hsl & Hcap & Hstrg2Bytes)". wp_auto.
 
-  iDestruct (own_slice_small_sz with "Hown_bytes") as "%Hargs_bytes_sz".
-  wp_pures. wp_apply (wp_slice_len). wp_load.
-  wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
-  wp_pures. wp_load.
-  wp_apply (wp_WriteBytes with "[$Hsl $Hown_bytes]").
-  iIntros (?) "[Hsl Hargs_bytes_sl]". wp_store.
+  iDestruct (own_slice_len with "Hown_bytes") as "%Hown_bytes_sz".
+  wp_apply (wp_WriteInt with "[$Hsl $Hcap]"). iIntros (?) "[Hsl Hcap]". wp_auto.
+  wp_apply (wp_WriteBytes with "[$Hsl $Hcap $Hown_bytes]").
+  iIntros (?) "(Hsl & Hcap & Hown_bytes)". wp_auto.
 
-  iDestruct (own_slice_small_sz with "Hown_bytes2") as "%Hargs_bytes2_sz".
-  wp_pures. wp_apply (wp_slice_len). wp_load.
-  wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
-  wp_pures. wp_load.
-  wp_apply (wp_WriteBytes with "[$Hsl $Hown_bytes2]").
-  iIntros (?) "[Hsl Hargs_bytes2_sl]". wp_store.
-
+  iDestruct (own_slice_len with "Hown_bytes2") as "%Hown_bytes2_sz".
+  wp_apply (wp_WriteInt with "[$Hsl $Hcap]"). iIntros (?) "[Hsl Hcap]". wp_auto.
+  wp_apply (wp_WriteBytes with "[$Hsl $Hcap $Hown_bytes2]").
+  iIntros (?) "(Hsl & Hcap & Hown_bytes2)". wp_auto.
 
   iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
   unfold has_encoding.
+  split; last done.
   
-  rewrite ?string_bytes_length.
-  rewrite Hargs_strg_sz.
-  rewrite Hargs_strg2_sz.
-  rewrite Hargs_bytes_sz.
-  rewrite Hargs_bytes2_sz.
-  rewrite ?w64_to_nat_id.
-
-  done.
-  } done.
+  congruence. 
 Qed.
 
-Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : completeslice_gk.S.t) (suffix : list u8) (dq : dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
   {{{
         is_pkg_init completeslice_gk ∗
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -108,14 +97,15 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : completeslice_gk.S
   }}}
     completeslice_gk @ "Unmarshal" #enc_sl
   {{{
-        suff_sl, RET (#args__c, #suff_sl);
+        args__t suff_sl, RET (#args__t, #suff_sl);
+        own args__t args__c (DfracOwn 1) ∗ 
         own_slice suff_sl dq suffix
   }}}.
 
 Proof.
   wp_start as "[%Henc Hsl]". wp_auto.
   unfold has_encoding in Henc.
-  destruct Henc as (& Henc & Hlen_strg & Hlen_strg2 ).
+  destruct Henc as (& Henc & Hlen_strg & Hlen_strg2 & Hlen_bytes & Hlen_bytes2 ).
   rewrite Henc. rewrite -?app_assoc.
 
   wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
@@ -128,33 +118,11 @@ Proof.
   wp_apply (wp_StringFromBytes with "[$Hstrg2_byt]").
   iIntros "Hstrg2_byt". wp_auto.
 
-  wp_apply wp_allocN; first done; first by val_ty.
-  iIntros (?) "HbytesLen". iApply array_singleton in "HbytesLen". wp_pures.
-  wp_apply wp_allocN; first done; first by val_ty.
-  iIntros (?) "HbytesBytes". iApply array_singleton in "HbytesBytes". wp_pures.
-  wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
-  iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
+  wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
+  iIntros (??) "[Hown_hash Hsl]". wp_auto.
 
-  iDestruct (own_slice_small_sz with "Hsl") as %Hbytes_sz.
-  wp_apply (wp_ReadBytesCopy with "[$]").
-  { rewrite length_app in Hbytes_sz. word. }
-  iIntros (??) "[Hbytes' Hsl]". iApply own_slice_to_small in "Hbytes'".
-
-  wp_pures. wp_store. wp_store. wp_load. wp_store.
-
-  wp_apply wp_allocN; first done; first by val_ty.
-  iIntros (?) "Hbytes2Len". iApply array_singleton in "Hbytes2Len". wp_pures.
-  wp_apply wp_allocN; first done; first by val_ty.
-  iIntros (?) "Hbytes2Bytes". iApply array_singleton in "Hbytes2Bytes". wp_pures.
-  wp_load. wp_apply (wp_ReadInt with "[$Hsl]").
-  iIntros (?) "Hsl". wp_pures. wp_store. wp_store. wp_load. wp_load.
-
-  iDestruct (own_slice_small_sz with "Hsl") as %Hbytes2_sz.
-  wp_apply (wp_ReadBytesCopy with "[$]").
-  { rewrite length_app in Hbytes2_sz. word. }
-  iIntros (??) "[Hbytes2' Hsl]". iApply own_slice_to_small in "Hbytes2'".
-
-  wp_pures. wp_store. wp_store. wp_load. wp_store.
+  wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
+  iIntros (??) "[Hown_hash Hsl]". wp_auto.
 
   replace {|
     completeslice_gk.S.Strg' := args__c.(completeslice_gk.S.Strg');
@@ -163,6 +131,7 @@ Proof.
     completeslice_gk.S.Bytes2' := args__c.(completeslice_gk.S.Bytes2')
   |} with args__c; last (destruct args__c; reflexivity).
   iApply "HΦ". iFrame.
+  done.
 Qed.
 
 End completeSlice_gk.

@@ -33,9 +33,9 @@ Module TimeStamp_Proof.
       {{{
             enc enc_sl, RET #enc_sl;
             ⌜ has_encoding enc args__c ⌝ ∗
+            own args__t args__c dq ∗
             own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
-            own_slice_cap w8 enc_sl ∗
-            own args__t args__c dq
+            own_slice_cap w8 enc_sl
       }}}.
 
     Proof. 

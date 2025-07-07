@@ -1,7 +1,5 @@
 
-  iDestruct (own_slice_small_sz with "Hown_<< .Name >>") as "%Hargs_<< .Name >>_sz".
-  wp_pures. wp_apply (wp_slice_len). wp_load.
-  wp_apply (wp_WriteInt with "[$Hsl]"). iIntros (?) "Hsl". wp_store.
-  wp_pures. wp_load.
-  wp_apply (wp_WriteBytes with "[$Hsl $Hown_<< .Name >>]").
-  iIntros (?) "[Hsl Hargs_<< .Name >>_sl]". wp_store.
+  iDestruct (own_slice_len with "Hown_<< .Name >>") as "%Hown_<< .Name >>_sz".
+  wp_apply (wp_WriteInt with "[$Hsl $Hcap]"). iIntros (?) "[Hsl Hcap]". wp_auto.
+  wp_apply (wp_WriteBytes with "[$Hsl $Hcap $Hown_<< .Name >>]").
+  iIntros (?) "(Hsl & Hcap & Hown_<< .Name >>)". wp_auto.

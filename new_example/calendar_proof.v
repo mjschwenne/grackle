@@ -50,6 +50,7 @@ Module Calendar_Proof.
       {{{
             enc enc_sl, RET #enc_sl;
             ⌜ has_encoding enc args__c ⌝ ∗
+            own args__t args__c dq ∗
             own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
             own_slice_cap w8 enc_sl
       }}}.
@@ -74,7 +75,7 @@ Module Calendar_Proof.
           wp_apply (Event_Proof.wp_Encode with "[$Hsl $Hcap]").
           iApply "HΦ".
         }
-        iIntros (??) "(Hevents & %HeventsEnc & Hsl)". wp_auto.
+        iIntros (??) "(Hevents & Hevents_own & %HeventsEnc & Hsl)". wp_auto.
 
         iApply "HΦ". rewrite -?app_assoc. iFrame.
         iPureIntro. unfold has_encoding.

@@ -28,7 +28,10 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               (<<- coqType $field >>_le args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>))
               <<- end ->><<- end ->>
   <<- range $idx, $field := .Fields >>
-  <<- if (or (isCoqType $field "go_string|u8") (isRepeatedType $field)) >>
+  <<- if isRepeatedType $field >>
+  /\ encodes << $field.Name >>_enc args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) << .TypeName >>_gk.has_encoding
+  /\ length args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) < 2^64
+  <<- else if (isCoqType $field "go_string|u8") >>
   /\ length args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) < 2^64
   <<- else if isMessage . >>
   /\ << $field.TypeName ->>_gk.has_encoding << $field.Name ->>_enc args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>)

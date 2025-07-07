@@ -11,7 +11,7 @@ Proof.
     <<- range .Fields >>
     <<- if or (isMessage .) (isPredSliceType .) >> & Henc_<< .Name >>
     <<- if isPredSliceType . >> & H<< .Name >>_sz <<- end ->>
-    <<- else if isCoqType . "go_string" >> & Hlen_<< .Name >>
+    <<- else if isCoqType . "go_string|u8" >> & Hlen_<< .Name >>
     <<- end >>
     <<- end >> ).
   << end ->>

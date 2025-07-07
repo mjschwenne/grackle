@@ -26,26 +26,28 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               (u64_le args.(timestamp_gk.S.Second')).
 
 Definition own (args__v: timestamp_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
-  "Hown_hour" ∷ ⌜ args__v.(timestamp_gk.S.Hour') = args__c.(timestamp_gk.S.Hour') ⌝ ∗
-  "Hown_minute" ∷ ⌜ args__v.(timestamp_gk.S.Minute') = args__c.(timestamp_gk.S.Minute') ⌝ ∗
-  "Hown_second" ∷ ⌜ args__v.(timestamp_gk.S.Second') = args__c.(timestamp_gk.S.Second') ⌝.
+  "%Hown_hour" ∷ ⌜ args__v.(timestamp_gk.S.Hour') = args__c.(timestamp_gk.S.Hour') ⌝ ∗
+  "%Hown_minute" ∷ ⌜ args__v.(timestamp_gk.S.Minute') = args__c.(timestamp_gk.S.Minute') ⌝ ∗
+  "%Hown_second" ∷ ⌜ args__v.(timestamp_gk.S.Second') = args__c.(timestamp_gk.S.Second') ⌝.
 
-Lemma wp_Encode (args__c : timestamp_gk.S.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
+Lemma wp_Encode (args__t : timestamp_gk.S.t) (args__c : C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
         is_pkg_init timestamp_gk ∗
+        own args__t args__c dq ∗ 
         own_slice pre_sl (DfracOwn 1) prefix ∗
         own_slice_cap w8 pre_sl
   }}}
-    timestamp_gk @ "Marshal" #pre_sl #args__c
+    timestamp_gk @ "Marshal" #pre_sl #args__t
   {{{
         enc enc_sl, RET #enc_sl;
         ⌜ has_encoding enc args__c ⌝ ∗
+        own args__t args__c dq ∗ 
         own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
         own_slice_cap w8 enc_sl
   }}}.
 
 Proof.
-  wp_start as "[Hsl Hcap]". wp_auto.
+  wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
 
   wp_apply (wp_WriteInt32 with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
@@ -56,14 +58,16 @@ Proof.
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
-
   iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
-  done.
+  unfold has_encoding.
+  split; last done.
+  
+  congruence. 
 Qed.
 
-Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : timestamp_gk.S.t) (suffix : list u8) (dq : dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
   {{{
         is_pkg_init timestamp_gk ∗
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -71,7 +75,8 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : timestamp_gk.S.t) 
   }}}
     timestamp_gk @ "Unmarshal" #enc_sl
   {{{
-        suff_sl, RET (#args__c, #suff_sl);
+        args__t suff_sl, RET (#args__t, #suff_sl);
+        own args__t args__c (DfracOwn 1) ∗ 
         own_slice suff_sl dq suffix
   }}}.
 
@@ -91,6 +96,7 @@ Proof.
     timestamp_gk.S.Second' := args__c.(timestamp_gk.S.Second')
   |} with args__c; last (destruct args__c; reflexivity).
   iApply "HΦ". iFrame.
+  done.
 Qed.
 
 End TimeStamp_gk.

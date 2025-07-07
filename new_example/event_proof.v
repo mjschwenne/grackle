@@ -44,9 +44,9 @@ Module Event_Proof.
       {{{
             enc enc_sl, RET #enc_sl;
             ⌜ has_encoding enc args__c ⌝ ∗
+            own args__t args__c dq ∗
             own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
-            own_slice_cap w8 enc_sl ∗
-            own args__t args__c dq
+            own_slice_cap w8 enc_sl
       }}}.
 
     Proof.
@@ -65,10 +65,10 @@ Module Event_Proof.
       iIntros (?) "(Hsl & Hcap & Hname)". wp_auto.
 
       wp_apply (TimeStamp_Proof.wp_Encode with "[$Hsl $Hcap $HstartTime]").
-      iIntros (??) "(%HstartTime & Hs & Hcap & HstartTime)". wp_auto.
+      iIntros (??) "(%HstartTime & HstartTime & Hs & Hcap)". wp_auto.
 
       wp_apply (TimeStamp_Proof.wp_Encode with "[$Hs $Hcap $HendTime]").
-      iIntros (??) "(%HendTime & Hs & Hcap & HendTime)". wp_auto.
+      iIntros (??) "(%HendTime & HendTime & Hs & Hcap)". wp_auto.
 
       iApply "HΦ". rewrite -?app_assoc. iFrame.
       iSplit.
@@ -89,8 +89,8 @@ Module Event_Proof.
         main @ "UnmarshalEvent" #enc_sl
       {{{
             args__t suff_sl, RET (#args__t, #suff_sl);
-            own_slice suff_sl dq suffix ∗
-            own args__t args__c (DfracOwn 1)
+            own args__t args__c (DfracOwn 1) ∗
+            own_slice suff_sl dq suffix
       }}}.
 
     Proof.

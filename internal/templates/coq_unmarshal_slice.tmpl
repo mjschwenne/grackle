@@ -1,45 +1,12 @@
 
-  wp_apply wp_ref_of_zero; first done.
-  iIntros (l__<< .Name >>Len) "H<< .Name >>Len". wp_pures.
-
-  wp_load. wp_apply (wp_ReadInt with "[Hsl]"); first simpl; iFrame.
-  iIntros (?) "Hsl". wp_pures. wp_store. wp_store.
-
-  wp_load. wp_load.
-  <<- if isMessage . >>
-  wp_apply (wp_ReadSlice _ _ _ _ << .TypeName >>.has_encoding << .TypeName >>.own with "[Hsl]").
-  <<- else >>
-  wp_apply (wp_ReadSlice _ _ _ _ << goType . >>_has_encoding own_val with "[Hsl]").
-  <<- end >>
+  wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
+  wp_apply (wp_ReadSlice with "[$Hsl]").
   {
-    iIntros (???) "Hown'".
-    <<- if isMessage . >>
-    iApply << .TypeName >>.own_val_ty.
-    iFrame.
-    <<- else >>
-    iDestruct (own_val_to_val with "Hown'") as "%Hown_x".
-    rewrite Hown_x. iPureIntro. by val_ty.
-    <<- end >>
-  } { done. }
-  {
-    iFrame.
-    iSplit; first done.
+    iSplit; auto.
     iSplit; first word.
     iIntros (????) "!>".
-    iIntros (?) "[Hsl' Henc'] HΦ".
-    <<- if isMessage . >>
-    wp_apply (<< .TypeName >>.wp_Decode with "[$Hsl' $Henc']").
+    iIntros (?) "[Hsl Henc] HΦ".
+    wp_apply (<< .TypeName >>_gk.wp_Decode with "[$Hsl $Henc]").
     iApply "HΦ".
-    <<- else >>
-    iUnfold << goType . >>_has_encoding in "Henc'".
-    iDestruct "Henc'" as "%Henc_x".
-    rewrite Henc_x.
-    wp_apply (wp_Read<< marshalType . >> with "[$Hsl']").
-    iIntros (?) "Hsl".
-    iApply "HΦ".
-    iFrame.
-    done.
-    <<- end >>
   }
-  iIntros (??) "[Hpsl_<< .Name >> Hsl]".
-  wp_pures. wp_store. wp_store.
+  iIntros (???) "(Hown_<< .Name >>_sl & Hown_<< .Name >>_own & Hsl)". wp_auto.

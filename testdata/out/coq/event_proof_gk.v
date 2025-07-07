@@ -34,29 +34,30 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   /\ TimeStamp_gk.has_encoding endTime_enc args.(event_gk.S.EndTime').
 
 Definition own (args__v: event_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
-  "Hown_id" ∷ ⌜ args__v.(event_gk.S.Id') = args__c.(event_gk.S.Id') ⌝ ∗
-  "Hown_name" ∷ ⌜ args__v.(event_gk.S.Name') = args__c.(event_gk.S.Name') ⌝ ∗
+  "%Hown_id" ∷ ⌜ args__v.(event_gk.S.Id') = args__c.(event_gk.S.Id') ⌝ ∗
+  "%Hown_name" ∷ ⌜ args__v.(event_gk.S.Name') = args__c.(event_gk.S.Name') ⌝ ∗
+  "%Hown_name_len" ∷ ⌜ length args__c.(event_gk.S.Name') < 2^64 ⌝ ∗
   "Hown_startTime" ∷ TimeStamp_gk.own args__v.(event_gk.S.StartTime') args__c.(event_gk.S.StartTime') dq ∗
   "Hown_endTime" ∷ TimeStamp_gk.own args__v.(event_gk.S.EndTime') args__c.(event_gk.S.EndTime') dq.
 
-Lemma wp_Encode (args__c : event_gk.S.t) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
-  length args__c.(event_gk.S.Name') < 2^64 ->
+Lemma wp_Encode (args__t : event_gk.S.t) (args__c : C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
         is_pkg_init event_gk ∗
+        own args__t args__c dq ∗ 
         own_slice pre_sl (DfracOwn 1) prefix ∗
         own_slice_cap w8 pre_sl
   }}}
-    event_gk @ "Marshal" #pre_sl #args__c
+    event_gk @ "Marshal" #pre_sl #args__t
   {{{
         enc enc_sl, RET #enc_sl;
         ⌜ has_encoding enc args__c ⌝ ∗
+        own args__t args__c dq ∗ 
         own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
         own_slice_cap w8 enc_sl
   }}}.
 
 Proof.
-  intros Hnamelen.
-  wp_start as "[Hsl Hcap]". wp_auto.
+  wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
 
   wp_apply (wp_WriteInt32 with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
@@ -66,25 +67,29 @@ Proof.
   wp_apply (wp_WriteLenPrefixedBytes with "[$Hsl $Hcap $HnameBytes]").
   iIntros (?) "(Hsl & Hcap & HnameBytes)". wp_auto.
 
-  wp_apply (TimeStamp_gk.wp_Encode with "[$Hsl $Hcap]"); first trivial.
-  iIntros (startTime_enc ?) "(%Hargs_startTime_enc & Hsl & Hcap)". wp_auto.
+  wp_apply (TimeStamp_gk.wp_Encode with "[$Hsl $Hcap $Hown_startTime]").
+  iIntros (startTime_enc ?) "(%Hargs_startTime_enc & Hown_startTime & Hsl & Hcap)".
+  wp_auto.
 
-  wp_apply (TimeStamp_gk.wp_Encode with "[$Hsl $Hcap]"); first trivial.
-  iIntros (endTime_enc ?) "(%Hargs_endTime_enc & Hsl & Hcap)". wp_auto.
-
+  wp_apply (TimeStamp_gk.wp_Encode with "[$Hsl $Hcap $Hown_endTime]").
+  iIntros (endTime_enc ?) "(%Hargs_endTime_enc & Hown_endTime & Hsl & Hcap)".
+  wp_auto.
 
   iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
   unfold has_encoding.
-  exists startTime_enc, endTime_enc. 
-  split; first reflexivity.
-  done.
-  
-  
+  split; last done.
+  exists startTime_enc, endTime_enc.
+  split.
+  {
+     rewrite ?w64_to_nat_id.
+     congruence.
+  }
+  done. 
 Qed.
 
-Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : event_gk.S.t) (suffix : list u8) (dq : dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
   {{{
         is_pkg_init event_gk ∗
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -92,7 +97,8 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : event_gk.S.t) (suf
   }}}
     event_gk @ "Unmarshal" #enc_sl
   {{{
-        suff_sl, RET (#args__c, #suff_sl);
+        args__t suff_sl, RET (#args__t, #suff_sl);
+        own args__t args__c (DfracOwn 1) ∗ 
         own_slice suff_sl dq suffix
   }}}.
 
@@ -110,10 +116,10 @@ Proof.
   iIntros "Hname_byt". wp_auto.
 
   wp_apply (TimeStamp_gk.wp_Decode startTime_enc with "[$Hsl]"); first done.
-  iIntros (startTime__v) "Hsl". wp_auto.
+  iIntros (startTime__v ?) "[Hown_startTime Hsl]". wp_auto.
 
   wp_apply (TimeStamp_gk.wp_Decode endTime_enc with "[$Hsl]"); first done.
-  iIntros (endTime__v) "Hsl". wp_auto.
+  iIntros (endTime__v ?) "[Hown_endTime Hsl]". wp_auto.
 
   replace {|
     event_gk.S.Id' := args__c.(event_gk.S.Id');
@@ -122,6 +128,7 @@ Proof.
     event_gk.S.EndTime' := args__c.(event_gk.S.EndTime')
   |} with args__c; last (destruct args__c; reflexivity).
   iApply "HΦ". iFrame.
+  done.
 Qed.
 
 End Event_gk.
