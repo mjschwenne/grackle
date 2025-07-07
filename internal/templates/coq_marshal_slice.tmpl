@@ -5,7 +5,7 @@
   iDestruct (own_slice_len with "Hown_<< .Name >>_sl") as "%Hown_<< .Name >>_sz".
   iDestruct (big_sepL2_length with "Hown_<< .Name >>_own") as "%Hown_<< .Name >>_sz'".
   rewrite Hown_<< .Name >>_sz' in Hown_<< .Name >>_sz.
-  wp_apply (wp_WriteSlice with "[$Hsl $Hown_<< .Name >>_sl $Hown_<< .Name >>_own]").
+  wp_apply (wp_WriteSlice << if not (isMessage .) >>_ _ _ _ _ << goType . >>_has_encoding << end >>with "[$Hsl $Hcap $Hown_<< .Name >>_sl $Hown_<< .Name >>_own]").
   {
     iIntros (????) "!>".
     iIntros (?) "(Hown & Hsl & Hcap) HΦ".
@@ -13,14 +13,14 @@
     wp_apply (<< .TypeName >>_gk.wp_Encode with "[$Hown $Hsl $Hcap]").
     iApply "HΦ".
     <<- else >>
-    iDestruct (own_val_to_val with "Hown'") as "%Hown_x".
+    iDestruct (own_prim_eq with "Hown") as "%Hown_x".
     rewrite Hown_x.
-    wp_apply (wp_Write<< marshalType . >> with "[$Hsl']").
+    wp_apply (wp_Write<< marshalType . >> with "[$Hsl $Hcap]").
     iIntros (?) "Hsl".
     iApply "HΦ".
     iFrame.
     done.
     <<- end >>
   }
-  iIntros (<< .Name >>_enc << .Name >>_sl') "(Hown_<< .Name >> & Hown_<< .Name >>_own & %Henc_<< .Name >> & Hsl)".
+  iIntros (<< .Name >>_enc << .Name >>_sl') "(Hown_<< .Name >> & Hown_<< .Name >>_own & %Henc_<< .Name >> & Hsl & Hcap)".
   wp_auto.

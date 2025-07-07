@@ -1,7 +1,10 @@
 From New.proof Require Import proof_prelude.
 From New.proof Require Import github_com.tchajed.marshal.
-<<- if (filterByGoType .Fields "string") >>
+<<- if (filterByCoqType .Fields "go_string") >>
 From New.proof Require Import github_com.goose_lang.primitive. 
+<<- end >>
+<<- if (filterByCoqType .Fields "go_string|u8") >>
+From New.proof Require Import github_com.goose_lang.std. 
 <<- end >>
 From New.code Require Import << cleanCoqName .GoPackage >>.<< lower .Name >>_gk.
 From New.generatedproof Require Import << cleanCoqName .GoPackage >>.<< lower .Name >>_gk.

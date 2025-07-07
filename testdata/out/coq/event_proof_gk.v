@@ -6,6 +6,7 @@
 From New.proof Require Import proof_prelude.
 From New.proof Require Import github_com.tchajed.marshal.
 From New.proof Require Import github_com.goose_lang.primitive.
+From New.proof Require Import github_com.goose_lang.std.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.event_gk.
 From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.event_gk.
 From Grackle.test Require Import timestamp_proof_gk.
@@ -81,12 +82,7 @@ Proof.
   unfold has_encoding.
   split; last done.
   exists startTime_enc, endTime_enc.
-  split.
-  {
-     rewrite ?w64_to_nat_id.
-     congruence.
-  }
-  done. 
+  split. all: congruence || done. 
 Qed.
 
 Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
@@ -105,13 +101,15 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list 
 Proof.
   wp_start as "[%Henc Hsl]". wp_auto.
   unfold has_encoding in Henc.
-  destruct Henc as ( startTime_enc & endTime_enc & Henc & Hlen_name & Henc_startTime & Henc_endTime ).
+  destruct Henc as (startTime_enc & endTime_enc & Henc & Hlen_name & Henc_startTime & Henc_endTime ).
   rewrite Henc. rewrite -?app_assoc.
 
   wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
 
   wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
   iIntros (??) "[Hname_byt Hsl]". wp_auto.
+  wp_apply (wp_BytesClone with "[$Hname_byt]").
+  iIntros (?) "[Hname_byt Hname_byt_cap]".
   wp_apply (wp_StringFromBytes with "[$Hname_byt]").
   iIntros "Hname_byt". wp_auto.
 
@@ -121,12 +119,6 @@ Proof.
   wp_apply (TimeStamp_gk.wp_Decode endTime_enc with "[$Hsl]"); first done.
   iIntros (endTime__v ?) "[Hown_endTime Hsl]". wp_auto.
 
-  replace {|
-    event_gk.S.Id' := args__c.(event_gk.S.Id');
-    event_gk.S.Name' := args__c.(event_gk.S.Name');
-    event_gk.S.StartTime' := args__c.(event_gk.S.StartTime');
-    event_gk.S.EndTime' := args__c.(event_gk.S.EndTime')
-  |} with args__c; last (destruct args__c; reflexivity).
   iApply "HΦ". iFrame.
   done.
 Qed.

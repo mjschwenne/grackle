@@ -9,16 +9,24 @@
   <<- if $idx >>, << end ->>
   <<- .Name ->>_enc
   <<- end >>.<< end >>
-  << if gt (len $eenc) 0 >>split.
+  <<- $bbl := (filterByCoqType .Fields "u8|list|bool") ->>
+  << if gt (len $bbl) 0 >>
+  split.
   {
-     << range (filterByCoqType .Fields "u8|list") ->>
+     << range $bbl ->>
+     << if isCoqType . "bool" ->>
+     rewrite Hown_<< .Name >>.
+     << else ->>
      rewrite Hown_<< .Name >>_sz.
-     << end ->>
+     << end >><< end ->>
      rewrite ?w64_to_nat_id.
      congruence.
   }
-  << range (filterByCoqType .Fields "message") ->><< if isRepeatedType . ->>
+  << range (repeatedFields .Fields) ->>
   rewrite <- Hown_<< .Name >>_sz'.
-  << end >><< end ->>
-  done.<< else >>congruence.<< end >> 
+  << end ->>
+  done.<< else if gt (len (filterByCoqType .Fields "message|go_string|u8")) 0 >>
+  split. all: congruence || done.
+  <<- else >>
+  congruence.<< end >> 
 Qed.

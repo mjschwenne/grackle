@@ -6,7 +6,7 @@ func Unmarshal(s []byte) (S, []byte) {
     << .Name >>, s := marshal.ReadInt32(s)
     <<- else if or (isGoType . "string") (and (isSliceType . ) (isGoType . "byte")) >>
     << .Name >>Bytes, s := marshal.ReadLenPrefixedBytes(s)
-    << .Name >> := << if isGoType . "string" >>string(<< end >><< .Name >>Bytes<< if isGoType . "string" >>)<< end >>
+    << .Name >> := << if isGoType . "string" >>string(<< end >>std.BytesClone(<< .Name >>Bytes)<< if isGoType . "string" >>)<< end >>
     <<- else if isSliceType . >>
     << .Name >>Len, s := marshal.ReadInt(s)
     << .Name >>, s := marshal.ReadSlice[<< goType . >>](s, << .Name >>Len, << if isMessage . >><< goModuleName . >>.Unmarshal<< else >>marshal.Read<< marshalType . >><< end >>)

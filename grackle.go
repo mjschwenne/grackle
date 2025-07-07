@@ -168,17 +168,17 @@ func setupTemplates(files *descriptorpb.FileDescriptorSet) *template.Template {
 		// This is a bit of a hack to let me call templates with dynamic names
 		// It requires tmpl in the closure of the function, so the inline definition
 		// makes the most sense
-		"callTemplate": func(name string, data interface{}) (ret string, err error) {
+		"callTemplate": func(name string, data any) (ret string, err error) {
 			buf := bytes.NewBuffer([]byte{})
 			err = tmpl.ExecuteTemplate(buf, name, data)
 			ret = buf.String()
 			return
 		},
-		"dict": func(values ...interface{}) (map[string]interface{}, error) {
+		"dict": func(values ...any) (map[string]any, error) {
 			if len(values)%2 != 0 {
 				return nil, errors.New("invalid dict call")
 			}
-			dict := make(map[string]interface{}, len(values)/2)
+			dict := make(map[string]any, len(values)/2)
 			for i := 0; i < len(values); i += 2 {
 				key, ok := values[i].(string)
 				if !ok {
@@ -210,9 +210,9 @@ func generateMsg(message *descriptorpb.DescriptorProto, fileOpts *fileParams) me
 			if !slices.Contains(nested, realName) {
 				nested = append(nested, realName)
 			}
-			if util.IsRepeatedType(f) {
-				simple = false
-			}
+		}
+		if util.IsRepeatedType(f) || util.IsCoqType(f, "u8") {
+			simple = false
 		}
 		fields = append(fields, f)
 	}

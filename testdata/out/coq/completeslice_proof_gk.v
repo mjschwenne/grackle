@@ -6,6 +6,7 @@
 From New.proof Require Import proof_prelude.
 From New.proof Require Import github_com.tchajed.marshal.
 From New.proof Require Import github_com.goose_lang.primitive.
+From New.proof Require Import github_com.goose_lang.std.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.
 
@@ -19,27 +20,33 @@ Context `{!goGlobalsGS Σ}.
 Program Instance : IsPkgInit completeslice_gk :=
   ltac2:(build_pkg_init ()).
 
-Definition C := completeslice_gk.S.t.
+Record C :=
+    mkC {
+        strg' :  go_string;
+        strg2' :  go_string;
+        bytes' : list u8;
+        bytes2' : list u8;
+        }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-  encoded = (u64_le $ length $ args.(completeslice_gk.S.Strg')) ++ args.(completeslice_gk.S.Strg') ++
-              (u64_le $ length $ args.(completeslice_gk.S.Strg2')) ++ args.(completeslice_gk.S.Strg2') ++
-              (u64_le $ length $ args.(completeslice_gk.S.Bytes')) ++ args.(completeslice_gk.S.Bytes') ++
-              (u64_le $ length $ args.(completeslice_gk.S.Bytes2')) ++ args.(completeslice_gk.S.Bytes2')
-  /\ length args.(completeslice_gk.S.Strg') < 2^64
-  /\ length args.(completeslice_gk.S.Strg2') < 2^64
-  /\ length args.(completeslice_gk.S.Bytes') < 2^64
-  /\ length args.(completeslice_gk.S.Bytes2') < 2^64.
+  encoded = (u64_le $ length $ args.(strg')) ++ args.(strg') ++
+              (u64_le $ length $ args.(strg2')) ++ args.(strg2') ++
+              (u64_le $ length $ args.(bytes')) ++ args.(bytes') ++
+              (u64_le $ length $ args.(bytes2')) ++ args.(bytes2')
+  /\ length args.(strg') < 2^64
+  /\ length args.(strg2') < 2^64
+  /\ length args.(bytes') < 2^64
+  /\ length args.(bytes2') < 2^64.
 
 Definition own (args__v: completeslice_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
-  "%Hown_strg" ∷ ⌜ args__v.(completeslice_gk.S.Strg') = args__c.(completeslice_gk.S.Strg') ⌝ ∗
-  "%Hown_strg_len" ∷ ⌜ length args__c.(completeslice_gk.S.Strg') < 2^64 ⌝ ∗
-  "%Hown_strg2" ∷ ⌜ args__v.(completeslice_gk.S.Strg2') = args__c.(completeslice_gk.S.Strg2') ⌝ ∗
-  "%Hown_strg2_len" ∷ ⌜ length args__c.(completeslice_gk.S.Strg2') < 2^64 ⌝ ∗
-  "Hown_bytes" ∷ own_slice args__v.(completeslice_gk.S.Bytes') dq args__c.(completeslice_gk.S.Bytes') ∗
-  "%Hown_bytes_len" ∷ ⌜ length args__c.(completeslice_gk.S.Bytes') < 2^64 ⌝ ∗
-  "Hown_bytes2" ∷ own_slice args__v.(completeslice_gk.S.Bytes2') dq args__c.(completeslice_gk.S.Bytes2') ∗
-  "%Hown_bytes2_len" ∷ ⌜ length args__c.(completeslice_gk.S.Bytes2') < 2^64 ⌝.
+  "%Hown_strg" ∷ ⌜ args__v.(completeslice_gk.S.Strg') = args__c.(strg') ⌝ ∗
+  "%Hown_strg_len" ∷ ⌜ length args__c.(strg') < 2^64 ⌝ ∗
+  "%Hown_strg2" ∷ ⌜ args__v.(completeslice_gk.S.Strg2') = args__c.(strg2') ⌝ ∗
+  "%Hown_strg2_len" ∷ ⌜ length args__c.(strg2') < 2^64 ⌝ ∗
+  "Hown_bytes" ∷ own_slice args__v.(completeslice_gk.S.Bytes') dq args__c.(bytes') ∗
+  "%Hown_bytes_len" ∷ ⌜ length args__c.(bytes') < 2^64 ⌝ ∗
+  "Hown_bytes2" ∷ own_slice args__v.(completeslice_gk.S.Bytes2') dq args__c.(bytes2') ∗
+  "%Hown_bytes2_len" ∷ ⌜ length args__c.(bytes2') < 2^64 ⌝.
 
 Lemma wp_Encode (args__t : completeslice_gk.S.t) (args__c : C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
@@ -86,7 +93,14 @@ Proof.
   unfold has_encoding.
   split; last done.
   
-  congruence. 
+  split.
+  {
+     rewrite Hown_bytes_sz.
+     rewrite Hown_bytes2_sz.
+     rewrite ?w64_to_nat_id.
+     congruence.
+  }
+  done. 
 Qed.
 
 Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
@@ -105,31 +119,33 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list 
 Proof.
   wp_start as "[%Henc Hsl]". wp_auto.
   unfold has_encoding in Henc.
-  destruct Henc as (& Henc & Hlen_strg & Hlen_strg2 & Hlen_bytes & Hlen_bytes2 ).
+  destruct Henc as (Henc & Hlen_strg & Hlen_strg2 & Hlen_bytes & Hlen_bytes2 ).
   rewrite Henc. rewrite -?app_assoc.
 
   wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
   iIntros (??) "[Hstrg_byt Hsl]". wp_auto.
+  wp_apply (wp_BytesClone with "[$Hstrg_byt]").
+  iIntros (?) "[Hstrg_byt Hstrg_byt_cap]".
   wp_apply (wp_StringFromBytes with "[$Hstrg_byt]").
   iIntros "Hstrg_byt". wp_auto.
 
   wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
   iIntros (??) "[Hstrg2_byt Hsl]". wp_auto.
+  wp_apply (wp_BytesClone with "[$Hstrg2_byt]").
+  iIntros (?) "[Hstrg2_byt Hstrg2_byt_cap]".
   wp_apply (wp_StringFromBytes with "[$Hstrg2_byt]").
   iIntros "Hstrg2_byt". wp_auto.
 
   wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
-  iIntros (??) "[Hown_hash Hsl]". wp_auto.
+  iIntros (??) "[Hown_bytes Hsl]". wp_auto.
+  wp_apply (wp_BytesClone with "[$Hown_bytes]").
+  iIntros (?) "[Hown_bytes Hown_bytes_cap]". wp_auto.
 
   wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
-  iIntros (??) "[Hown_hash Hsl]". wp_auto.
+  iIntros (??) "[Hown_bytes2 Hsl]". wp_auto.
+  wp_apply (wp_BytesClone with "[$Hown_bytes2]").
+  iIntros (?) "[Hown_bytes2 Hown_bytes2_cap]". wp_auto.
 
-  replace {|
-    completeslice_gk.S.Strg' := args__c.(completeslice_gk.S.Strg');
-    completeslice_gk.S.Strg2' := args__c.(completeslice_gk.S.Strg2');
-    completeslice_gk.S.Bytes' := args__c.(completeslice_gk.S.Bytes');
-    completeslice_gk.S.Bytes2' := args__c.(completeslice_gk.S.Bytes2')
-  |} with args__c; last (destruct args__c; reflexivity).
   iApply "HΦ". iFrame.
   done.
 Qed.

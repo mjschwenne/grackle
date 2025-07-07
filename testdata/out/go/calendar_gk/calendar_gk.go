@@ -6,6 +6,7 @@
 package calendar_gk
 
 import (
+	"github.com/goose-lang/std"
 	"github.com/tchajed/marshal"
 
 	"github.com/mjschwenne/grackle/testdata/out/go/event_gk"
@@ -29,7 +30,7 @@ func Marshal(enc []byte, c S) []byte {
 func Unmarshal(s []byte) (S, []byte) {
 
 	hashBytes, s := marshal.ReadLenPrefixedBytes(s)
-	hash := hashBytes
+	hash := std.BytesClone(hashBytes)
 	eventsLen, s := marshal.ReadInt(s)
 	events, s := marshal.ReadSlice[event_gk.S](s, eventsLen, event_gk.Unmarshal)
 

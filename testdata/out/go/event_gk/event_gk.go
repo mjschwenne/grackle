@@ -7,6 +7,7 @@ package event_gk
 
 import (
 	"github.com/goose-lang/primitive"
+	"github.com/goose-lang/std"
 	"github.com/tchajed/marshal"
 
 	"github.com/mjschwenne/grackle/testdata/out/go/timestamp_gk"
@@ -33,7 +34,7 @@ func Unmarshal(s []byte) (S, []byte) {
 
 	id, s := marshal.ReadInt32(s)
 	nameBytes, s := marshal.ReadLenPrefixedBytes(s)
-	name := string(nameBytes)
+	name := string(std.BytesClone(nameBytes))
 	startTime, s := timestamp_gk.Unmarshal(s)
 	endTime, s := timestamp_gk.Unmarshal(s)
 

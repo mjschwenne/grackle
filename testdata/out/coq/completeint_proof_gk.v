@@ -111,14 +111,6 @@ Proof.
 
   wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
 
-  replace {|
-    completeint_gk.S.One' := args__c.(completeint_gk.S.One');
-    completeint_gk.S.Two' := args__c.(completeint_gk.S.Two');
-    completeint_gk.S.Three' := args__c.(completeint_gk.S.Three');
-    completeint_gk.S.Four' := args__c.(completeint_gk.S.Four');
-    completeint_gk.S.Five' := args__c.(completeint_gk.S.Five');
-    completeint_gk.S.Six' := args__c.(completeint_gk.S.Six')
-  |} with args__c; last (destruct args__c; reflexivity).
   iApply "HΦ". iFrame.
   done.
 Qed.

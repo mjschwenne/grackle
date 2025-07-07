@@ -5,6 +5,7 @@
 
 From New.proof Require Import proof_prelude.
 From New.proof Require Import github_com.tchajed.marshal.
+From New.proof Require Import github_com.goose_lang.std.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.calendar_gk.
 From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.calendar_gk.
 From Grackle.test Require Import event_proof_gk.
@@ -72,14 +73,14 @@ Proof.
   iDestruct (own_slice_len with "Hown_events_sl") as "%Hown_events_sz".
   iDestruct (big_sepL2_length with "Hown_events_own") as "%Hown_events_sz'".
   rewrite Hown_events_sz' in Hown_events_sz.
-  wp_apply (wp_WriteSlice with "[$Hsl $Hown_events_sl $Hown_events_own]").
+  wp_apply (wp_WriteSlice with "[$Hsl $Hcap $Hown_events_sl $Hown_events_own]").
   {
     iIntros (????) "!>".
     iIntros (?) "(Hown & Hsl & Hcap) HΦ".
     wp_apply (Event_gk.wp_Encode with "[$Hown $Hsl $Hcap]").
     iApply "HΦ".
   }
-  iIntros (events_enc events_sl') "(Hown_events & Hown_events_own & %Henc_events & Hsl)".
+  iIntros (events_enc events_sl') "(Hown_events & Hown_events_own & %Henc_events & Hsl & Hcap)".
   wp_auto.
 
   iApply "HΦ". rewrite -?app_assoc.
@@ -115,14 +116,16 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list 
 Proof.
   wp_start as "[%Henc Hsl]". wp_auto.
   unfold has_encoding in Henc.
-  destruct Henc as ( events_enc & Henc & Hlen_hash & Henc_events & Hevents_sz ).
+  destruct Henc as (events_enc & Henc & Hlen_hash & Henc_events & Hevents_sz ).
   rewrite Henc. rewrite -?app_assoc.
 
   wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
   iIntros (??) "[Hown_hash Hsl]". wp_auto.
+  wp_apply (wp_BytesClone with "[$Hown_hash]").
+  iIntros (?) "[Hown_hash Hown_hash_cap]". wp_auto.
 
   wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
-  wp_apply (wp_ReadSlice with "[$Hsl]").
+  wp_apply (wp_ReadSlice  with "[$Hsl]").
   {
     iSplit; auto.
     iSplit; first word.
@@ -132,6 +135,8 @@ Proof.
     iApply "HΦ".
   }
   iIntros (???) "(Hown_events_sl & Hown_events_own & Hsl)". wp_auto.
+  iDestruct (big_sepL2_length with "Hown_events_own") as "%Hown_events_sz".
+  rewrite <- Hown_events_sz in Hevents_sz.
 
   iApply "HΦ". iFrame.
   done.

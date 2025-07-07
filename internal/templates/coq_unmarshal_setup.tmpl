@@ -6,8 +6,8 @@ Proof.
   unfold has_encoding in Henc.
   destruct Henc as (
   <<- range $idx, $r := (extEncFields .Fields) ->>
-    <<- if $idx >>&<< end >> << .Name >>_enc << end ->>
-    & Henc
+    << .Name >>_enc & << end ->>
+    Henc
     <<- range .Fields >>
     <<- if or (isMessage .) (isPredSliceType .) >> & Henc_<< .Name >>
     <<- if isPredSliceType . >> & H<< .Name >>_sz <<- end ->>

@@ -1,12 +1,24 @@
 
   wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
-  wp_apply (wp_ReadSlice with "[$Hsl]").
+  wp_apply (wp_ReadSlice << if not (isMessage .) >>_ _ _ _ _ own_prim << end >> with "[$Hsl]").
   {
     iSplit; auto.
     iSplit; first word.
     iIntros (????) "!>".
     iIntros (?) "[Hsl Henc] HΦ".
+    <<- if isMessage . >>
     wp_apply (<< .TypeName >>_gk.wp_Decode with "[$Hsl $Henc]").
     iApply "HΦ".
+    <<- else >>
+    iDestruct "Henc" as "%Hown_x".
+    unfold << goType . >>_has_encoding in Hown_x.
+    rewrite Hown_x.
+    wp_apply (wp_Read<< marshalType . >> with "[$Hsl]").
+    iIntros (?) "Hsl".
+    iApply "HΦ". iFrame.
+    done.
+    <<- end >>
   }
   iIntros (???) "(Hown_<< .Name >>_sl & Hown_<< .Name >>_own & Hsl)". wp_auto.
+  iDestruct (big_sepL2_length with "Hown_<< .Name >>_own") as "%Hown_<< .Name >>_sz".
+  rewrite <- Hown_<< .Name >>_sz in H<< .Name >>_sz.

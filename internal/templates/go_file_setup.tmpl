@@ -7,6 +7,9 @@ import (
     <<- if (filterByGoType .Fields "string") >>
     "github.com/goose-lang/primitive"
     <<- end >>
+    <<- if (filterByGoType .Fields "string|byte") >>
+    "github.com/goose-lang/std"
+    <<- end >>
     << range .NestedMessages >>
     "<< $.GoPackage >>/<<- lower . ->>_gk"
     <<- end >>

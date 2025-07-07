@@ -1,11 +1,4 @@
 
-  replace {|
-    << range $idx, $field := .Fields >>
-    <<- if $idx >>;
-    << end ->>
-    << lower $.Name >>_gk.S.<< goName .Name >>' := args__c.(<< lower $.Name >>_gk.S.<< goName .Name >>')
-    <<- end >>
-  |} with args__c; last (destruct args__c; reflexivity).
   iApply "HΦ". iFrame.
   done.
 Qed.

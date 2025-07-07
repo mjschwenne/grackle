@@ -2,6 +2,7 @@ From New.proof Require Import proof_prelude.
 From Grackle.new_ex Require Import goose.github_com.mjschwenne.grackle.new_example.
 From Grackle.new_ex Require Import pg.github_com.mjschwenne.grackle.new_example.
 From New.proof Require Import github_com.tchajed.marshal.
+From New.proof Require Import github_com.goose_lang.std.
 From Grackle.new_ex Require Import event_proof.
 
 Module Calendar_Proof.
@@ -96,8 +97,8 @@ Module Calendar_Proof.
         main @ "UnmarshalCalendar" #enc_sl
       {{{
             suff_sl args__t (events:list main.Event.t), RET (#args__t, #suff_sl);
-            own_slice suff_sl dq suffix ∗
-            own_slice args__t.(main.Calendar.events') (DfracOwn 1) events
+            own args__t args__c (DfracOwn 1) ∗ 
+            own_slice suff_sl dq suffix
       }}}.
     Proof.
       wp_start as "[Hsl %Henc]". wp_auto.
@@ -107,6 +108,8 @@ Module Calendar_Proof.
 
       wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
       iIntros (??) "[Hhash Hsl]". wp_auto. 
+      wp_apply (wp_BytesClone with "[$Hhash]").
+      iIntros (?) "[Hhash Hhash_cap]". wp_auto.
       
       wp_apply (wp_ReadInt with "[$Hsl]").
       iIntros (?) "Hsl". wp_auto.
@@ -122,6 +125,10 @@ Module Calendar_Proof.
       } 
       iIntros (???) "(Hevent & HeventPred & Hsl)". wp_auto.
 
+      replace {|
+          main.Calendar.hash' := b';
+          main.Calendar.events' := vals
+        |} with args__t.
       iApply "HΦ". iFrame.
     Qed.
   End Calendar_Proof.

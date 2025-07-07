@@ -1,3 +1,5 @@
 
   wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
-  iIntros (??) "[Hown_hash Hsl]". wp_auto.
+  iIntros (??) "[Hown_<< .Name >> Hsl]". wp_auto.
+  wp_apply (wp_BytesClone with "[$Hown_<< .Name >>]").
+  iIntros (?) "[Hown_<< .Name >> Hown_<< .Name >>_cap]". wp_auto.

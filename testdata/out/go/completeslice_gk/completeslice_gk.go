@@ -7,6 +7,7 @@ package completeslice_gk
 
 import (
 	"github.com/goose-lang/primitive"
+	"github.com/goose-lang/std"
 	"github.com/tchajed/marshal"
 )
 
@@ -33,13 +34,13 @@ func Marshal(enc []byte, c S) []byte {
 func Unmarshal(s []byte) (S, []byte) {
 
 	strgBytes, s := marshal.ReadLenPrefixedBytes(s)
-	strg := string(strgBytes)
+	strg := string(std.BytesClone(strgBytes))
 	strg2Bytes, s := marshal.ReadLenPrefixedBytes(s)
-	strg2 := string(strg2Bytes)
+	strg2 := string(std.BytesClone(strg2Bytes))
 	bytesBytes, s := marshal.ReadLenPrefixedBytes(s)
-	bytes := bytesBytes
+	bytes := std.BytesClone(bytesBytes)
 	bytes2Bytes, s := marshal.ReadLenPrefixedBytes(s)
-	bytes2 := bytes2Bytes
+	bytes2 := std.BytesClone(bytes2Bytes)
 
 	return S{
 		Strg:   strg,

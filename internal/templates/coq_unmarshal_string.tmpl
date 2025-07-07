@@ -1,5 +1,7 @@
 
   wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
   iIntros (??) "[H<< .Name >>_byt Hsl]". wp_auto.
+  wp_apply (wp_BytesClone with "[$H<< .Name >>_byt]").
+  iIntros (?) "[H<< .Name >>_byt H<< .Name >>_byt_cap]".
   wp_apply (wp_StringFromBytes with "[$H<< .Name >>_byt]").
   iIntros "H<< .Name >>_byt". wp_auto.

@@ -90,11 +90,6 @@ Proof.
 
   wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
 
-  replace {|
-    timestamp_gk.S.Hour' := args__c.(timestamp_gk.S.Hour');
-    timestamp_gk.S.Minute' := args__c.(timestamp_gk.S.Minute');
-    timestamp_gk.S.Second' := args__c.(timestamp_gk.S.Second')
-  |} with args__c; last (destruct args__c; reflexivity).
   iApply "HΦ". iFrame.
   done.
 Qed.
