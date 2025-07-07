@@ -4,6 +4,7 @@ go 1.24.2
 
 require (
 	github.com/goose-lang/goose v0.5.4-0.20250701201137-fea16bec040c
+	github.com/goose-lang/primitive v0.2.0
 	github.com/tchajed/marshal v0.6.5
 	golang.org/x/mod v0.25.0
 	google.golang.org/protobuf v1.36.6
@@ -13,7 +14,6 @@ require (
 require (
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/goose-lang/primitive v0.2.0 // indirect
 	github.com/goose-lang/std v0.6.1 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
