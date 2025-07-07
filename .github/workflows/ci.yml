@@ -15,7 +15,7 @@ jobs:
           submodules: "recursive"
       - uses: coq-community/docker-coq-action@v1
         with:
-          coq_version: "8.20"
+          coq_version: "9.0"
           ocaml_version: "default"
           install: ""
           before_script: |
@@ -53,5 +53,5 @@ jobs:
 
       - name: Check goose output
         run: |
-          go run github.com/goose-lang/goose/cmd/goose@new -out example/goose ./example
+          go run github.com/goose-lang/goose/cmd/goose@new -out new_example/goose ./new_example
           git diff --exit-code
