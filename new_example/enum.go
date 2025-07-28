@@ -10,14 +10,14 @@ const (
 	STATUS_UNSPECIFIED Status = 0
 	STATUS_STUDENT     Status = 1
 	STATUS_STAFF       Status = 2
-	STATUS_PROFESSOR   Status = 2
+	STATUS_PROFESSOR   Status = 3
 )
 
 type Person_Status struct {
 	status Status
 }
 
-func (ps *Person_Status) SetStatus(s Status) {
+func (ps Person_Status) SetStatus(s Status) {
 	if s == STATUS_STUDENT {
 		ps.status = s
 	} else if s == STATUS_STAFF {
@@ -29,7 +29,7 @@ func (ps *Person_Status) SetStatus(s Status) {
 	}
 }
 
-func (ps *Person_Status) GetStatus() Status {
+func (ps Person_Status) GetStatus() Status {
 	return ps.status
 }
 

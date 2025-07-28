@@ -93,13 +93,13 @@ Definition STATUS_STUDENT : expr := #(W64 1).
 
 Definition STATUS_STAFF : expr := #(W64 2).
 
-Definition STATUS_PROFESSOR : expr := #(W64 2).
+Definition STATUS_PROFESSOR : expr := #(W64 3).
 
 Definition Person_Status : go_type := structT [
   "status" :: Status
 ].
 
-(* go: enum.go:20:26 *)
+(* go: enum.go:20:25 *)
 Definition Person_Status__SetStatus : val :=
   rec: "Person_Status__SetStatus" "ps" "s" :=
     exception_do (let: "ps" := (mem.alloc "ps") in
@@ -107,27 +107,27 @@ Definition Person_Status__SetStatus : val :=
     (if: (![#Status] "s") = STATUS_STUDENT
     then
       let: "$r0" := (![#Status] "s") in
-      do:  ((struct.field_ref #Person_Status #"status"%go (![#ptrT] "ps")) <-[#Status] "$r0")
+      do:  ((struct.field_ref #Person_Status #"status"%go "ps") <-[#Status] "$r0")
     else
       (if: (![#Status] "s") = STATUS_STAFF
       then
         let: "$r0" := (![#Status] "s") in
-        do:  ((struct.field_ref #Person_Status #"status"%go (![#ptrT] "ps")) <-[#Status] "$r0")
+        do:  ((struct.field_ref #Person_Status #"status"%go "ps") <-[#Status] "$r0")
       else
         (if: (![#Status] "s") = STATUS_PROFESSOR
         then
           let: "$r0" := (![#Status] "s") in
-          do:  ((struct.field_ref #Person_Status #"status"%go (![#ptrT] "ps")) <-[#Status] "$r0")
+          do:  ((struct.field_ref #Person_Status #"status"%go "ps") <-[#Status] "$r0")
         else
           let: "$r0" := STATUS_UNSPECIFIED in
-          do:  ((struct.field_ref #Person_Status #"status"%go (![#ptrT] "ps")) <-[#Status] "$r0"))));;;
+          do:  ((struct.field_ref #Person_Status #"status"%go "ps") <-[#Status] "$r0"))));;;
     return: #()).
 
-(* go: enum.go:32:26 *)
+(* go: enum.go:32:25 *)
 Definition Person_Status__GetStatus : val :=
   rec: "Person_Status__GetStatus" "ps" <> :=
     exception_do (let: "ps" := (mem.alloc "ps") in
-    return: (![#Status] (struct.field_ref #Person_Status #"status"%go (![#ptrT] "ps")))).
+    return: (![#Status] (struct.field_ref #Person_Status #"status"%go "ps"))).
 
 (* go: enum.go:36:6 *)
 Definition MarshalPersonStatus : val :=
@@ -157,7 +157,7 @@ Definition UnmarshalPersonStatus : val :=
     }]) in
     do:  ("status" <-[#Person_Status] "$r0");;;
     do:  (let: "$a0" := (![#uint64T] "status_int") in
-    (method_call #new_example.main #"Person_Status'ptr" #"SetStatus" "status") "$a0");;;
+    (method_call #new_example.main #"Person_Status" #"SetStatus" (![#Person_Status] "status")) "$a0");;;
     return: (![#Person_Status] "status", ![#sliceT] "s")).
 
 Definition Person : go_type := structT [
@@ -204,7 +204,7 @@ Definition UnmarshalPerson : val :=
     }]) in
     do:  ("status" <-[#Person_Status] "$r0");;;
     do:  (let: "$a0" := (![#uint64T] "status_int") in
-    (method_call #new_example.main #"Person_Status'ptr" #"SetStatus" "status") "$a0");;;
+    (method_call #new_example.main #"Person_Status" #"SetStatus" (![#Person_Status] "status")) "$a0");;;
     return: (let: "$Name" := (string.from_bytes (![#sliceT] "name")) in
      let: "$Status" := (![#Person_Status] "status") in
      struct.make #Person [{
@@ -337,7 +337,11 @@ Definition vars' : list (go_string * go_type) := [].
 
 Definition functions' : list (go_string * val) := [("MarshalCalendar"%go, MarshalCalendar); ("UnmarshalCalendar"%go, UnmarshalCalendar); ("MarshalPersonStatus"%go, MarshalPersonStatus); ("UnmarshalPersonStatus"%go, UnmarshalPersonStatus); ("MarshalPerson"%go, MarshalPerson); ("UnmarshalPerson"%go, UnmarshalPerson); ("MarshalEvent"%go, MarshalEvent); ("UnmarshalEvent"%go, UnmarshalEvent); ("MarshalTimeStamp"%go, MarshalTimeStamp); ("UnmarshalTimeStamp"%go, UnmarshalTimeStamp)].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [("Calendar"%go, []); ("Calendar'ptr"%go, []); ("Status"%go, []); ("Status'ptr"%go, []); ("Person_Status"%go, []); ("Person_Status'ptr"%go, [("GetStatus"%go, Person_Status__GetStatus); ("SetStatus"%go, Person_Status__SetStatus)]); ("Person"%go, []); ("Person'ptr"%go, []); ("Event"%go, []); ("Event'ptr"%go, []); ("TimeStamp"%go, []); ("TimeStamp'ptr"%go, [])].
+Definition msets' : list (go_string * (list (go_string * val))) := [("Calendar"%go, []); ("Calendar'ptr"%go, []); ("Status"%go, []); ("Status'ptr"%go, []); ("Person_Status"%go, [("GetStatus"%go, Person_Status__GetStatus); ("SetStatus"%go, Person_Status__SetStatus)]); ("Person_Status'ptr"%go, [("GetStatus"%go, (λ: "$recvAddr",
+                 method_call #new_example.main #"Person_Status" #"GetStatus" (![#Person_Status] "$recvAddr")
+                 )%V); ("SetStatus"%go, (λ: "$recvAddr",
+                 method_call #new_example.main #"Person_Status" #"SetStatus" (![#Person_Status] "$recvAddr")
+                 )%V)]); ("Person"%go, []); ("Person'ptr"%go, []); ("Event"%go, []); ("Event'ptr"%go, []); ("TimeStamp"%go, []); ("TimeStamp'ptr"%go, [])].
 
 #[global] Instance info' : PkgInfo new_example.main :=
   {|
