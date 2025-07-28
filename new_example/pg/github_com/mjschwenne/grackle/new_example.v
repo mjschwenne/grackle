@@ -441,14 +441,6 @@ Global Instance wp_func_call_UnmarshalTimeStamp :
   WpFuncCall main "UnmarshalTimeStamp" _ (is_pkg_defined main) :=
   ltac:(apply wp_func_call'; reflexivity).
 
-Global Instance wp_method_call_Person_Status_GetStatus :
-  WpMethodCall main "Person_Status" "GetStatus" _ (is_pkg_defined main) :=
-  ltac:(apply wp_method_call'; reflexivity).
-
-Global Instance wp_method_call_Person_Status_SetStatus :
-  WpMethodCall main "Person_Status" "SetStatus" _ (is_pkg_defined main) :=
-  ltac:(apply wp_method_call'; reflexivity).
-
 Global Instance wp_method_call_Person_Status'ptr_GetStatus :
   WpMethodCall main "Person_Status'ptr" "GetStatus" _ (is_pkg_defined main) :=
   ltac:(apply wp_method_call'; reflexivity).

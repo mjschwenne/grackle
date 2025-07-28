@@ -17,7 +17,7 @@ type Person_Status struct {
 	status Status
 }
 
-func (ps Person_Status) SetStatus(s Status) {
+func (ps *Person_Status) SetStatus(s Status) {
 	if s == STATUS_STUDENT {
 		ps.status = s
 	} else if s == STATUS_STAFF {
@@ -29,7 +29,7 @@ func (ps Person_Status) SetStatus(s Status) {
 	}
 }
 
-func (ps Person_Status) GetStatus() Status {
+func (ps *Person_Status) GetStatus() Status {
 	return ps.status
 }
 

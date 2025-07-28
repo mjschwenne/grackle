@@ -3,6 +3,7 @@ From New.proof Require Import github_com.tchajed.marshal.
 From New.proof Require Import github_com.goose_lang.std.
 From New.code Require Import github_com.mjschwenne.grackle.new_example.
 From Grackle.pg Require Import github_com.mjschwenne.grackle.new_example.
+From Perennial.Helpers Require Import NamedProps.
 
 Module Person_Proof.
   Section Status_Proof.
@@ -41,43 +42,64 @@ Module Person_Proof.
     Definition own (args__v:main.Person_Status.t) (args__c:C) (dq:dfrac) : iProp Σ :=
       "%Hstatus" ∷ ⌜ args__v.(main.Person_Status.status') = (to_tag args__c.(status')) ⌝.
 
-    Lemma wp_GetStatus (args__t:main.Person_Status.t) (args__c:C) (dq:dfrac):
+    Lemma wp_GetStatus (l:loc) (args__t:main.Person_Status.t) (args__c:C) (dq dq':dfrac):
       {{{
             is_pkg_init main ∗
-            own args__t args__c dq
+            own args__t args__c dq ∗
+            l ↦{dq'} args__t
       }}}
-        args__t @ main @ "Person_Status" @ "GetStatus" #()
+        l @ main @ "Person_Status'ptr" @ "GetStatus" #()
       {{{
             status, RET #status;
             ⌜ status = (to_tag args__c.(status')) ⌝ ∗
+            l ↦{dq'} args__t ∗
             own args__t args__c dq
       }}}.
 
     Proof.
-      wp_start as "Hown". wp_auto.
+      wp_start as "[Hown Hptr]". wp_auto.
+      
       iDestruct "Hown" as "%Hown".
       iApply "HΦ".
       iSplitR; first done.
-      done.
+      iFrame. done.
     Qed.
 
-    Lemma wp_SetStatus (args__t:main.Person_Status.t) (args__c:C) new (dq:dfrac):
+    Lemma wp_SetStatus (ps:loc) (args__t:main.Person_Status.t) (args__c:C) new new__c (dq:dfrac):
       {{{
-            is_pkg_init main
+            is_pkg_init main ∗
+            "Hptr" ∷ ps ↦ args__t ∗
+            "%Hnew" ∷ ⌜ new = to_tag new__c ⌝ ∗
+            "Hown" ∷ own args__t args__c dq
       }}}
-        args__t @ main @ "Person_Status" @ "SetStatus" #new
+        ps @ main @ "Person_Status'ptr" @ "SetStatus" #new
       {{{
-            RET #();
+            args__t, RET #();
             ⌜ args__t.(main.Person_Status.status') = new ⌝ ∗
-            own args__t args__c dq
+            ps ↦ args__t ∗
+            own args__t (args__c <| status' := new__c |>) dq
       }}}.
 
     Proof.
-      wp_start. wp_auto.
+      wp_start as "@". wp_auto.
       wp_if_destruct.
-      + wp_auto. iApply "HΦ".
-        iSplitL.
-    Admitted.
+      { wp_auto. iApply "HΦ".
+        iFrame. done. }
+      wp_auto. wp_if_destruct.
+      { wp_auto. iApply "HΦ".
+        iFrame. done. }
+      wp_auto. wp_if_destruct.
+      { wp_auto. iApply "HΦ".
+        iFrame. done. }
+      wp_auto.
+       iApply "HΦ".
+       iFrame.
+       iSplit.
+         {
+           iPureIntro. simpl. destruct new__c; simpl in *; try congruence.
+       }
+       unfold own. iPureIntro. simpl. destruct new__c; simpl in *; try congruence.
+    Qed.
       
     Lemma wp_Enocde (args__t:main.Person_Status.t) (args__c:C) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac):
       {{{
