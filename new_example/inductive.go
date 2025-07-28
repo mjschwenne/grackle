@@ -3,8 +3,6 @@
 package main
 
 import (
-	"slices"
-
 	"github.com/tchajed/marshal"
 )
 
@@ -23,29 +21,39 @@ type eCorpus struct {
 }
 
 func (e *eCorpus) SetCorpus(c Corpus) {
-	if slices.Contains([]Corpus{CORPUS_UNSPECIFIED, CORPUS_WEB, CORPUS_NEWS}, c) {
+	if c == CORPUS_WEB {
+		e.corpus = c
+	} else if c == CORPUS_NEWS {
+		e.corpus = c
+	} else {
 		e.corpus = c
 	}
 }
 
+func (e *eCorpus) GetCorpus() Corpus {
+	return e.corpus
+}
+
 type eQuery struct {
 	query  string
-	corpus Corpus
+	corpus eCorpus
 }
 
 func MarshalEQuery(enc []byte, q eQuery) []byte {
 	enc = marshal.WriteLenPrefixedBytes(enc, []byte(q.query))
-	enc = marshal.WriteInt(enc, uint64(q.corpus))
+	enc = marshal.WriteInt(enc, uint64(q.corpus.GetCorpus()))
 	return enc
 }
 
 func UnmarshalEQuery(s []byte) (eQuery, []byte) {
 	query, s := marshal.ReadLenPrefixedBytes(s)
-	corpus, s := marshal.ReadInt(s)
+	corpus_int, s := marshal.ReadInt(s)
+	corpus := eCorpus{}
+	corpus.SetCorpus(Corpus(corpus_int))
 
 	return eQuery{
 		query:  string(query),
-		corpus: Corpus(corpus),
+		corpus: corpus,
 	}, s
 }
 

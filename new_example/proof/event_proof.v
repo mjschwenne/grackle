@@ -1,6 +1,6 @@
 From New.proof Require Import proof_prelude.
-From Grackle.new_ex Require Import goose.github_com.mjschwenne.grackle.new_example.
-From Grackle.new_ex Require Import pg.github_com.mjschwenne.grackle.new_example.
+From New.code Require Import github_com.mjschwenne.grackle.new_example.
+From Grackle.pg Require Import github_com.mjschwenne.grackle.new_example.
 From New.proof Require Import github_com.tchajed.marshal.
 From Grackle.new_ex Require Import timestamp_proof.
 From New.proof.github_com.goose_lang Require Import primitive.
@@ -38,7 +38,7 @@ Module Event_Proof.
             is_pkg_init main ∗
             own args__t args__c dq ∗
             own_slice pre_sl (DfracOwn 1) prefix ∗
-            own_slice_cap w8 pre_sl
+            own_slice_cap w8 pre_sl (DfracOwn 1)
       }}}
         main @ "MarshalEvent" #pre_sl #args__t
       {{{
@@ -46,7 +46,7 @@ Module Event_Proof.
             ⌜ has_encoding enc args__c ⌝ ∗
             own args__t args__c dq ∗
             own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
-            own_slice_cap w8 enc_sl
+            own_slice_cap w8 enc_sl (DfracOwn 1)
       }}}.
 
     Proof.

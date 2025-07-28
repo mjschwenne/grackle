@@ -1,6 +1,6 @@
 From New.proof Require Import proof_prelude.
-From Grackle.new_ex Require Import goose.github_com.mjschwenne.grackle.new_example.
-From Grackle.new_ex Require Import pg.github_com.mjschwenne.grackle.new_example.
+From New.code Require Import github_com.mjschwenne.grackle.new_example.
+From Grackle.pg Require Import github_com.mjschwenne.grackle.new_example.
 From New.proof Require Import github_com.tchajed.marshal.
 
 Module TimeStamp_Proof.
@@ -27,7 +27,7 @@ Module TimeStamp_Proof.
             is_pkg_init main ∗
             own args__t args__c dq ∗
             own_slice pre_sl (DfracOwn 1) prefix ∗
-            own_slice_cap w8 pre_sl
+            own_slice_cap w8 pre_sl (DfracOwn 1)
       }}}
         main @ "MarshalTimeStamp" #pre_sl #args__t
       {{{
@@ -35,7 +35,7 @@ Module TimeStamp_Proof.
             ⌜ has_encoding enc args__c ⌝ ∗
             own args__t args__c dq ∗
             own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
-            own_slice_cap w8 enc_sl
+            own_slice_cap w8 enc_sl (DfracOwn 1)
       }}}.
 
     Proof. 

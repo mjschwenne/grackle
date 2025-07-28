@@ -5,7 +5,7 @@ Require Export New.generatedproof.github_com.goose_lang.std.
 Require Export New.generatedproof.github_com.goose_lang.primitive.
 Require Export New.golang.theory.
 
-Require Export Grackle.new_ex.goose.github_com.mjschwenne.grackle.new_example.
+Require Export New.code.github_com.mjschwenne.grackle.new_example.
 
 Set Default Proof Using "Type".
 
@@ -74,6 +74,144 @@ Proof.
 
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
   simpl_one_flatten_struct (# (Calendar.hash' v)) main.Calendar "hash"%go.
+
+  solve_field_ref_f.
+Qed.
+
+End instances.
+
+(* type main.Status *)
+Module Status.
+Section def.
+Context `{ffi_syntax}.
+Definition t := w64.
+End def.
+End Status.
+
+(* type main.Person_Status *)
+Module Person_Status.
+Section def.
+Context `{ffi_syntax}.
+Record t := mk {
+  status' : Status.t;
+}.
+End def.
+End Person_Status.
+
+Section instances.
+Context `{ffi_syntax}.
+
+Global Instance settable_Person_Status : Settable Person_Status.t :=
+  settable! Person_Status.mk < Person_Status.status' >.
+Global Instance into_val_Person_Status : IntoVal Person_Status.t :=
+  {| to_val_def v :=
+    struct.val_aux main.Person_Status [
+    "status" ::= #(Person_Status.status' v)
+    ]%struct
+  |}.
+
+Global Program Instance into_val_typed_Person_Status : IntoValTyped Person_Status.t main.Person_Status :=
+{|
+  default_val := Person_Status.mk (default_val _);
+|}.
+Next Obligation. solve_to_val_type. Qed.
+Next Obligation. solve_zero_val. Qed.
+Next Obligation. solve_to_val_inj. Qed.
+Final Obligation. solve_decision. Qed.
+
+Global Instance into_val_struct_field_Person_Status_status : IntoValStructField "status" main.Person_Status Person_Status.status'.
+Proof. solve_into_val_struct_field. Qed.
+
+
+Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
+Global Instance wp_struct_make_Person_Status status':
+  PureWp True
+    (struct.make #main.Person_Status (alist_val [
+      "status" ::= #status'
+    ]))%struct
+    #(Person_Status.mk status').
+Proof. solve_struct_make_pure_wp. Qed.
+
+
+Global Instance Person_Status_struct_fields_split dq l (v : Person_Status.t) :
+  StructFieldsSplit dq l v (
+    "Hstatus" ∷ l ↦s[main.Person_Status :: "status"]{dq} v.(Person_Status.status')
+  ).
+Proof.
+  rewrite /named.
+  apply struct_fields_split_intro.
+  unfold_typed_pointsto; split_pointsto_app.
+
+  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
+
+  solve_field_ref_f.
+Qed.
+
+End instances.
+
+(* type main.Person *)
+Module Person.
+Section def.
+Context `{ffi_syntax}.
+Record t := mk {
+  Name' : go_string;
+  Status' : Person_Status.t;
+}.
+End def.
+End Person.
+
+Section instances.
+Context `{ffi_syntax}.
+
+Global Instance settable_Person : Settable Person.t :=
+  settable! Person.mk < Person.Name'; Person.Status' >.
+Global Instance into_val_Person : IntoVal Person.t :=
+  {| to_val_def v :=
+    struct.val_aux main.Person [
+    "Name" ::= #(Person.Name' v);
+    "Status" ::= #(Person.Status' v)
+    ]%struct
+  |}.
+
+Global Program Instance into_val_typed_Person : IntoValTyped Person.t main.Person :=
+{|
+  default_val := Person.mk (default_val _) (default_val _);
+|}.
+Next Obligation. solve_to_val_type. Qed.
+Next Obligation. solve_zero_val. Qed.
+Next Obligation. solve_to_val_inj. Qed.
+Final Obligation. solve_decision. Qed.
+
+Global Instance into_val_struct_field_Person_Name : IntoValStructField "Name" main.Person Person.Name'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_Person_Status : IntoValStructField "Status" main.Person Person.Status'.
+Proof. solve_into_val_struct_field. Qed.
+
+
+Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
+Global Instance wp_struct_make_Person Name' Status':
+  PureWp True
+    (struct.make #main.Person (alist_val [
+      "Name" ::= #Name';
+      "Status" ::= #Status'
+    ]))%struct
+    #(Person.mk Name' Status').
+Proof. solve_struct_make_pure_wp. Qed.
+
+
+Global Instance Person_struct_fields_split dq l (v : Person.t) :
+  StructFieldsSplit dq l v (
+    "HName" ∷ l ↦s[main.Person :: "Name"]{dq} v.(Person.Name') ∗
+    "HStatus" ∷ l ↦s[main.Person :: "Status"]{dq} v.(Person.Status')
+  ).
+Proof.
+  rewrite /named.
+  apply struct_fields_split_intro.
+  unfold_typed_pointsto; split_pointsto_app.
+
+  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
+  simpl_one_flatten_struct (# (Person.Name' v)) main.Person "Name"%go.
 
   solve_field_ref_f.
 Qed.
@@ -271,6 +409,22 @@ Global Instance wp_func_call_UnmarshalCalendar :
   WpFuncCall main "UnmarshalCalendar" _ (is_pkg_defined main) :=
   ltac:(apply wp_func_call'; reflexivity).
 
+Global Instance wp_func_call_MarshalPersonStatus :
+  WpFuncCall main "MarshalPersonStatus" _ (is_pkg_defined main) :=
+  ltac:(apply wp_func_call'; reflexivity).
+
+Global Instance wp_func_call_UnmarshalPersonStatus :
+  WpFuncCall main "UnmarshalPersonStatus" _ (is_pkg_defined main) :=
+  ltac:(apply wp_func_call'; reflexivity).
+
+Global Instance wp_func_call_MarshalPerson :
+  WpFuncCall main "MarshalPerson" _ (is_pkg_defined main) :=
+  ltac:(apply wp_func_call'; reflexivity).
+
+Global Instance wp_func_call_UnmarshalPerson :
+  WpFuncCall main "UnmarshalPerson" _ (is_pkg_defined main) :=
+  ltac:(apply wp_func_call'; reflexivity).
+
 Global Instance wp_func_call_MarshalEvent :
   WpFuncCall main "MarshalEvent" _ (is_pkg_defined main) :=
   ltac:(apply wp_func_call'; reflexivity).
@@ -286,6 +440,14 @@ Global Instance wp_func_call_MarshalTimeStamp :
 Global Instance wp_func_call_UnmarshalTimeStamp :
   WpFuncCall main "UnmarshalTimeStamp" _ (is_pkg_defined main) :=
   ltac:(apply wp_func_call'; reflexivity).
+
+Global Instance wp_method_call_Person_Status'ptr_GetStatus :
+  WpMethodCall main "Person_Status'ptr" "GetStatus" _ (is_pkg_defined main) :=
+  ltac:(apply wp_method_call'; reflexivity).
+
+Global Instance wp_method_call_Person_Status'ptr_SetStatus :
+  WpMethodCall main "Person_Status'ptr" "SetStatus" _ (is_pkg_defined main) :=
+  ltac:(apply wp_method_call'; reflexivity).
 
 End names.
 End main.

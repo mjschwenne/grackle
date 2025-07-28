@@ -53,7 +53,7 @@ Lemma wp_Encode (args__t : completeslice_gk.S.t) (args__c : C) (pre_sl : slice.t
         is_pkg_init completeslice_gk ∗
         own args__t args__c dq ∗ 
         own_slice pre_sl (DfracOwn 1) prefix ∗
-        own_slice_cap w8 pre_sl
+        own_slice_cap w8 pre_sl (DfracOwn 1)
   }}}
     completeslice_gk @ "Marshal" #pre_sl #args__t
   {{{
@@ -61,7 +61,7 @@ Lemma wp_Encode (args__t : completeslice_gk.S.t) (args__c : C) (pre_sl : slice.t
         ⌜ has_encoding enc args__c ⌝ ∗
         own args__t args__c dq ∗ 
         own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
-        own_slice_cap w8 enc_sl
+        own_slice_cap w8 enc_sl (DfracOwn 1)
   }}}.
 
 Proof.
