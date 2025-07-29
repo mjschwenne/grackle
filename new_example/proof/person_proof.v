@@ -3,10 +3,11 @@ From New.proof Require Import github_com.tchajed.marshal.
 From New.proof Require Import github_com.goose_lang.std.
 From New.code Require Import github_com.mjschwenne.grackle.new_example.
 From Grackle.pg Require Import github_com.mjschwenne.grackle.new_example.
+From New.proof.github_com.goose_lang Require Import primitive.
 From Perennial.Helpers Require Import NamedProps.
 
 Module Person_Proof.
-  Section Status_Proof.
+  Section Person_Proof.
 
     Context `{hG: heapGS Σ, !ffi_semantics _ _}.
     Context `{!goGlobalsGS Σ}.
@@ -15,13 +16,13 @@ Module Person_Proof.
       Program Instance : IsPkgInit main :=
       ltac2:(build_pkg_init ()).
 
-    Inductive V :=
+    Inductive Status :=
       | STATUS_UNSPECIFIED
       | STATUS_STUDENT
       | STATUS_STAFF
       | STATUS_PROFESSOR.
 
-    Definition to_tag (status:V) : u64 :=
+    Definition to_tag status : u64 :=
       match status with
       | STATUS_UNSPECIFIED => 0
       | STATUS_STUDENT => 1
@@ -29,86 +30,28 @@ Module Person_Proof.
       | STATUS_PROFESSOR => 3
       end.
 
-    Definition to_v (status:V) := #(to_tag status).
-
     Record C :=
       mkC {
-        status' : V;
+        name' : go_string; 
+        status' : Status;
       }.
 
     Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-      encoded = (u64_le (to_tag args.(status'))).
+      encoded = (u64_le $ length args.(name')) ++ args.(name') ++ (u64_le (to_tag args.(status')))
+                                                               /\ length args.(name') < 2^64.
       
-    Definition own (args__v:main.Person_Status.t) (args__c:C) (dq:dfrac) : iProp Σ :=
-      "%Hstatus" ∷ ⌜ args__v.(main.Person_Status.status') = (to_tag args__c.(status')) ⌝.
+    Definition own (args__v:main.Person.t) (args__c:C) (dq:dfrac) : iProp Σ :=
+      "%Hname" ∷ ⌜ args__v.(main.Person.Name') = args__c.(name') ⌝ ∗
+      "%Hstatus" ∷ ⌜ args__v.(main.Person.Status') = (to_tag args__c.(status')) ⌝.
 
-    Lemma wp_GetStatus (l:loc) (args__t:main.Person_Status.t) (args__c:C) (dq dq':dfrac):
-      {{{
-            is_pkg_init main ∗
-            own args__t args__c dq ∗
-            l ↦{dq'} args__t
-      }}}
-        l @ main @ "Person_Status'ptr" @ "GetStatus" #()
-      {{{
-            status, RET #status;
-            ⌜ status = (to_tag args__c.(status')) ⌝ ∗
-            l ↦{dq'} args__t ∗
-            own args__t args__c dq
-      }}}.
-
-    Proof.
-      wp_start as "[Hown Hptr]". wp_auto.
-      
-      iDestruct "Hown" as "%Hown".
-      iApply "HΦ".
-      iSplitR; first done.
-      iFrame. done.
-    Qed.
-
-    Lemma wp_SetStatus (ps:loc) (args__t:main.Person_Status.t) (args__c:C) new new__c (dq:dfrac):
-      {{{
-            is_pkg_init main ∗
-            "Hptr" ∷ ps ↦ args__t ∗
-            "%Hnew" ∷ ⌜ new = to_tag new__c ⌝ ∗
-            "Hown" ∷ own args__t args__c dq
-      }}}
-        ps @ main @ "Person_Status'ptr" @ "SetStatus" #new
-      {{{
-            args__t, RET #();
-            ⌜ args__t.(main.Person_Status.status') = new ⌝ ∗
-            ps ↦ args__t ∗
-            own args__t (args__c <| status' := new__c |>) dq
-      }}}.
-
-    Proof.
-      wp_start as "@". wp_auto.
-      wp_if_destruct.
-      { wp_auto. iApply "HΦ".
-        iFrame. done. }
-      wp_auto. wp_if_destruct.
-      { wp_auto. iApply "HΦ".
-        iFrame. done. }
-      wp_auto. wp_if_destruct.
-      { wp_auto. iApply "HΦ".
-        iFrame. done. }
-      wp_auto.
-       iApply "HΦ".
-       iFrame.
-       iSplit.
-         {
-           iPureIntro. simpl. destruct new__c; simpl in *; try congruence.
-       }
-       unfold own. iPureIntro. simpl. destruct new__c; simpl in *; try congruence.
-    Qed.
-      
-    Lemma wp_Enocde (args__t:main.Person_Status.t) (args__c:C) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac):
+    Lemma wp_Enocde (args__t:main.Person.t) (args__c:C) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac):
       {{{
             is_pkg_init main ∗
             own args__t args__c dq ∗
             own_slice pre_sl (DfracOwn 1) prefix ∗
             own_slice_cap w8 pre_sl (DfracOwn 1)
       }}}
-        main @ "MarshalPersonStatus" #pre_sl #args__t
+        main @ "MarshalPerson" #pre_sl #args__t
       {{{
             enc enc_sl, RET #enc_sl;
             ⌜ has_encoding enc args__c ⌝ ∗
@@ -118,16 +61,24 @@ Module Person_Proof.
       }}}.
       
     Proof.
-      wp_start as "(Hown & Hsl & Hcap)". wp_auto.
-      iDestruct "Hown" as "%Hown_status".
+      wp_start as "(@ & Hsl & Hcap)". wp_auto.
+
+      wp_apply wp_AssumeNoStringOverflow.
+      iIntros "%HnameLen". rewrite Hname in HnameLen. wp_auto.
+      wp_apply wp_StringToBytes.
+      iIntros (?) "Hname". wp_auto.
+
+      wp_apply (wp_WriteLenPrefixedBytes with "[$Hsl $Hname $Hcap]").
+      iIntros (?) "(Hsl & Hcap & Hname)". wp_auto.
 
       wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
       iIntros (?) "[Hsl Hcap]". wp_auto.
 
       iApply "HΦ". iFrame.
       iSplit.
-      + iPureIntro. unfold has_encoding. rewrite Hown_status. reflexivity.
       + done.
+      + rewrite -?app_assoc. rewrite Hname. rewrite Hstatus. iFrame.
+        done.
     Qed.
 
     Lemma wp_Decode (enc: list u8) (enc_sl: slice.t) (args__c:C) (suffix: list u8) (dq: dfrac):
@@ -136,7 +87,7 @@ Module Person_Proof.
             own_slice enc_sl dq (enc ++ suffix) ∗
             ⌜ has_encoding enc args__c ⌝
       }}}
-        main @ "UnmarshalPersonStatus" #enc_sl
+        main @ "UnmarshalPerson" #enc_sl
       {{{
             args__t suff_sl, RET (#args__t, #suff_sl);
             own args__t args__c (DfracOwn 1) ∗
@@ -146,13 +97,19 @@ Module Person_Proof.
     Proof.
       wp_start as "(Hsl & %Henc)". wp_auto.
       unfold has_encoding in Henc.
-      rewrite Henc.
+      destruct Henc as [Henc HnameLen].
+      rewrite Henc. rewrite -?app_assoc.
+
+      wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
+      iIntros (??) "[Hn Hsl]". wp_auto.
 
       wp_apply (wp_ReadInt with "[$Hsl]").
       iIntros (?) "Hsl". wp_auto.
 
-      wp_apply (wp_SetStatus with "[status]").
-      iIntros "[%Hstatus Hown]". wp_auto.
-    Admitted.
-  End Status_Proof.
+      wp_apply (wp_StringFromBytes with "[$Hn]").
+      iIntros "Hn". wp_auto.
+
+      iApply "HΦ". iFrame. done.
+    Qed.
+  End Person_Proof.
 End Person_Proof.

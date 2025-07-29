@@ -95,92 +95,29 @@ Definition STATUS_STAFF : expr := #(W64 2).
 
 Definition STATUS_PROFESSOR : expr := #(W64 3).
 
-Definition Person_Status : go_type := structT [
-  "status" :: Status
-].
-
-(* go: enum.go:20:26 *)
-Definition Person_Status__SetStatus : val :=
-  rec: "Person_Status__SetStatus" "ps" "s" :=
-    exception_do (let: "ps" := (mem.alloc "ps") in
-    let: "s" := (mem.alloc "s") in
-    (if: (![#Status] "s") = STATUS_STUDENT
-    then
-      let: "$r0" := (![#Status] "s") in
-      do:  ((struct.field_ref #Person_Status #"status"%go (![#ptrT] "ps")) <-[#Status] "$r0")
-    else
-      (if: (![#Status] "s") = STATUS_STAFF
-      then
-        let: "$r0" := (![#Status] "s") in
-        do:  ((struct.field_ref #Person_Status #"status"%go (![#ptrT] "ps")) <-[#Status] "$r0")
-      else
-        (if: (![#Status] "s") = STATUS_PROFESSOR
-        then
-          let: "$r0" := (![#Status] "s") in
-          do:  ((struct.field_ref #Person_Status #"status"%go (![#ptrT] "ps")) <-[#Status] "$r0")
-        else
-          let: "$r0" := STATUS_UNSPECIFIED in
-          do:  ((struct.field_ref #Person_Status #"status"%go (![#ptrT] "ps")) <-[#Status] "$r0"))));;;
-    return: #()).
-
-(* go: enum.go:32:26 *)
-Definition Person_Status__GetStatus : val :=
-  rec: "Person_Status__GetStatus" "ps" <> :=
-    exception_do (let: "ps" := (mem.alloc "ps") in
-    return: (![#Status] (struct.field_ref #Person_Status #"status"%go (![#ptrT] "ps")))).
-
-(* go: enum.go:36:6 *)
-Definition MarshalPersonStatus : val :=
-  rec: "MarshalPersonStatus" "enc" "ps" :=
-    exception_do (let: "ps" := (mem.alloc "ps") in
-    let: "enc" := (mem.alloc "enc") in
-    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
-    let: "$a1" := (![#Status] (struct.field_ref #Person_Status #"status"%go "ps")) in
-    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
-    do:  ("enc" <-[#sliceT] "$r0");;;
-    return: (![#sliceT] "enc")).
-
-(* go: enum.go:41:6 *)
-Definition UnmarshalPersonStatus : val :=
-  rec: "UnmarshalPersonStatus" "s" :=
-    exception_do (let: "s" := (mem.alloc "s") in
-    let: "status_int" := (mem.alloc (type.zero_val #uint64T)) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("status_int" <-[#uint64T] "$r0");;;
-    do:  ("s" <-[#sliceT] "$r1");;;
-    let: "status" := (mem.alloc (type.zero_val #Person_Status)) in
-    let: "$r0" := (struct.make #Person_Status [{
-      "status" ::= type.zero_val #Status
-    }]) in
-    do:  ("status" <-[#Person_Status] "$r0");;;
-    do:  (let: "$a0" := (![#uint64T] "status_int") in
-    (method_call #new_example.main #"Person_Status'ptr" #"SetStatus" "status") "$a0");;;
-    return: (![#Person_Status] "status", ![#sliceT] "s")).
-
 Definition Person : go_type := structT [
   "Name" :: stringT;
-  "Status" :: Person_Status
+  "Status" :: Status
 ].
 
-(* go: enum.go:53:6 *)
+(* go: enum.go:22:6 *)
 Definition MarshalPerson : val :=
   rec: "MarshalPerson" "enc" "p" :=
     exception_do (let: "p" := (mem.alloc "p") in
     let: "enc" := (mem.alloc "enc") in
+    do:  (let: "$a0" := (![#stringT] (struct.field_ref #Person #"Name"%go "p")) in
+    (func_call #primitive.primitive #"AssumeNoStringOverflow"%go) "$a0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (string.to_bytes (![#stringT] (struct.field_ref #Person #"Name"%go "p"))) in
     (func_call #marshal.marshal #"WriteLenPrefixedBytes"%go) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
-    let: "$a1" := (![#Person_Status] (struct.field_ref #Person #"Status"%go "p")) in
-    (func_call #new_example.main #"MarshalPersonStatus"%go) "$a0" "$a1") in
+    let: "$a1" := (![#Status] (struct.field_ref #Person #"Status"%go "p")) in
+    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
-(* go: enum.go:59:6 *)
+(* go: enum.go:29:6 *)
 Definition UnmarshalPerson : val :=
   rec: "UnmarshalPerson" "s" :=
     exception_do (let: "s" := (mem.alloc "s") in
@@ -198,15 +135,11 @@ Definition UnmarshalPerson : val :=
     let: "$r1" := "$ret1" in
     do:  ("status_int" <-[#uint64T] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
-    let: "status" := (mem.alloc (type.zero_val #Person_Status)) in
-    let: "$r0" := (struct.make #Person_Status [{
-      "status" ::= type.zero_val #Status
-    }]) in
-    do:  ("status" <-[#Person_Status] "$r0");;;
-    do:  (let: "$a0" := (![#uint64T] "status_int") in
-    (method_call #new_example.main #"Person_Status'ptr" #"SetStatus" "status") "$a0");;;
+    let: "status" := (mem.alloc (type.zero_val #Status)) in
+    let: "$r0" := (![#uint64T] "status_int") in
+    do:  ("status" <-[#Status] "$r0");;;
     return: (let: "$Name" := (string.from_bytes (![#sliceT] "name")) in
-     let: "$Status" := (![#Person_Status] "status") in
+     let: "$Status" := (![#Status] "status") in
      struct.make #Person [{
        "Name" ::= "$Name";
        "Status" ::= "$Status"
@@ -335,9 +268,9 @@ Definition UnmarshalTimeStamp : val :=
 
 Definition vars' : list (go_string * go_type) := [].
 
-Definition functions' : list (go_string * val) := [("MarshalCalendar"%go, MarshalCalendar); ("UnmarshalCalendar"%go, UnmarshalCalendar); ("MarshalPersonStatus"%go, MarshalPersonStatus); ("UnmarshalPersonStatus"%go, UnmarshalPersonStatus); ("MarshalPerson"%go, MarshalPerson); ("UnmarshalPerson"%go, UnmarshalPerson); ("MarshalEvent"%go, MarshalEvent); ("UnmarshalEvent"%go, UnmarshalEvent); ("MarshalTimeStamp"%go, MarshalTimeStamp); ("UnmarshalTimeStamp"%go, UnmarshalTimeStamp)].
+Definition functions' : list (go_string * val) := [("MarshalCalendar"%go, MarshalCalendar); ("UnmarshalCalendar"%go, UnmarshalCalendar); ("MarshalPerson"%go, MarshalPerson); ("UnmarshalPerson"%go, UnmarshalPerson); ("MarshalEvent"%go, MarshalEvent); ("UnmarshalEvent"%go, UnmarshalEvent); ("MarshalTimeStamp"%go, MarshalTimeStamp); ("UnmarshalTimeStamp"%go, UnmarshalTimeStamp)].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [("Calendar"%go, []); ("Calendar'ptr"%go, []); ("Status"%go, []); ("Status'ptr"%go, []); ("Person_Status"%go, []); ("Person_Status'ptr"%go, [("GetStatus"%go, Person_Status__GetStatus); ("SetStatus"%go, Person_Status__SetStatus)]); ("Person"%go, []); ("Person'ptr"%go, []); ("Event"%go, []); ("Event'ptr"%go, []); ("TimeStamp"%go, []); ("TimeStamp'ptr"%go, [])].
+Definition msets' : list (go_string * (list (go_string * val))) := [("Calendar"%go, []); ("Calendar'ptr"%go, []); ("Status"%go, []); ("Status'ptr"%go, []); ("Person"%go, []); ("Person'ptr"%go, []); ("Event"%go, []); ("Event'ptr"%go, []); ("TimeStamp"%go, []); ("TimeStamp'ptr"%go, [])].
 
 #[global] Instance info' : PkgInfo new_example.main :=
   {|
