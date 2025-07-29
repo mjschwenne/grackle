@@ -1,11 +1,11 @@
-package error
+package error_gk
 
 type E uint32
 
 const (
-	eOk        E = 0
-	eEndOfFile E = 1
-	eUnknown   E = 2
+	EOk        E = 0
+	EEndOfFile E = 1
+	EUnknown   E = 2
 )
 
 var Name = map[uint32]string{
@@ -18,12 +18,6 @@ var Value = map[string]uint32{
 	"eOk":        0,
 	"eEndOfFile": 1,
 	"eUnknown":   2,
-}
-
-func (e E) Enum() *E {
-	n := new(E)
-	*n = e
-	return n
 }
 
 func (e E) String() string {

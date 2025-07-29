@@ -173,13 +173,14 @@ func GetGoTypeName(field *field) string {
 		return strings.ToLower(field.GetTypeName()) + "_gk.S"
 	}
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
-		return strings.ToLower(field.GetTypeName()[1:]) + "_gk.E"
+		return strings.ToLower(field.GetTypeName()) + "_gk.E"
 	}
 	return TypeMap[field.GetType()].GoType
 }
 
 func GetGoModuleName(field *field) string {
-	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE ||
+		field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
 		return strings.ToLower(field.GetTypeName()) + "_gk"
 	}
 

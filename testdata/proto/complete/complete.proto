@@ -27,6 +27,11 @@ message structSlice {
   repeated completeInt ints = 2;
 }
 
+message enum {
+  string op = 1;
+  error err = 2;
+}
+
 message complete {
   completeInt int = 1;
   completeSlice slc = 2;

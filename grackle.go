@@ -204,12 +204,16 @@ func generateMsg(message *descriptorpb.DescriptorProto, fileOpts *fileParams) me
 	var fields []*field
 	var nested []string
 	for _, f := range message.GetField() {
-		if f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		if f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE ||
+			f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
 			realName := (f.GetTypeName())[1:]
 			f.TypeName = &realName
 			if !slices.Contains(nested, realName) {
 				nested = append(nested, realName)
 			}
+			// } else if f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM &&
+			// 	!slices.Contains(nested, f.GetTypeName()) {
+			// 	nested = append(nested, f.GetTypeName())
 		}
 		if util.IsRepeatedType(f) || util.IsCoqType(f, "u8") {
 			simple = false
