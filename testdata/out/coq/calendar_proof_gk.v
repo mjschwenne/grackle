@@ -4,6 +4,7 @@
 (*****************************************)
 
 From New.proof Require Import proof_prelude.
+From Perennial.Helpers Require Import NamedProps.
 From New.proof Require Import github_com.tchajed.marshal.
 From New.proof Require Import github_com.goose_lang.std.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.calendar_gk.

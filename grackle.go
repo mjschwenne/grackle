@@ -48,6 +48,16 @@ type messageParams struct {
 	MsgMap          map[string]*descriptorpb.DescriptorProto
 }
 
+type enumParams struct {
+	Name            *string
+	GooseOutput     *string
+	CoqLogicalPath  *string
+	CoqPhysicalPath *string
+	GoPhysicalPath  *string
+	GoPackage       *string
+	Values          []*descriptorpb.EnumValueDescriptorProto
+}
+
 //go:embed internal/templates
 var tmplFS embed.FS
 
@@ -211,9 +221,6 @@ func generateMsg(message *descriptorpb.DescriptorProto, fileOpts *fileParams) me
 			if !slices.Contains(nested, realName) {
 				nested = append(nested, realName)
 			}
-			// } else if f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM &&
-			// 	!slices.Contains(nested, f.GetTypeName()) {
-			// 	nested = append(nested, f.GetTypeName())
 		}
 		if util.IsRepeatedType(f) || util.IsCoqType(f, "u8") {
 			simple = false
@@ -236,6 +243,21 @@ func generateMsg(message *descriptorpb.DescriptorProto, fileOpts *fileParams) me
 	}
 
 	return messageOpts
+}
+
+func setupEnum(enum *descriptorpb.EnumDescriptorProto, fileOpts *fileParams) enumParams {
+	coqOutputPath := util.GetCoqOutputPath(fileOpts.CoqPhysicalPath, enum.Name)
+	goOutputPath := util.GetGoOutputPath(fileOpts.GoOutputPath, enum.Name)
+	enumOpts := enumParams{
+		Name:            enum.Name,
+		GooseOutput:     fileOpts.GooseOutput,
+		CoqLogicalPath:  fileOpts.CoqLogicalPath,
+		CoqPhysicalPath: &coqOutputPath,
+		GoPackage:       fileOpts.GoPackage,
+		GoPhysicalPath:  &goOutputPath,
+		Values:          enum.GetValue(),
+	}
+	return enumOpts
 }
 
 func gooseTranslate(gooseOutput *string, proofGenPath *string, goRoot string, goDirectory string) {
@@ -286,7 +308,27 @@ func Grackle(protoDir *string,
 			GoPackage:       goPackage,
 		}
 		for _, enum := range file.EnumType {
+			var coqOut io.Writer
 			var goOut io.Writer
+			e := setupEnum(enum, fileOpts)
+
+			if *coqPhysicalPath != "" {
+				if debug != nil {
+					coqOut = debug
+					fmt.Fprintf(debug, "--- Begin: %s ---\n", *e.CoqPhysicalPath)
+				} else {
+					coqOut = util.OpenGrackleFile(e.CoqPhysicalPath)
+				}
+				err := tmpl.ExecuteTemplate(coqOut, "coq_enum.tmpl", e)
+
+				if err != nil {
+					log.Fatalf("Error generating coq code: %v\n", err)
+				}
+				if debug != nil {
+					fmt.Fprintf(debug, "--- End: %s ---\n", *e.CoqPhysicalPath)
+				}
+			}
+
 			goPhysicalPath := util.GetGoOutputPath(goOutputPath, enum.Name)
 			if *goOutputPath != "" {
 				if debug != nil {
@@ -318,6 +360,15 @@ func Grackle(protoDir *string,
 				if debug != nil {
 					fmt.Fprintf(debug, "--- End: %s ---\n", goPhysicalPath)
 				}
+			}
+
+			// Goose Translation, but only if the user wants and we have real go output
+			if debug == nil && *gooseOutput != "" && *goOutputPath != "" {
+				if *proofGenOutput == "" {
+					log.Printf("Warning: proofgen output path not set, skipping proofgen generation!\n")
+				}
+				_, goRoot := util.FindGoModuleName(*goOutputPath)
+				gooseTranslate(gooseOutput, proofGenOutput, goRoot, filepath.Dir(goPhysicalPath))
 			}
 		}
 		for _, message := range file.MessageType {

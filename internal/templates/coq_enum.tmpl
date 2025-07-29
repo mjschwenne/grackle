@@ -1,0 +1,29 @@
+<< template "coq_autogen_notice.tmpl" >>
+From New.proof Require Import proof_prelude.
+From New.code Require Import << cleanCoqName .GoPackage >>.<< lower .Name >>_gk.
+From New.generatedproof Require Import << cleanCoqName .GoPackage >>.<< lower .Name >>_gk.
+
+Module << .Name >>_gk.
+Section << .Name >>_gk.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context `{!goGlobalsGS Σ}.
+
+#[global]
+Program Instance : IsPkgInit << lower .Name >>_gk :=
+  ltac2:(build_pkg_init ()).
+
+Inductive E :=
+<<- range .Values >>
+| << .Name >> 
+<<- end >>.
+
+Definition to_tag e : u64 :=
+  match e with
+  <<- range .Values >>
+  | << .Name >> => << .Number >>
+  <<- end >>
+  end.
+
+End << .Name >>_gk.
+End << .Name >>_gk.
