@@ -6,12 +6,37 @@
 From New.proof Require Import proof_prelude.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.error_gk.
 From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.error_gk.
+From Perennial.algebra Require Import map.
 
 Module error_gk.
 Section error_gk.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!goGlobalsGS Σ}.
+Context `{!ghost_varG Σ ()}.
+
+Local Instance wp_globals_alloc_inst :
+  WpGlobalsAlloc error_gk.vars' (@error_gk.GlobalAddrs) (@error_gk.var_addrs) (λ _, error_gk.own_allocated).
+Proof.
+  solve_wp_globals_alloc.
+Qed.
+
+Definition own_initialized `{!error_gk.GlobalAddrs} : iProp Σ :=
+  "HglobalName" ∷ error_gk.Name ↦ "temp"%go ∗
+  "HglobalValue" ∷ error_gk.Value ↦ "temp"%go.
+
+Definition is_initialized (γtok : gname) `{!error_gk.GlobalAddrs} : iProp Σ :=
+  inv nroot (ghost_var γtok 1 () ∨ own_initialized).
+
+Lemma wp_initialize' pending postconds γtok :
+  error_gk ∉ pending →
+  postconds !! error_gk = Some (∃ (d : error_gk.GlobalAddrs), is_pkg_defined error_gk ∗ is_initialized γtok)%I →
+  {{{ own_globals_tok pending postconds }}}
+    error_gk.initialize' #()
+  {{{ (_ : error_gk.GlobalAddrs), RET #();
+      is_pkg_init error_gk ∗ is_initialized γtok ∗ own_globals_tok pending postconds
+  }}}.
+Admitted.
 
 #[global]
 Program Instance : IsPkgInit error_gk :=
