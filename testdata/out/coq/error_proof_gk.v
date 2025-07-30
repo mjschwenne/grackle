@@ -17,16 +17,16 @@ Context `{!goGlobalsGS Σ}.
 Program Instance : IsPkgInit error_gk :=
   ltac2:(build_pkg_init ()).
 
-Inductive E :=
+Inductive I :=
 | eOk
 | eEndOfFile
 | eUnknown.
 
-Definition to_tag e : u64 :=
-  match e with
-  | eOk => 0
-  | eEndOfFile => 1
-  | eUnknown => 2
+Definition to_tag i : w32 :=
+  match i with
+  | eOk => W32 0
+  | eEndOfFile => W32 1
+  | eUnknown => W32 2
   end.
 
 End error_gk.

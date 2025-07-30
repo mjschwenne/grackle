@@ -24,6 +24,8 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               (u64_le $ length $ args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>)) ++ << $field.Name >>_enc
               <<- else if (isCoqType . "bool") ->>
               [if args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) then W8 1 else W8 0]
+              <<- else if (isCoqType . "enum") ->>
+              (u32_le $ << goModuleName . >>.to_tag args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>))
               <<- else ->>
               (<<- coqType $field >>_le args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>))
               <<- end ->><<- end ->>

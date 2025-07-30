@@ -13,15 +13,15 @@ Context `{!goGlobalsGS Σ}.
 Program Instance : IsPkgInit << lower .Name >>_gk :=
   ltac2:(build_pkg_init ()).
 
-Inductive E :=
+Inductive I :=
 <<- range .Values >>
 | << .Name >> 
 <<- end >>.
 
-Definition to_tag e : u64 :=
-  match e with
+Definition to_tag i : w32 :=
+  match i with
   <<- range .Values >>
-  | << .Name >> => << .Number >>
+  | << .Name >> => W32 << .Number >>
   <<- end >>
   end.
 

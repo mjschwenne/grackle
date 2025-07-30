@@ -7,7 +7,7 @@ const (
     << goName .GetName >> E = << .GetNumber >>
     <<- end >>
 )
-
+<</*
 var Name = map[uint32]string{
     <<- range .GetValue >>
     << .GetNumber >>: "<< .GetName >>",
@@ -23,3 +23,4 @@ var Value = map[string]uint32{
 func (<< param .Name >> E) String() string {
     return Name[uint32(<< param .Name >>)]
 }
+*/>>

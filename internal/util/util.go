@@ -165,6 +165,9 @@ func GetCoqTypeName(field *field) string {
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		return field.GetTypeName() + "_gk.C"
 	}
+	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
+		return field.GetTypeName() + "_gk.I"
+	}
 	return TypeMap[field.GetType()].CoqType
 }
 

@@ -23,17 +23,21 @@ Context `{!goGlobalsGS Σ}.
 Program Instance : IsPkgInit enum_gk :=
   ltac2:(build_pkg_init ()).
 
-Definition C := enum_gk.S.t.
+Record C :=
+    mkC {
+        op' :  go_string;
+        err' :  error_gk.I;
+        }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-  encoded = (u64_le $ length $ args.(enum_gk.S.Op')) ++ args.(enum_gk.S.Op') ++
-              (enum_le args.(enum_gk.S.Err'))
-  /\ length args.(enum_gk.S.Op') < 2^64.
+  encoded = (u64_le $ length $ args.(op')) ++ args.(op') ++
+              (u32_le $ error_gk.to_tag args.(err'))
+  /\ length args.(op') < 2^64.
 
 Definition own (args__v: enum_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
-  "%Hown_op" ∷ ⌜ args__v.(enum_gk.S.Op') = args__c.(enum_gk.S.Op') ⌝ ∗
-  "%Hown_op_len" ∷ ⌜ length args__c.(enum_gk.S.Op') < 2^64 ⌝ ∗
-  "%Hown_err" ∷ ⌜ args__v.(enum_gk.S.Err') = args__c.(enum_gk.S.Err') ⌝.
+  "%Hown_op" ∷ ⌜ args__v.(enum_gk.S.Op') = args__c.(op') ⌝ ∗
+  "%Hown_op_len" ∷ ⌜ length args__c.(op') < 2^64 ⌝ ∗
+  "%Hown_err" ∷ ⌜ args__v.(enum_gk.S.Err') = error_gk.to_tag args__c.(err') ⌝.
 
 Lemma wp_Encode (args__t : enum_gk.S.t) (args__c : C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
@@ -59,7 +63,7 @@ Proof.
   wp_apply (wp_WriteLenPrefixedBytes with "[$Hsl $Hcap $HopBytes]").
   iIntros (?) "(Hsl & Hcap & HopBytes)". wp_auto.
 
-  wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
+  wp_apply (wp_WriteInt32 with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
   iApply "HΦ". rewrite -?app_assoc.
@@ -97,7 +101,7 @@ Proof.
   wp_apply (wp_StringFromBytes with "[$Hop_byt]").
   iIntros "Hop_byt". wp_auto.
 
-  wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
+  wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
 
   iApply "HΦ". iFrame.
   done.

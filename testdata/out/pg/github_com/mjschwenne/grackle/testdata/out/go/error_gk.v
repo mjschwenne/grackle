@@ -20,8 +20,6 @@ Section names.
 
 Class GlobalAddrs :=
 {
-  Name : loc;
-  Value : loc;
 }.
 
 Context `{!GlobalAddrs}.
@@ -29,8 +27,6 @@ Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!goGlobalsGS Σ}.
 
 Definition var_addrs : list (go_string * loc) := [
-    ("Name"%go, Name);
-    ("Value"%go, Value)
   ].
 
 Global Instance is_pkg_defined_instance : IsPkgDefined error_gk :=
@@ -39,24 +35,7 @@ Global Instance is_pkg_defined_instance : IsPkgDefined error_gk :=
 |}.
 
 Definition own_allocated : iProp Σ :=
-  "HName" ∷ Name ↦ (default_val loc) ∗
-  "HValue" ∷ Value ↦ (default_val loc).
-
-Global Instance wp_globals_get_Name : 
-  WpGlobalsGet error_gk "Name" Name (is_pkg_defined error_gk).
-Proof. apply wp_globals_get'. reflexivity. Qed.
-
-Global Instance wp_globals_get_Value : 
-  WpGlobalsGet error_gk "Value" Value (is_pkg_defined error_gk).
-Proof. apply wp_globals_get'. reflexivity. Qed.
-
-Global Instance wp_method_call_E_String :
-  WpMethodCall error_gk "E" "String" _ (is_pkg_defined error_gk) :=
-  ltac:(apply wp_method_call'; reflexivity).
-
-Global Instance wp_method_call_E'ptr_String :
-  WpMethodCall error_gk "E'ptr" "String" _ (is_pkg_defined error_gk) :=
-  ltac:(apply wp_method_call'; reflexivity).
+True.
 
 End names.
 End error_gk.

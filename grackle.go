@@ -209,7 +209,7 @@ func setupTemplates(files *descriptorpb.FileDescriptorSet) *template.Template {
 }
 
 func generateMsg(message *descriptorpb.DescriptorProto, fileOpts *fileParams) messageParams {
-	// A message is simple if it has no repeated fields (or enums/oneof?)
+	// A message is simple if it has no repeated fields (or enums/oneof)
 	simple := true
 	var fields []*field
 	var nested []string
@@ -222,7 +222,8 @@ func generateMsg(message *descriptorpb.DescriptorProto, fileOpts *fileParams) me
 				nested = append(nested, realName)
 			}
 		}
-		if util.IsRepeatedType(f) || util.IsCoqType(f, "u8") {
+		if util.IsRepeatedType(f) || util.IsCoqType(f, "u8") ||
+			f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
 			simple = false
 		}
 		fields = append(fields, f)
