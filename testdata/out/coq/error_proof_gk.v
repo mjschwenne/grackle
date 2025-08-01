@@ -15,8 +15,18 @@ Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!goGlobalsGS Σ}.
 Context `{!ghost_varG Σ ()}.
 
-Definition name_map : gmap w32 go_string := gmap_empty.
-Definition value_map : gmap go_string w32 := gmap_empty.
+Definition name_map_emp : gmap w32 go_string := gmap_empty.
+(* FIXME: For some reason, type inference is wrong about using gmap_empty directly below
+   and I can't figure out how to expliclity pass the parameters to gmap_empty. *)
+Definition name_map : gmap w32 go_string := map_insert (W32 0) "eOk"%go
+                                              (map_insert (W32 1) "eEndOfFile"%go
+                                                 (map_insert (W32 2) "eUnknown"%go
+                                                    name_map_emp)).
+Definition value_map_emp : gmap go_string w32 := gmap_empty.
+Definition value_map : gmap go_string w32 := map_insert "eOk"%go (W32 0)
+                                               (map_insert "eEndOfFile"%go (W32 1)
+                                                  (map_insert "eUnknown"%go (W32 2)
+                                                    value_map_emp)).
 
 Definition own_initialized `{!error_gk.GlobalAddrs} : iProp Σ :=
   "HglobalName" ∷ error_gk.Name ↦${DfracDiscarded} name_map ∗
