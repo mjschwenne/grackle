@@ -9,9 +9,24 @@ Section << .Name >>_gk.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!goGlobalsGS Σ}.
 
-#[global]
-Program Instance : IsPkgInit << lower .Name >>_gk :=
-  ltac2:(build_pkg_init ()).
+Definition name_map : gmap w32 go_string := list_to_map [
+                                                << range $idx, $val := .Values ->>
+                                                << if $idx >>;
+                                                << end ->>
+                                                ((W32 << .Number >>), "<< .Name >>"%go)
+                                                <<- end >>
+                                              ].
+Definition value_map : gmap go_string w32 := list_to_map [
+                                                 << range $idx, $val := .Values ->>
+                                                 << if $idx >>;
+                                                 << end ->>
+                                                 ("<< .Name >>"%go, (W32 << .Number >>))
+                                                 <<- end >>
+                                               ].
+
+Definition own_initialized `{!<< lower .Name >>_gk.GlobalAddrs} : iProp Σ :=
+  "HglobalName" ∷ << lower .Name >>_gk.Name ↦${DfracDiscarded} name_map ∗
+  "HglobalValue" ∷ << lower .Name >>_gk.Value ↦${DfracDiscarded} value_map.
 
 Inductive I :=
 <<- range .Values >>

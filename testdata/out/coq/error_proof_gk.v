@@ -6,48 +6,27 @@
 From New.proof Require Import proof_prelude.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.error_gk.
 From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.error_gk.
-From Perennial.algebra Require Import map.
 
 Module error_gk.
 Section error_gk.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!goGlobalsGS Σ}.
-Context `{!ghost_varG Σ ()}.
 
-Definition name_map_emp : gmap w32 go_string := gmap_empty.
-(* FIXME: For some reason, type inference is wrong about using gmap_empty directly below
-   and I can't figure out how to expliclity pass the parameters to gmap_empty. *)
-Definition name_map : gmap w32 go_string := map_insert (W32 0) "eOk"%go
-                                              (map_insert (W32 1) "eEndOfFile"%go
-                                                 (map_insert (W32 2) "eUnknown"%go
-                                                    name_map_emp)).
-Definition value_map_emp : gmap go_string w32 := gmap_empty.
-Definition value_map : gmap go_string w32 := map_insert "eOk"%go (W32 0)
-                                               (map_insert "eEndOfFile"%go (W32 1)
-                                                  (map_insert "eUnknown"%go (W32 2)
-                                                    value_map_emp)).
+Definition name_map : gmap w32 go_string := list_to_map [
+                                                ((W32 0), "eOk"%go);
+                                                ((W32 1), "eEndOfFile"%go);
+                                                ((W32 2), "eUnknown"%go)
+                                              ].
+Definition value_map : gmap go_string w32 := list_to_map [
+                                                 ("eOk"%go, (W32 0));
+                                                 ("eEndOfFile"%go, (W32 1));
+                                                 ("eUnknown"%go, (W32 2))
+                                               ].
 
 Definition own_initialized `{!error_gk.GlobalAddrs} : iProp Σ :=
   "HglobalName" ∷ error_gk.Name ↦${DfracDiscarded} name_map ∗
   "HglobalValue" ∷ error_gk.Value ↦${DfracDiscarded} value_map.
-
-Definition is_initialized (γtok : gname) `{!error_gk.GlobalAddrs} : iProp Σ :=
-  inv nroot (ghost_var γtok 1 () ∨ own_initialized).
-
-Lemma wp_initialize' pending postconds γtok :
-  error_gk ∉ pending →
-  postconds !! error_gk = Some (∃ (d : error_gk.GlobalAddrs), is_pkg_defined error_gk ∗ is_initialized γtok)%I →
-  {{{ own_globals_tok pending postconds }}}
-    error_gk.initialize' #()
-  {{{ (_ : error_gk.GlobalAddrs), RET #();
-      is_pkg_defined error_gk ∗ is_initialized γtok ∗ own_globals_tok pending postconds
-  }}}.
-Admitted.
-
-(* #[global] *)
-(* Program Instance : IsPkgInit error_gk := *)
-(*   ltac2:(build_pkg_init ()). *)
 
 Inductive I :=
 | eOk

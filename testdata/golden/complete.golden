@@ -14,9 +14,20 @@ Section error_gk.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!goGlobalsGS Σ}.
 
-#[global]
-Program Instance : IsPkgInit error_gk :=
-  ltac2:(build_pkg_init ()).
+Definition name_map : gmap w32 go_string := list_to_map [
+                                                ((W32 0), "eOk"%go);
+                                                ((W32 1), "eEndOfFile"%go);
+                                                ((W32 2), "eUnknown"%go)
+                                              ].
+Definition value_map : gmap go_string w32 := list_to_map [
+                                                 ("eOk"%go, (W32 0));
+                                                 ("eEndOfFile"%go, (W32 1));
+                                                 ("eUnknown"%go, (W32 2))
+                                               ].
+
+Definition own_initialized `{!error_gk.GlobalAddrs} : iProp Σ :=
+  "HglobalName" ∷ error_gk.Name ↦${DfracDiscarded} name_map ∗
+  "HglobalValue" ∷ error_gk.Value ↦${DfracDiscarded} value_map.
 
 Inductive I :=
 | eOk
@@ -43,6 +54,22 @@ const (
 	EEndOfFile E = 1
 	EUnknown   E = 2
 )
+
+var Name = map[uint32]string{
+	0: "eOk",
+	1: "eEndOfFile",
+	2: "eUnknown",
+}
+
+var Value = map[string]uint32{
+	"eOk":        0,
+	"eEndOfFile": 1,
+	"eUnknown":   2,
+}
+
+func (e E) String() string {
+	return Name[uint32(e)]
+}
 --- End: testdata/out/go/error_gk/error_gk.go ---
 --- Begin: testdata/out/coq/completeint_proof_gk.v ---
 (*****************************************)
