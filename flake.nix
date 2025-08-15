@@ -19,7 +19,7 @@
         grackle = pkgs.buildGoModule {
           name = "grackle";
           src = ./.;
-          vendorHash = "sha256-HByv0JVhqfAGtfnhkoF3tqAW4YGw9O1IM41qc5JEnr0=";
+          vendorHash = "sha256-tx+UiQWfXq9AJ/JQdGy9qw7VTKKVQ8D1CFAyN/wNU8w=";
           nativeBuildInputs = with pkgs; [protobuf];
         };
         goose = pkgs.buildGoModule {
