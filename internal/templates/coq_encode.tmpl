@@ -13,7 +13,7 @@ Lemma wp_Encode (args__t : << lower .Name >>_gk.S.t) (args__c : C) (pre_sl : sli
         own_slice pre_sl (DfracOwn 1) prefix ∗
         own_slice_cap w8 pre_sl (DfracOwn 1)
   }}}
-    << lower .Name >>_gk @ "Marshal" #pre_sl #args__t
+    @! << lower .Name >>_gk.Marshal #pre_sl #args__t
   {{{
         enc enc_sl, RET #enc_sl;
         ⌜ has_encoding enc args__c ⌝ ∗

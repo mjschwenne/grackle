@@ -1,6 +1,6 @@
 //go:build !goose
 
-package main
+package example
 
 import (
 	"github.com/tchajed/marshal"

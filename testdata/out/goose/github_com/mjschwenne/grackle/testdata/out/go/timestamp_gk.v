@@ -9,52 +9,58 @@ Section code.
 Context `{ffi_syntax}.
 
 
+Definition Sⁱᵈ : go_string := "github.com/mjschwenne/grackle/testdata/out/go/timestamp_gk.S"%go.
+
 Definition S : go_type := structT [
   "Hour" :: uint32T;
   "Minute" :: uint32T;
   "Second" :: uint64T
 ].
 
+Definition Marshal : go_string := "github.com/mjschwenne/grackle/testdata/out/go/timestamp_gk.Marshal"%go.
+
 (* go: timestamp_gk.go:18:6 *)
-Definition Marshal : val :=
-  rec: "Marshal" "enc" "t" :=
+Definition Marshalⁱᵐᵖˡ : val :=
+  λ: "enc" "t",
     exception_do (let: "t" := (mem.alloc "t") in
     let: "enc" := (mem.alloc "enc") in
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#uint32T] (struct.field_ref #S #"Hour"%go "t")) in
-    (func_call #marshal.marshal #"WriteInt32"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt32) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#uint32T] (struct.field_ref #S #"Minute"%go "t")) in
-    (func_call #marshal.marshal #"WriteInt32"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt32) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#uint64T] (struct.field_ref #S #"Second"%go "t")) in
-    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
+Definition Unmarshal : go_string := "github.com/mjschwenne/grackle/testdata/out/go/timestamp_gk.Unmarshal"%go.
+
 (* go: timestamp_gk.go:26:6 *)
-Definition Unmarshal : val :=
-  rec: "Unmarshal" "s" :=
+Definition Unmarshalⁱᵐᵖˡ : val :=
+  λ: "s",
     exception_do (let: "s" := (mem.alloc "s") in
     let: "hour" := (mem.alloc (type.zero_val #uint32T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt32"%go) "$a0") in
+    (func_call #marshal.ReadInt32) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("hour" <-[#uint32T] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "minute" := (mem.alloc (type.zero_val #uint32T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt32"%go) "$a0") in
+    (func_call #marshal.ReadInt32) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("minute" <-[#uint32T] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "second" := (mem.alloc (type.zero_val #uint64T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
+    (func_call #marshal.ReadInt) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("second" <-[#uint64T] "$r0");;;
@@ -70,9 +76,9 @@ Definition Unmarshal : val :=
 
 Definition vars' : list (go_string * go_type) := [].
 
-Definition functions' : list (go_string * val) := [("Marshal"%go, Marshal); ("Unmarshal"%go, Unmarshal)].
+Definition functions' : list (go_string * val) := [(Marshal, Marshalⁱᵐᵖˡ); (Unmarshal, Unmarshalⁱᵐᵖˡ)].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [("S"%go, []); ("S'ptr"%go, [])].
+Definition msets' : list (go_string * (list (go_string * val))) := [(Sⁱᵈ, []); (ptrTⁱᵈ Sⁱᵈ, [])].
 
 #[global] Instance info' : PkgInfo timestamp_gk.timestamp_gk :=
   {|
@@ -83,9 +89,10 @@ Definition msets' : list (go_string * (list (go_string * val))) := [("S"%go, [])
   |}.
 
 Definition initialize' : val :=
-  rec: "initialize'" <> :=
-    globals.package_init timestamp_gk.timestamp_gk (λ: <>,
-      exception_do (do:  marshal.initialize')
+  λ: <>,
+    package.init #timestamp_gk.timestamp_gk (λ: <>,
+      exception_do (do:  (marshal.initialize' #());;;
+      do:  (package.alloc timestamp_gk.timestamp_gk #()))
       ).
 
 End code.

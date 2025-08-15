@@ -9,9 +9,9 @@ Require Export New.code.github_com.mjschwenne.grackle.new_example.
 
 Set Default Proof Using "Type".
 
-Module main.
+Module example.
 
-(* type main.Calendar *)
+(* type example.Calendar *)
 Module Calendar.
 Section def.
 Context `{ffi_syntax}.
@@ -29,13 +29,13 @@ Global Instance settable_Calendar : Settable Calendar.t :=
   settable! Calendar.mk < Calendar.hash'; Calendar.events' >.
 Global Instance into_val_Calendar : IntoVal Calendar.t :=
   {| to_val_def v :=
-    struct.val_aux main.Calendar [
+    struct.val_aux example.Calendar [
     "hash" ::= #(Calendar.hash' v);
     "events" ::= #(Calendar.events' v)
     ]%struct
   |}.
 
-Global Program Instance into_val_typed_Calendar : IntoValTyped Calendar.t main.Calendar :=
+Global Program Instance into_val_typed_Calendar : IntoValTyped Calendar.t example.Calendar :=
 {|
   default_val := Calendar.mk (default_val _) (default_val _);
 |}.
@@ -44,17 +44,17 @@ Next Obligation. solve_zero_val. Qed.
 Next Obligation. solve_to_val_inj. Qed.
 Final Obligation. solve_decision. Qed.
 
-Global Instance into_val_struct_field_Calendar_hash : IntoValStructField "hash" main.Calendar Calendar.hash'.
+Global Instance into_val_struct_field_Calendar_hash : IntoValStructField "hash" example.Calendar Calendar.hash'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_Calendar_events : IntoValStructField "events" main.Calendar Calendar.events'.
+Global Instance into_val_struct_field_Calendar_events : IntoValStructField "events" example.Calendar Calendar.events'.
 Proof. solve_into_val_struct_field. Qed.
 
 
 Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
 Global Instance wp_struct_make_Calendar hash' events':
   PureWp True
-    (struct.make #main.Calendar (alist_val [
+    (struct.make #example.Calendar (alist_val [
       "hash" ::= #hash';
       "events" ::= #events'
     ]))%struct
@@ -64,8 +64,8 @@ Proof. solve_struct_make_pure_wp. Qed.
 
 Global Instance Calendar_struct_fields_split dq l (v : Calendar.t) :
   StructFieldsSplit dq l v (
-    "Hhash" ∷ l ↦s[main.Calendar :: "hash"]{dq} v.(Calendar.hash') ∗
-    "Hevents" ∷ l ↦s[main.Calendar :: "events"]{dq} v.(Calendar.events')
+    "Hhash" ∷ l ↦s[example.Calendar :: "hash"]{dq} v.(Calendar.hash') ∗
+    "Hevents" ∷ l ↦s[example.Calendar :: "events"]{dq} v.(Calendar.events')
   ).
 Proof.
   rewrite /named.
@@ -73,14 +73,14 @@ Proof.
   unfold_typed_pointsto; split_pointsto_app.
 
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (Calendar.hash' v)) main.Calendar "hash"%go.
+  simpl_one_flatten_struct (# (Calendar.hash' v)) (example.Calendar) "hash"%go.
 
   solve_field_ref_f.
 Qed.
 
 End instances.
 
-(* type main.Status *)
+(* type example.Status *)
 Module Status.
 Section def.
 Context `{ffi_syntax}.
@@ -88,7 +88,7 @@ Definition t := w64.
 End def.
 End Status.
 
-(* type main.Person *)
+(* type example.Person *)
 Module Person.
 Section def.
 Context `{ffi_syntax}.
@@ -106,13 +106,13 @@ Global Instance settable_Person : Settable Person.t :=
   settable! Person.mk < Person.Name'; Person.Status' >.
 Global Instance into_val_Person : IntoVal Person.t :=
   {| to_val_def v :=
-    struct.val_aux main.Person [
+    struct.val_aux example.Person [
     "Name" ::= #(Person.Name' v);
     "Status" ::= #(Person.Status' v)
     ]%struct
   |}.
 
-Global Program Instance into_val_typed_Person : IntoValTyped Person.t main.Person :=
+Global Program Instance into_val_typed_Person : IntoValTyped Person.t example.Person :=
 {|
   default_val := Person.mk (default_val _) (default_val _);
 |}.
@@ -121,17 +121,17 @@ Next Obligation. solve_zero_val. Qed.
 Next Obligation. solve_to_val_inj. Qed.
 Final Obligation. solve_decision. Qed.
 
-Global Instance into_val_struct_field_Person_Name : IntoValStructField "Name" main.Person Person.Name'.
+Global Instance into_val_struct_field_Person_Name : IntoValStructField "Name" example.Person Person.Name'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_Person_Status : IntoValStructField "Status" main.Person Person.Status'.
+Global Instance into_val_struct_field_Person_Status : IntoValStructField "Status" example.Person Person.Status'.
 Proof. solve_into_val_struct_field. Qed.
 
 
 Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
 Global Instance wp_struct_make_Person Name' Status':
   PureWp True
-    (struct.make #main.Person (alist_val [
+    (struct.make #example.Person (alist_val [
       "Name" ::= #Name';
       "Status" ::= #Status'
     ]))%struct
@@ -141,8 +141,8 @@ Proof. solve_struct_make_pure_wp. Qed.
 
 Global Instance Person_struct_fields_split dq l (v : Person.t) :
   StructFieldsSplit dq l v (
-    "HName" ∷ l ↦s[main.Person :: "Name"]{dq} v.(Person.Name') ∗
-    "HStatus" ∷ l ↦s[main.Person :: "Status"]{dq} v.(Person.Status')
+    "HName" ∷ l ↦s[example.Person :: "Name"]{dq} v.(Person.Name') ∗
+    "HStatus" ∷ l ↦s[example.Person :: "Status"]{dq} v.(Person.Status')
   ).
 Proof.
   rewrite /named.
@@ -150,14 +150,14 @@ Proof.
   unfold_typed_pointsto; split_pointsto_app.
 
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (Person.Name' v)) main.Person "Name"%go.
+  simpl_one_flatten_struct (# (Person.Name' v)) (example.Person) "Name"%go.
 
   solve_field_ref_f.
 Qed.
 
 End instances.
 
-(* type main.TimeStamp *)
+(* type example.TimeStamp *)
 Module TimeStamp.
 Section def.
 Context `{ffi_syntax}.
@@ -176,14 +176,14 @@ Global Instance settable_TimeStamp : Settable TimeStamp.t :=
   settable! TimeStamp.mk < TimeStamp.hour'; TimeStamp.minute'; TimeStamp.second' >.
 Global Instance into_val_TimeStamp : IntoVal TimeStamp.t :=
   {| to_val_def v :=
-    struct.val_aux main.TimeStamp [
+    struct.val_aux example.TimeStamp [
     "hour" ::= #(TimeStamp.hour' v);
     "minute" ::= #(TimeStamp.minute' v);
     "second" ::= #(TimeStamp.second' v)
     ]%struct
   |}.
 
-Global Program Instance into_val_typed_TimeStamp : IntoValTyped TimeStamp.t main.TimeStamp :=
+Global Program Instance into_val_typed_TimeStamp : IntoValTyped TimeStamp.t example.TimeStamp :=
 {|
   default_val := TimeStamp.mk (default_val _) (default_val _) (default_val _);
 |}.
@@ -192,20 +192,20 @@ Next Obligation. solve_zero_val. Qed.
 Next Obligation. solve_to_val_inj. Qed.
 Final Obligation. solve_decision. Qed.
 
-Global Instance into_val_struct_field_TimeStamp_hour : IntoValStructField "hour" main.TimeStamp TimeStamp.hour'.
+Global Instance into_val_struct_field_TimeStamp_hour : IntoValStructField "hour" example.TimeStamp TimeStamp.hour'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_TimeStamp_minute : IntoValStructField "minute" main.TimeStamp TimeStamp.minute'.
+Global Instance into_val_struct_field_TimeStamp_minute : IntoValStructField "minute" example.TimeStamp TimeStamp.minute'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_TimeStamp_second : IntoValStructField "second" main.TimeStamp TimeStamp.second'.
+Global Instance into_val_struct_field_TimeStamp_second : IntoValStructField "second" example.TimeStamp TimeStamp.second'.
 Proof. solve_into_val_struct_field. Qed.
 
 
 Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
 Global Instance wp_struct_make_TimeStamp hour' minute' second':
   PureWp True
-    (struct.make #main.TimeStamp (alist_val [
+    (struct.make #example.TimeStamp (alist_val [
       "hour" ::= #hour';
       "minute" ::= #minute';
       "second" ::= #second'
@@ -216,9 +216,9 @@ Proof. solve_struct_make_pure_wp. Qed.
 
 Global Instance TimeStamp_struct_fields_split dq l (v : TimeStamp.t) :
   StructFieldsSplit dq l v (
-    "Hhour" ∷ l ↦s[main.TimeStamp :: "hour"]{dq} v.(TimeStamp.hour') ∗
-    "Hminute" ∷ l ↦s[main.TimeStamp :: "minute"]{dq} v.(TimeStamp.minute') ∗
-    "Hsecond" ∷ l ↦s[main.TimeStamp :: "second"]{dq} v.(TimeStamp.second')
+    "Hhour" ∷ l ↦s[example.TimeStamp :: "hour"]{dq} v.(TimeStamp.hour') ∗
+    "Hminute" ∷ l ↦s[example.TimeStamp :: "minute"]{dq} v.(TimeStamp.minute') ∗
+    "Hsecond" ∷ l ↦s[example.TimeStamp :: "second"]{dq} v.(TimeStamp.second')
   ).
 Proof.
   rewrite /named.
@@ -226,15 +226,15 @@ Proof.
   unfold_typed_pointsto; split_pointsto_app.
 
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (TimeStamp.hour' v)) main.TimeStamp "hour"%go.
-  simpl_one_flatten_struct (# (TimeStamp.minute' v)) main.TimeStamp "minute"%go.
+  simpl_one_flatten_struct (# (TimeStamp.hour' v)) (example.TimeStamp) "hour"%go.
+  simpl_one_flatten_struct (# (TimeStamp.minute' v)) (example.TimeStamp) "minute"%go.
 
   solve_field_ref_f.
 Qed.
 
 End instances.
 
-(* type main.Event *)
+(* type example.Event *)
 Module Event.
 Section def.
 Context `{ffi_syntax}.
@@ -254,7 +254,7 @@ Global Instance settable_Event : Settable Event.t :=
   settable! Event.mk < Event.id'; Event.name'; Event.startTime'; Event.endTime' >.
 Global Instance into_val_Event : IntoVal Event.t :=
   {| to_val_def v :=
-    struct.val_aux main.Event [
+    struct.val_aux example.Event [
     "id" ::= #(Event.id' v);
     "name" ::= #(Event.name' v);
     "startTime" ::= #(Event.startTime' v);
@@ -262,7 +262,7 @@ Global Instance into_val_Event : IntoVal Event.t :=
     ]%struct
   |}.
 
-Global Program Instance into_val_typed_Event : IntoValTyped Event.t main.Event :=
+Global Program Instance into_val_typed_Event : IntoValTyped Event.t example.Event :=
 {|
   default_val := Event.mk (default_val _) (default_val _) (default_val _) (default_val _);
 |}.
@@ -271,23 +271,23 @@ Next Obligation. solve_zero_val. Qed.
 Next Obligation. solve_to_val_inj. Qed.
 Final Obligation. solve_decision. Qed.
 
-Global Instance into_val_struct_field_Event_id : IntoValStructField "id" main.Event Event.id'.
+Global Instance into_val_struct_field_Event_id : IntoValStructField "id" example.Event Event.id'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_Event_name : IntoValStructField "name" main.Event Event.name'.
+Global Instance into_val_struct_field_Event_name : IntoValStructField "name" example.Event Event.name'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_Event_startTime : IntoValStructField "startTime" main.Event Event.startTime'.
+Global Instance into_val_struct_field_Event_startTime : IntoValStructField "startTime" example.Event Event.startTime'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_Event_endTime : IntoValStructField "endTime" main.Event Event.endTime'.
+Global Instance into_val_struct_field_Event_endTime : IntoValStructField "endTime" example.Event Event.endTime'.
 Proof. solve_into_val_struct_field. Qed.
 
 
 Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
 Global Instance wp_struct_make_Event id' name' startTime' endTime':
   PureWp True
-    (struct.make #main.Event (alist_val [
+    (struct.make #example.Event (alist_val [
       "id" ::= #id';
       "name" ::= #name';
       "startTime" ::= #startTime';
@@ -299,10 +299,10 @@ Proof. solve_struct_make_pure_wp. Qed.
 
 Global Instance Event_struct_fields_split dq l (v : Event.t) :
   StructFieldsSplit dq l v (
-    "Hid" ∷ l ↦s[main.Event :: "id"]{dq} v.(Event.id') ∗
-    "Hname" ∷ l ↦s[main.Event :: "name"]{dq} v.(Event.name') ∗
-    "HstartTime" ∷ l ↦s[main.Event :: "startTime"]{dq} v.(Event.startTime') ∗
-    "HendTime" ∷ l ↦s[main.Event :: "endTime"]{dq} v.(Event.endTime')
+    "Hid" ∷ l ↦s[example.Event :: "id"]{dq} v.(Event.id') ∗
+    "Hname" ∷ l ↦s[example.Event :: "name"]{dq} v.(Event.name') ∗
+    "HstartTime" ∷ l ↦s[example.Event :: "startTime"]{dq} v.(Event.startTime') ∗
+    "HendTime" ∷ l ↦s[example.Event :: "endTime"]{dq} v.(Event.endTime')
   ).
 Proof.
   rewrite /named.
@@ -310,9 +310,9 @@ Proof.
   unfold_typed_pointsto; split_pointsto_app.
 
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (Event.id' v)) main.Event "id"%go.
-  simpl_one_flatten_struct (# (Event.name' v)) main.Event "name"%go.
-  simpl_one_flatten_struct (# (Event.startTime' v)) main.Event "startTime"%go.
+  simpl_one_flatten_struct (# (Event.id' v)) (example.Event) "id"%go.
+  simpl_one_flatten_struct (# (Event.name' v)) (example.Event) "name"%go.
+  simpl_one_flatten_struct (# (Event.startTime' v)) (example.Event) "startTime"%go.
 
   solve_field_ref_f.
 Qed.
@@ -321,56 +321,41 @@ End instances.
 
 Section names.
 
-Class GlobalAddrs :=
-{
-}.
-
-Context `{!GlobalAddrs}.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!goGlobalsGS Σ}.
-
-Definition var_addrs : list (go_string * loc) := [
-  ].
-
-Global Instance is_pkg_defined_instance : IsPkgDefined main :=
-{|
-  is_pkg_defined := is_global_definitions main var_addrs;
-|}.
-
-Definition own_allocated : iProp Σ :=
-True.
+Context `{!globalsGS Σ}.
+Context `{!GoContext}.
 
 Global Instance wp_func_call_MarshalCalendar :
-  WpFuncCall main "MarshalCalendar" _ (is_pkg_defined main) :=
+  WpFuncCall example.MarshalCalendar _ (is_pkg_defined example) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 Global Instance wp_func_call_UnmarshalCalendar :
-  WpFuncCall main "UnmarshalCalendar" _ (is_pkg_defined main) :=
+  WpFuncCall example.UnmarshalCalendar _ (is_pkg_defined example) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 Global Instance wp_func_call_MarshalPerson :
-  WpFuncCall main "MarshalPerson" _ (is_pkg_defined main) :=
+  WpFuncCall example.MarshalPerson _ (is_pkg_defined example) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 Global Instance wp_func_call_UnmarshalPerson :
-  WpFuncCall main "UnmarshalPerson" _ (is_pkg_defined main) :=
+  WpFuncCall example.UnmarshalPerson _ (is_pkg_defined example) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 Global Instance wp_func_call_MarshalEvent :
-  WpFuncCall main "MarshalEvent" _ (is_pkg_defined main) :=
+  WpFuncCall example.MarshalEvent _ (is_pkg_defined example) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 Global Instance wp_func_call_UnmarshalEvent :
-  WpFuncCall main "UnmarshalEvent" _ (is_pkg_defined main) :=
+  WpFuncCall example.UnmarshalEvent _ (is_pkg_defined example) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 Global Instance wp_func_call_MarshalTimeStamp :
-  WpFuncCall main "MarshalTimeStamp" _ (is_pkg_defined main) :=
+  WpFuncCall example.MarshalTimeStamp _ (is_pkg_defined example) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 Global Instance wp_func_call_UnmarshalTimeStamp :
-  WpFuncCall main "UnmarshalTimeStamp" _ (is_pkg_defined main) :=
+  WpFuncCall example.UnmarshalTimeStamp _ (is_pkg_defined example) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 End names.
-End main.
+End example.

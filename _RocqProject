@@ -36,7 +36,6 @@
 -Q perennial/external/iris/iris_heap_lang iris.heap_lang
 -Q perennial/external/coqutil/src/coqutil coqutil
 -Q perennial/external/record-update/src RecordUpdate
--Q perennial/external/coq-tactical/src Tactical
 -Q perennial/external/iris-named-props/src iris_named_props
 # perennial itself
 -Q perennial/src Perennial

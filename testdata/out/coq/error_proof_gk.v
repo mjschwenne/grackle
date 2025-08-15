@@ -11,7 +11,7 @@ Module error_gk.
 Section error_gk.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!goGlobalsGS Σ}.
+Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
 Definition name_map : gmap w32 go_string := list_to_map [
                                                 ((W32 0), "eOk"%go);
@@ -24,9 +24,17 @@ Definition value_map : gmap go_string w32 := list_to_map [
                                                  ("eUnknown"%go, (W32 2))
                                                ].
 
-Definition own_initialized `{!error_gk.GlobalAddrs} : iProp Σ :=
-  "HglobalName" ∷ error_gk.Name ↦${DfracDiscarded} name_map ∗
-  "HglobalValue" ∷ error_gk.Value ↦${DfracDiscarded} value_map.
+Definition is_initialized : iProp Σ :=
+  "HglobalName" ∷ (global_addr error_gk.Name) ↦${DfracDiscarded} name_map ∗
+  "HglobalValue" ∷ (global_addr error_gk.Value) ↦${DfracDiscarded} value_map.
+
+Local Notation deps := (ltac2:(build_pkg_init_deps 'error_gk) : iProp Σ) (only parsing).
+#[global]
+Program Instance : IsPkgInit error_gk :=
+  {|
+    is_pkg_init_def := is_initialized;
+    is_pkg_init_deps := deps;
+  |}.
 
 Inductive I :=
 | eOk

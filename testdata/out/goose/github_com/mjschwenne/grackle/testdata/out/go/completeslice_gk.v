@@ -11,6 +11,8 @@ Section code.
 Context `{ffi_syntax}.
 
 
+Definition Sⁱᵈ : go_string := "github.com/mjschwenne/grackle/testdata/out/go/completeslice_gk.S"%go.
+
 Definition S : go_type := structT [
   "Strg" :: stringT;
   "Strg2" :: stringT;
@@ -18,90 +20,94 @@ Definition S : go_type := structT [
   "Bytes2" :: sliceT
 ].
 
+Definition Marshal : go_string := "github.com/mjschwenne/grackle/testdata/out/go/completeslice_gk.Marshal"%go.
+
 (* go: completeslice_gk.go:21:6 *)
-Definition Marshal : val :=
-  rec: "Marshal" "enc" "c" :=
+Definition Marshalⁱᵐᵖˡ : val :=
+  λ: "enc" "c",
     exception_do (let: "c" := (mem.alloc "c") in
     let: "enc" := (mem.alloc "enc") in
     do:  (let: "$a0" := (![#stringT] (struct.field_ref #S #"Strg"%go "c")) in
-    (func_call #primitive.primitive #"AssumeNoStringOverflow"%go) "$a0");;;
+    (func_call #primitive.AssumeNoStringOverflow) "$a0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (string.to_bytes (![#stringT] (struct.field_ref #S #"Strg"%go "c"))) in
-    (func_call #marshal.marshal #"WriteLenPrefixedBytes"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteLenPrefixedBytes) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     do:  (let: "$a0" := (![#stringT] (struct.field_ref #S #"Strg2"%go "c")) in
-    (func_call #primitive.primitive #"AssumeNoStringOverflow"%go) "$a0");;;
+    (func_call #primitive.AssumeNoStringOverflow) "$a0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (string.to_bytes (![#stringT] (struct.field_ref #S #"Strg2"%go "c"))) in
-    (func_call #marshal.marshal #"WriteLenPrefixedBytes"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteLenPrefixedBytes) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] (struct.field_ref #S #"Bytes"%go "c")) in
     slice.len "$a0")) in
-    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#sliceT] (struct.field_ref #S #"Bytes"%go "c")) in
-    (func_call #marshal.marshal #"WriteBytes"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteBytes) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] (struct.field_ref #S #"Bytes2"%go "c")) in
     slice.len "$a0")) in
-    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#sliceT] (struct.field_ref #S #"Bytes2"%go "c")) in
-    (func_call #marshal.marshal #"WriteBytes"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteBytes) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
+Definition Unmarshal : go_string := "github.com/mjschwenne/grackle/testdata/out/go/completeslice_gk.Unmarshal"%go.
+
 (* go: completeslice_gk.go:34:6 *)
-Definition Unmarshal : val :=
-  rec: "Unmarshal" "s" :=
+Definition Unmarshalⁱᵐᵖˡ : val :=
+  λ: "s",
     exception_do (let: "s" := (mem.alloc "s") in
     let: "strgBytes" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
+    (func_call #marshal.ReadLenPrefixedBytes) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("strgBytes" <-[#sliceT] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "strg" := (mem.alloc (type.zero_val #stringT)) in
     let: "$r0" := (string.from_bytes (let: "$a0" := (![#sliceT] "strgBytes") in
-    (func_call #std.std #"BytesClone"%go) "$a0")) in
+    (func_call #std.BytesClone) "$a0")) in
     do:  ("strg" <-[#stringT] "$r0");;;
     let: "strg2Bytes" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
+    (func_call #marshal.ReadLenPrefixedBytes) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("strg2Bytes" <-[#sliceT] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "strg2" := (mem.alloc (type.zero_val #stringT)) in
     let: "$r0" := (string.from_bytes (let: "$a0" := (![#sliceT] "strg2Bytes") in
-    (func_call #std.std #"BytesClone"%go) "$a0")) in
+    (func_call #std.BytesClone) "$a0")) in
     do:  ("strg2" <-[#stringT] "$r0");;;
     let: "bytesBytes" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
+    (func_call #marshal.ReadLenPrefixedBytes) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("bytesBytes" <-[#sliceT] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "bytes" := (mem.alloc (type.zero_val #sliceT)) in
     let: "$r0" := (let: "$a0" := (![#sliceT] "bytesBytes") in
-    (func_call #std.std #"BytesClone"%go) "$a0") in
+    (func_call #std.BytesClone) "$a0") in
     do:  ("bytes" <-[#sliceT] "$r0");;;
     let: "bytes2Bytes" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
+    (func_call #marshal.ReadLenPrefixedBytes) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("bytes2Bytes" <-[#sliceT] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "bytes2" := (mem.alloc (type.zero_val #sliceT)) in
     let: "$r0" := (let: "$a0" := (![#sliceT] "bytes2Bytes") in
-    (func_call #std.std #"BytesClone"%go) "$a0") in
+    (func_call #std.BytesClone) "$a0") in
     do:  ("bytes2" <-[#sliceT] "$r0");;;
     return: (let: "$Strg" := (![#stringT] "strg") in
      let: "$Strg2" := (![#stringT] "strg2") in
@@ -116,9 +122,9 @@ Definition Unmarshal : val :=
 
 Definition vars' : list (go_string * go_type) := [].
 
-Definition functions' : list (go_string * val) := [("Marshal"%go, Marshal); ("Unmarshal"%go, Unmarshal)].
+Definition functions' : list (go_string * val) := [(Marshal, Marshalⁱᵐᵖˡ); (Unmarshal, Unmarshalⁱᵐᵖˡ)].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [("S"%go, []); ("S'ptr"%go, [])].
+Definition msets' : list (go_string * (list (go_string * val))) := [(Sⁱᵈ, []); (ptrTⁱᵈ Sⁱᵈ, [])].
 
 #[global] Instance info' : PkgInfo completeslice_gk.completeslice_gk :=
   {|
@@ -129,11 +135,12 @@ Definition msets' : list (go_string * (list (go_string * val))) := [("S"%go, [])
   |}.
 
 Definition initialize' : val :=
-  rec: "initialize'" <> :=
-    globals.package_init completeslice_gk.completeslice_gk (λ: <>,
-      exception_do (do:  marshal.initialize';;;
-      do:  std.initialize';;;
-      do:  primitive.initialize')
+  λ: <>,
+    package.init #completeslice_gk.completeslice_gk (λ: <>,
+      exception_do (do:  (marshal.initialize' #());;;
+      do:  (std.initialize' #());;;
+      do:  (primitive.initialize' #());;;
+      do:  (package.alloc completeslice_gk.completeslice_gk #()))
       ).
 
 End code.

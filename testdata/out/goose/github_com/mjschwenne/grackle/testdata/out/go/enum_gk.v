@@ -12,46 +12,52 @@ Section code.
 Context `{ffi_syntax}.
 
 
+Definition Sⁱᵈ : go_string := "github.com/mjschwenne/grackle/testdata/out/go/enum_gk.S"%go.
+
 Definition S : go_type := structT [
   "Op" :: stringT;
   "Err" :: error_gk.E
 ].
 
+Definition Marshal : go_string := "github.com/mjschwenne/grackle/testdata/out/go/enum_gk.Marshal"%go.
+
 (* go: enum_gk.go:21:6 *)
-Definition Marshal : val :=
-  rec: "Marshal" "enc" "e" :=
+Definition Marshalⁱᵐᵖˡ : val :=
+  λ: "enc" "e",
     exception_do (let: "e" := (mem.alloc "e") in
     let: "enc" := (mem.alloc "enc") in
     do:  (let: "$a0" := (![#stringT] (struct.field_ref #S #"Op"%go "e")) in
-    (func_call #primitive.primitive #"AssumeNoStringOverflow"%go) "$a0");;;
+    (func_call #primitive.AssumeNoStringOverflow) "$a0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (string.to_bytes (![#stringT] (struct.field_ref #S #"Op"%go "e"))) in
-    (func_call #marshal.marshal #"WriteLenPrefixedBytes"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteLenPrefixedBytes) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#error_gk.E] (struct.field_ref #S #"Err"%go "e")) in
-    (func_call #marshal.marshal #"WriteInt32"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt32) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
+Definition Unmarshal : go_string := "github.com/mjschwenne/grackle/testdata/out/go/enum_gk.Unmarshal"%go.
+
 (* go: enum_gk.go:29:6 *)
-Definition Unmarshal : val :=
-  rec: "Unmarshal" "s" :=
+Definition Unmarshalⁱᵐᵖˡ : val :=
+  λ: "s",
     exception_do (let: "s" := (mem.alloc "s") in
     let: "opBytes" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
+    (func_call #marshal.ReadLenPrefixedBytes) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("opBytes" <-[#sliceT] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "op" := (mem.alloc (type.zero_val #stringT)) in
     let: "$r0" := (string.from_bytes (let: "$a0" := (![#sliceT] "opBytes") in
-    (func_call #std.std #"BytesClone"%go) "$a0")) in
+    (func_call #std.BytesClone) "$a0")) in
     do:  ("op" <-[#stringT] "$r0");;;
     let: "err_int" := (mem.alloc (type.zero_val #uint32T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt32"%go) "$a0") in
+    (func_call #marshal.ReadInt32) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("err_int" <-[#uint32T] "$r0");;;
@@ -68,9 +74,9 @@ Definition Unmarshal : val :=
 
 Definition vars' : list (go_string * go_type) := [].
 
-Definition functions' : list (go_string * val) := [("Marshal"%go, Marshal); ("Unmarshal"%go, Unmarshal)].
+Definition functions' : list (go_string * val) := [(Marshal, Marshalⁱᵐᵖˡ); (Unmarshal, Unmarshalⁱᵐᵖˡ)].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [("S"%go, []); ("S'ptr"%go, [])].
+Definition msets' : list (go_string * (list (go_string * val))) := [(Sⁱᵈ, []); (ptrTⁱᵈ Sⁱᵈ, [])].
 
 #[global] Instance info' : PkgInfo enum_gk.enum_gk :=
   {|
@@ -81,12 +87,13 @@ Definition msets' : list (go_string * (list (go_string * val))) := [("S"%go, [])
   |}.
 
 Definition initialize' : val :=
-  rec: "initialize'" <> :=
-    globals.package_init enum_gk.enum_gk (λ: <>,
-      exception_do (do:  error_gk.initialize';;;
-      do:  marshal.initialize';;;
-      do:  std.initialize';;;
-      do:  primitive.initialize')
+  λ: <>,
+    package.init #enum_gk.enum_gk (λ: <>,
+      exception_do (do:  (error_gk.initialize' #());;;
+      do:  (marshal.initialize' #());;;
+      do:  (std.initialize' #());;;
+      do:  (primitive.initialize' #());;;
+      do:  (package.alloc enum_gk.enum_gk #()))
       ).
 
 End code.

@@ -12,6 +12,8 @@ Section code.
 Context `{ffi_syntax}.
 
 
+Definition Sⁱᵈ : go_string := "github.com/mjschwenne/grackle/testdata/out/go/complete_gk.S"%go.
+
 Definition S : go_type := structT [
   "Int" :: completeint_gk.S;
   "Slc" :: completeslice_gk.S;
@@ -21,83 +23,87 @@ Definition S : go_type := structT [
   "Sints" :: sliceT
 ].
 
+Definition Marshal : go_string := "github.com/mjschwenne/grackle/testdata/out/go/complete_gk.Marshal"%go.
+
 (* go: complete_gk.go:25:6 *)
-Definition Marshal : val :=
-  rec: "Marshal" "enc" "c" :=
+Definition Marshalⁱᵐᵖˡ : val :=
+  λ: "enc" "c",
     exception_do (let: "c" := (mem.alloc "c") in
     let: "enc" := (mem.alloc "enc") in
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#completeint_gk.S] (struct.field_ref #S #"Int"%go "c")) in
-    (func_call #completeint_gk.completeint_gk #"Marshal"%go) "$a0" "$a1") in
+    (func_call #completeint_gk.Marshal) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#completeslice_gk.S] (struct.field_ref #S #"Slc"%go "c")) in
-    (func_call #completeslice_gk.completeslice_gk #"Marshal"%go) "$a0" "$a1") in
+    (func_call #completeslice_gk.Marshal) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#boolT] (struct.field_ref #S #"Success"%go "c")) in
-    (func_call #marshal.marshal #"WriteBool"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteBool) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] (struct.field_ref #S #"Sslice"%go "c")) in
     slice.len "$a0")) in
-    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#sliceT] (struct.field_ref #S #"Sslice"%go "c")) in
-    let: "$a2" := (func_call #structslice_gk.structslice_gk #"Marshal"%go) in
-    (func_call #marshal.marshal #"WriteSlice"%go #structslice_gk.S) "$a0" "$a1" "$a2") in
+    let: "$a2" := (func_call #structslice_gk.Marshal) in
+    (func_call #marshal.WriteSlice #structslice_gk.S) "$a0" "$a1" "$a2") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] (struct.field_ref #S #"Iints"%go "c")) in
     slice.len "$a0")) in
-    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#sliceT] (struct.field_ref #S #"Iints"%go "c")) in
-    let: "$a2" := (func_call #marshal.marshal #"WriteInt"%go) in
-    (func_call #marshal.marshal #"WriteSlice"%go #uint64T) "$a0" "$a1" "$a2") in
+    let: "$a2" := (func_call #marshal.WriteInt) in
+    (func_call #marshal.WriteSlice #uint64T) "$a0" "$a1" "$a2") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] (struct.field_ref #S #"Sints"%go "c")) in
     slice.len "$a0")) in
-    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#sliceT] (struct.field_ref #S #"Sints"%go "c")) in
-    let: "$a2" := (func_call #marshal.marshal #"WriteInt32"%go) in
-    (func_call #marshal.marshal #"WriteSlice"%go #uint32T) "$a0" "$a1" "$a2") in
+    let: "$a2" := (func_call #marshal.WriteInt32) in
+    (func_call #marshal.WriteSlice #uint32T) "$a0" "$a1" "$a2") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
+Definition Unmarshal : go_string := "github.com/mjschwenne/grackle/testdata/out/go/complete_gk.Unmarshal"%go.
+
 (* go: complete_gk.go:42:6 *)
-Definition Unmarshal : val :=
-  rec: "Unmarshal" "s" :=
+Definition Unmarshalⁱᵐᵖˡ : val :=
+  λ: "s",
     exception_do (let: "s" := (mem.alloc "s") in
     let: "int" := (mem.alloc (type.zero_val #completeint_gk.S)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #completeint_gk.completeint_gk #"Unmarshal"%go) "$a0") in
+    (func_call #completeint_gk.Unmarshal) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("int" <-[#completeint_gk.S] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "slc" := (mem.alloc (type.zero_val #completeslice_gk.S)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #completeslice_gk.completeslice_gk #"Unmarshal"%go) "$a0") in
+    (func_call #completeslice_gk.Unmarshal) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("slc" <-[#completeslice_gk.S] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "success" := (mem.alloc (type.zero_val #boolT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadBool"%go) "$a0") in
+    (func_call #marshal.ReadBool) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("success" <-[#boolT] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "ssliceLen" := (mem.alloc (type.zero_val #uint64T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
+    (func_call #marshal.ReadInt) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("ssliceLen" <-[#uint64T] "$r0");;;
@@ -105,15 +111,15 @@ Definition Unmarshal : val :=
     let: "sslice" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
     let: "$a1" := (![#uint64T] "ssliceLen") in
-    let: "$a2" := (func_call #structslice_gk.structslice_gk #"Unmarshal"%go) in
-    (func_call #marshal.marshal #"ReadSlice"%go #structslice_gk.S) "$a0" "$a1" "$a2") in
+    let: "$a2" := (func_call #structslice_gk.Unmarshal) in
+    (func_call #marshal.ReadSlice #structslice_gk.S) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("sslice" <-[#sliceT] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "iintsLen" := (mem.alloc (type.zero_val #uint64T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
+    (func_call #marshal.ReadInt) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("iintsLen" <-[#uint64T] "$r0");;;
@@ -121,15 +127,15 @@ Definition Unmarshal : val :=
     let: "iints" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
     let: "$a1" := (![#uint64T] "iintsLen") in
-    let: "$a2" := (func_call #marshal.marshal #"ReadInt"%go) in
-    (func_call #marshal.marshal #"ReadSlice"%go #uint64T) "$a0" "$a1" "$a2") in
+    let: "$a2" := (func_call #marshal.ReadInt) in
+    (func_call #marshal.ReadSlice #uint64T) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("iints" <-[#sliceT] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "sintsLen" := (mem.alloc (type.zero_val #uint64T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
+    (func_call #marshal.ReadInt) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("sintsLen" <-[#uint64T] "$r0");;;
@@ -137,8 +143,8 @@ Definition Unmarshal : val :=
     let: "sints" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
     let: "$a1" := (![#uint64T] "sintsLen") in
-    let: "$a2" := (func_call #marshal.marshal #"ReadInt32"%go) in
-    (func_call #marshal.marshal #"ReadSlice"%go #uint32T) "$a0" "$a1" "$a2") in
+    let: "$a2" := (func_call #marshal.ReadInt32) in
+    (func_call #marshal.ReadSlice #uint32T) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("sints" <-[#sliceT] "$r0");;;
@@ -160,9 +166,9 @@ Definition Unmarshal : val :=
 
 Definition vars' : list (go_string * go_type) := [].
 
-Definition functions' : list (go_string * val) := [("Marshal"%go, Marshal); ("Unmarshal"%go, Unmarshal)].
+Definition functions' : list (go_string * val) := [(Marshal, Marshalⁱᵐᵖˡ); (Unmarshal, Unmarshalⁱᵐᵖˡ)].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [("S"%go, []); ("S'ptr"%go, [])].
+Definition msets' : list (go_string * (list (go_string * val))) := [(Sⁱᵈ, []); (ptrTⁱᵈ Sⁱᵈ, [])].
 
 #[global] Instance info' : PkgInfo complete_gk.complete_gk :=
   {|
@@ -173,12 +179,13 @@ Definition msets' : list (go_string * (list (go_string * val))) := [("S"%go, [])
   |}.
 
 Definition initialize' : val :=
-  rec: "initialize'" <> :=
-    globals.package_init complete_gk.complete_gk (λ: <>,
-      exception_do (do:  structslice_gk.initialize';;;
-      do:  completeslice_gk.initialize';;;
-      do:  completeint_gk.initialize';;;
-      do:  marshal.initialize')
+  λ: <>,
+    package.init #complete_gk.complete_gk (λ: <>,
+      exception_do (do:  (structslice_gk.initialize' #());;;
+      do:  (completeslice_gk.initialize' #());;;
+      do:  (completeint_gk.initialize' #());;;
+      do:  (marshal.initialize' #());;;
+      do:  (package.alloc complete_gk.complete_gk #()))
       ).
 
 End code.

@@ -8,6 +8,8 @@ Section code.
 Context `{ffi_syntax}.
 
 
+Definition Eⁱᵈ : go_string := "github.com/mjschwenne/grackle/testdata/out/go/error_gk.E"%go.
+
 Definition E : go_type := uint32T.
 
 Definition EOk : expr := #(W32 0).
@@ -16,17 +18,21 @@ Definition EEndOfFile : expr := #(W32 1).
 
 Definition EUnknown : expr := #(W32 2).
 
-(* go: error_gk.go:23:12 *)
-Definition E__String : val :=
-  rec: "E__String" "e" <> :=
-    exception_do (let: "e" := (mem.alloc "e") in
-    return: (Fst (map.get (![type.mapT #uint32T #stringT] (globals.get #error_gk.error_gk #"Name"%go)) (![#E] "e")))).
+Definition Name : go_string := "github.com/mjschwenne/grackle/testdata/out/go/error_gk.Name"%go.
 
-Definition vars' : list (go_string * go_type) := [("Name"%go, mapT uint32T stringT); ("Value"%go, mapT stringT uint32T)].
+Definition Value : go_string := "github.com/mjschwenne/grackle/testdata/out/go/error_gk.Value"%go.
+
+(* go: error_gk.go:23:12 *)
+Definition E__Stringⁱᵐᵖˡ : val :=
+  λ: "e" <>,
+    exception_do (let: "e" := (mem.alloc "e") in
+    return: (Fst (map.get (![type.mapT #uint32T #stringT] (globals.get #Name)) (![#E] "e")))).
+
+Definition vars' : list (go_string * go_type) := [(Name, mapT uint32T stringT); (Value, mapT stringT uint32T)].
 
 Definition functions' : list (go_string * val) := [].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [("E"%go, [("String"%go, E__String)]); ("E'ptr"%go, [("String"%go, (λ: "$recvAddr",
+Definition msets' : list (go_string * (list (go_string * val))) := [(Eⁱᵈ, [("String"%go, E__Stringⁱᵐᵖˡ)]); (ptrTⁱᵈ Eⁱᵈ, [("String"%go, (λ: "$recvAddr",
                  method_call #error_gk.error_gk #"E" #"String" (![#E] "$recvAddr")
                  )%V)])].
 
@@ -39,24 +45,25 @@ Definition msets' : list (go_string * (list (go_string * val))) := [("E"%go, [("
   |}.
 
 Definition initialize' : val :=
-  rec: "initialize'" <> :=
-    globals.package_init error_gk.error_gk (λ: <>,
-      exception_do (let: "$r0" := ((let: "$v0" := #"eOk"%go in
+  λ: <>,
+    package.init #error_gk.error_gk (λ: <>,
+      exception_do (do:  (package.alloc error_gk.error_gk #());;;
+      let: "$r0" := ((let: "$v0" := #"eOk"%go in
       let: "$k0" := #(W32 0) in
       let: "$v1" := #"eEndOfFile"%go in
       let: "$k1" := #(W32 1) in
       let: "$v2" := #"eUnknown"%go in
       let: "$k2" := #(W32 2) in
-      map.literal #uint32T #stringT [("$k0", "$v0"); ("$k1", "$v1"); ("$k2", "$v2")])) in
-      do:  ((globals.get #error_gk.error_gk #"Name"%go) <-[type.mapT #uint32T #stringT] "$r0");;;
+      map.literal #uint32T #stringT [map.kv_entry "$k0" "$v0"; map.kv_entry "$k1" "$v1"; map.kv_entry "$k2" "$v2"])) in
+      do:  ((globals.get #Name) <-[type.mapT #uint32T #stringT] "$r0");;;
       let: "$r0" := ((let: "$v0" := #(W32 0) in
       let: "$k0" := #"eOk"%go in
       let: "$v1" := #(W32 1) in
       let: "$k1" := #"eEndOfFile"%go in
       let: "$v2" := #(W32 2) in
       let: "$k2" := #"eUnknown"%go in
-      map.literal #stringT #uint32T [("$k0", "$v0"); ("$k1", "$v1"); ("$k2", "$v2")])) in
-      do:  ((globals.get #error_gk.error_gk #"Value"%go) <-[type.mapT #stringT #uint32T] "$r0"))
+      map.literal #stringT #uint32T [map.kv_entry "$k0" "$v0"; map.kv_entry "$k1" "$v1"; map.kv_entry "$k2" "$v2"])) in
+      do:  ((globals.get #Value) <-[type.mapT #stringT #uint32T] "$r0"))
       ).
 
 End code.

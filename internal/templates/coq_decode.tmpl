@@ -4,7 +4,7 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list 
         ⌜ has_encoding enc args__c ⌝ ∗
         own_slice enc_sl dq (enc ++ suffix)
   }}}
-    << lower .Name >>_gk @ "Unmarshal" #enc_sl
+    @! << lower .Name >>_gk.Unmarshal #enc_sl
   {{{
         args__t suff_sl, RET (#args__t, #suff_sl);
         own args__t args__c (DfracOwn 1) ∗ 

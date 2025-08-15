@@ -73,7 +73,7 @@ Proof.
   unfold_typed_pointsto; split_pointsto_app.
 
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (S.Hash' v)) calendar_gk.S "Hash"%go.
+  simpl_one_flatten_struct (# (S.Hash' v)) (calendar_gk.S) "Hash"%go.
 
   solve_field_ref_f.
 Qed.
@@ -82,31 +82,16 @@ End instances.
 
 Section names.
 
-Class GlobalAddrs :=
-{
-}.
-
-Context `{!GlobalAddrs}.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!goGlobalsGS Σ}.
-
-Definition var_addrs : list (go_string * loc) := [
-  ].
-
-Global Instance is_pkg_defined_instance : IsPkgDefined calendar_gk :=
-{|
-  is_pkg_defined := is_global_definitions calendar_gk var_addrs;
-|}.
-
-Definition own_allocated : iProp Σ :=
-True.
+Context `{!globalsGS Σ}.
+Context `{!GoContext}.
 
 Global Instance wp_func_call_Marshal :
-  WpFuncCall calendar_gk "Marshal" _ (is_pkg_defined calendar_gk) :=
+  WpFuncCall calendar_gk.Marshal _ (is_pkg_defined calendar_gk) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 Global Instance wp_func_call_Unmarshal :
-  WpFuncCall calendar_gk "Unmarshal" _ (is_pkg_defined calendar_gk) :=
+  WpFuncCall calendar_gk.Unmarshal _ (is_pkg_defined calendar_gk) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 End names.

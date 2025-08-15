@@ -102,11 +102,11 @@ Proof.
   unfold_typed_pointsto; split_pointsto_app.
 
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (S.Int' v)) complete_gk.S "Int"%go.
-  simpl_one_flatten_struct (# (S.Slc' v)) complete_gk.S "Slc"%go.
-  simpl_one_flatten_struct (# (S.Success' v)) complete_gk.S "Success"%go.
-  simpl_one_flatten_struct (# (S.Sslice' v)) complete_gk.S "Sslice"%go.
-  simpl_one_flatten_struct (# (S.Iints' v)) complete_gk.S "Iints"%go.
+  simpl_one_flatten_struct (# (S.Int' v)) (complete_gk.S) "Int"%go.
+  simpl_one_flatten_struct (# (S.Slc' v)) (complete_gk.S) "Slc"%go.
+  simpl_one_flatten_struct (# (S.Success' v)) (complete_gk.S) "Success"%go.
+  simpl_one_flatten_struct (# (S.Sslice' v)) (complete_gk.S) "Sslice"%go.
+  simpl_one_flatten_struct (# (S.Iints' v)) (complete_gk.S) "Iints"%go.
 
   solve_field_ref_f.
 Qed.
@@ -115,31 +115,16 @@ End instances.
 
 Section names.
 
-Class GlobalAddrs :=
-{
-}.
-
-Context `{!GlobalAddrs}.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!goGlobalsGS Σ}.
-
-Definition var_addrs : list (go_string * loc) := [
-  ].
-
-Global Instance is_pkg_defined_instance : IsPkgDefined complete_gk :=
-{|
-  is_pkg_defined := is_global_definitions complete_gk var_addrs;
-|}.
-
-Definition own_allocated : iProp Σ :=
-True.
+Context `{!globalsGS Σ}.
+Context `{!GoContext}.
 
 Global Instance wp_func_call_Marshal :
-  WpFuncCall complete_gk "Marshal" _ (is_pkg_defined complete_gk) :=
+  WpFuncCall complete_gk.Marshal _ (is_pkg_defined complete_gk) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 Global Instance wp_func_call_Unmarshal :
-  WpFuncCall complete_gk "Unmarshal" _ (is_pkg_defined complete_gk) :=
+  WpFuncCall complete_gk.Unmarshal _ (is_pkg_defined complete_gk) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 End names.

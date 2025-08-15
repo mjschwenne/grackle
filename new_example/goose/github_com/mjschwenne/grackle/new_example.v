@@ -4,17 +4,21 @@ Require Export New.code.github_com.goose_lang.primitive.
 Require Export New.code.github_com.goose_lang.std.
 Require Export New.code.github_com.tchajed.marshal.
 
-Definition main : go_string := "github.com/mjschwenne/grackle/new_example".
+Definition example : go_string := "github.com/mjschwenne/grackle/new_example".
 
-Module main.
+Module example.
 Section code.
 Context `{ffi_syntax}.
 
+
+Definition Calendarⁱᵈ : go_string := "github.com/mjschwenne/grackle/new_example.Calendar"%go.
 
 Definition Calendar : go_type := structT [
   "hash" :: sliceT;
   "events" :: sliceT
 ].
+
+Definition MarshalCalendar : go_string := "github.com/mjschwenne/grackle/new_example.MarshalCalendar"%go.
 
 Definition TimeStamp : go_type := structT [
   "hour" :: uint32T;
@@ -29,42 +33,48 @@ Definition Event : go_type := structT [
   "endTime" :: TimeStamp
 ].
 
+Definition MarshalEvent : go_string := "github.com/mjschwenne/grackle/new_example.MarshalEvent"%go.
+
 (* go: calendar.go:11:6 *)
-Definition MarshalCalendar : val :=
-  rec: "MarshalCalendar" "enc" "c" :=
+Definition MarshalCalendarⁱᵐᵖˡ : val :=
+  λ: "enc" "c",
     exception_do (let: "c" := (mem.alloc "c") in
     let: "enc" := (mem.alloc "enc") in
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#sliceT] (struct.field_ref #Calendar #"hash"%go "c")) in
-    (func_call #marshal.marshal #"WriteLenPrefixedBytes"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteLenPrefixedBytes) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] (struct.field_ref #Calendar #"events"%go "c")) in
     slice.len "$a0")) in
-    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     return: (let: "$a0" := (![#sliceT] "enc") in
      let: "$a1" := (![#sliceT] (struct.field_ref #Calendar #"events"%go "c")) in
-     let: "$a2" := (func_call #new_example.main #"MarshalEvent"%go) in
-     (func_call #marshal.marshal #"WriteSlice"%go #Event) "$a0" "$a1" "$a2")).
+     let: "$a2" := (func_call #MarshalEvent) in
+     (func_call #marshal.WriteSlice #Event) "$a0" "$a1" "$a2")).
+
+Definition UnmarshalCalendar : go_string := "github.com/mjschwenne/grackle/new_example.UnmarshalCalendar"%go.
+
+Definition UnmarshalEvent : go_string := "github.com/mjschwenne/grackle/new_example.UnmarshalEvent"%go.
 
 (* go: calendar.go:17:6 *)
-Definition UnmarshalCalendar : val :=
-  rec: "UnmarshalCalendar" "s" :=
+Definition UnmarshalCalendarⁱᵐᵖˡ : val :=
+  λ: "s",
     exception_do (let: "s" := (mem.alloc "s") in
     let: "hash" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
+    (func_call #marshal.ReadLenPrefixedBytes) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("hash" <-[#sliceT] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "hash") in
-    (func_call #std.std #"BytesClone"%go) "$a0") in
+    (func_call #std.BytesClone) "$a0") in
     do:  ("hash" <-[#sliceT] "$r0");;;
     let: "eventsLen" := (mem.alloc (type.zero_val #uint64T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
+    (func_call #marshal.ReadInt) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("eventsLen" <-[#uint64T] "$r0");;;
@@ -72,8 +82,8 @@ Definition UnmarshalCalendar : val :=
     let: "events" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
     let: "$a1" := (![#uint64T] "eventsLen") in
-    let: "$a2" := (func_call #new_example.main #"UnmarshalEvent"%go) in
-    (func_call #marshal.marshal #"ReadSlice"%go #Event) "$a0" "$a1" "$a2") in
+    let: "$a2" := (func_call #UnmarshalEvent) in
+    (func_call #marshal.ReadSlice #Event) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("events" <-[#sliceT] "$r0");;;
@@ -85,6 +95,8 @@ Definition UnmarshalCalendar : val :=
        "events" ::= "$events"
      }], ![#sliceT] "s")).
 
+Definition Statusⁱᵈ : go_string := "github.com/mjschwenne/grackle/new_example.Status"%go.
+
 Definition Status : go_type := uint64T.
 
 Definition STATUS_UNSPECIFIED : expr := #(W64 0).
@@ -95,42 +107,48 @@ Definition STATUS_STAFF : expr := #(W64 2).
 
 Definition STATUS_PROFESSOR : expr := #(W64 3).
 
+Definition Personⁱᵈ : go_string := "github.com/mjschwenne/grackle/new_example.Person"%go.
+
 Definition Person : go_type := structT [
   "Name" :: stringT;
   "Status" :: Status
 ].
 
+Definition MarshalPerson : go_string := "github.com/mjschwenne/grackle/new_example.MarshalPerson"%go.
+
 (* go: enum.go:22:6 *)
-Definition MarshalPerson : val :=
-  rec: "MarshalPerson" "enc" "p" :=
+Definition MarshalPersonⁱᵐᵖˡ : val :=
+  λ: "enc" "p",
     exception_do (let: "p" := (mem.alloc "p") in
     let: "enc" := (mem.alloc "enc") in
     do:  (let: "$a0" := (![#stringT] (struct.field_ref #Person #"Name"%go "p")) in
-    (func_call #primitive.primitive #"AssumeNoStringOverflow"%go) "$a0");;;
+    (func_call #primitive.AssumeNoStringOverflow) "$a0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (string.to_bytes (![#stringT] (struct.field_ref #Person #"Name"%go "p"))) in
-    (func_call #marshal.marshal #"WriteLenPrefixedBytes"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteLenPrefixedBytes) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#Status] (struct.field_ref #Person #"Status"%go "p")) in
-    (func_call #marshal.marshal #"WriteInt"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
+Definition UnmarshalPerson : go_string := "github.com/mjschwenne/grackle/new_example.UnmarshalPerson"%go.
+
 (* go: enum.go:29:6 *)
-Definition UnmarshalPerson : val :=
-  rec: "UnmarshalPerson" "s" :=
+Definition UnmarshalPersonⁱᵐᵖˡ : val :=
+  λ: "s",
     exception_do (let: "s" := (mem.alloc "s") in
     let: "name" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
+    (func_call #marshal.ReadLenPrefixedBytes) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("name" <-[#sliceT] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "status_int" := (mem.alloc (type.zero_val #uint64T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt"%go) "$a0") in
+    (func_call #marshal.ReadInt) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("status_int" <-[#uint64T] "$r0");;;
@@ -145,59 +163,65 @@ Definition UnmarshalPerson : val :=
        "Status" ::= "$Status"
      }], ![#sliceT] "s")).
 
+Definition Eventⁱᵈ : go_string := "github.com/mjschwenne/grackle/new_example.Event"%go.
+
+Definition MarshalTimeStamp : go_string := "github.com/mjschwenne/grackle/new_example.MarshalTimeStamp"%go.
+
 (* go: event.go:15:6 *)
-Definition MarshalEvent : val :=
-  rec: "MarshalEvent" "enc" "e" :=
+Definition MarshalEventⁱᵐᵖˡ : val :=
+  λ: "enc" "e",
     exception_do (let: "e" := (mem.alloc "e") in
     let: "enc" := (mem.alloc "enc") in
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#uint32T] (struct.field_ref #Event #"id"%go "e")) in
-    (func_call #marshal.marshal #"WriteInt32"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt32) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     do:  (let: "$a0" := (![#stringT] (struct.field_ref #Event #"name"%go "e")) in
-    (func_call #primitive.primitive #"AssumeNoStringOverflow"%go) "$a0");;;
+    (func_call #primitive.AssumeNoStringOverflow) "$a0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (string.to_bytes (![#stringT] (struct.field_ref #Event #"name"%go "e"))) in
-    (func_call #marshal.marshal #"WriteLenPrefixedBytes"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteLenPrefixedBytes) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#TimeStamp] (struct.field_ref #Event #"startTime"%go "e")) in
-    (func_call #new_example.main #"MarshalTimeStamp"%go) "$a0" "$a1") in
+    (func_call #MarshalTimeStamp) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#TimeStamp] (struct.field_ref #Event #"endTime"%go "e")) in
-    (func_call #new_example.main #"MarshalTimeStamp"%go) "$a0" "$a1") in
+    (func_call #MarshalTimeStamp) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
+Definition UnmarshalTimeStamp : go_string := "github.com/mjschwenne/grackle/new_example.UnmarshalTimeStamp"%go.
+
 (* go: event.go:24:6 *)
-Definition UnmarshalEvent : val :=
-  rec: "UnmarshalEvent" "s" :=
+Definition UnmarshalEventⁱᵐᵖˡ : val :=
+  λ: "s",
     exception_do (let: "s" := (mem.alloc "s") in
     let: "id" := (mem.alloc (type.zero_val #uint32T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt32"%go) "$a0") in
+    (func_call #marshal.ReadInt32) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("id" <-[#uint32T] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "nameBytes" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadLenPrefixedBytes"%go) "$a0") in
+    (func_call #marshal.ReadLenPrefixedBytes) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("nameBytes" <-[#sliceT] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "startTime" := (mem.alloc (type.zero_val #TimeStamp)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #new_example.main #"UnmarshalTimeStamp"%go) "$a0") in
+    (func_call #UnmarshalTimeStamp) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("startTime" <-[#TimeStamp] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "endTime" := (mem.alloc (type.zero_val #TimeStamp)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #new_example.main #"UnmarshalTimeStamp"%go) "$a0") in
+    (func_call #UnmarshalTimeStamp) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("endTime" <-[#TimeStamp] "$r0");;;
@@ -213,46 +237,48 @@ Definition UnmarshalEvent : val :=
        "endTime" ::= "$endTime"
      }], ![#sliceT] "s")).
 
+Definition TimeStampⁱᵈ : go_string := "github.com/mjschwenne/grackle/new_example.TimeStamp"%go.
+
 (* go: timestamp.go:11:6 *)
-Definition MarshalTimeStamp : val :=
-  rec: "MarshalTimeStamp" "enc" "t" :=
+Definition MarshalTimeStampⁱᵐᵖˡ : val :=
+  λ: "enc" "t",
     exception_do (let: "t" := (mem.alloc "t") in
     let: "enc" := (mem.alloc "enc") in
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#uint32T] (struct.field_ref #TimeStamp #"hour"%go "t")) in
-    (func_call #marshal.marshal #"WriteInt32"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt32) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#uint32T] (struct.field_ref #TimeStamp #"minute"%go "t")) in
-    (func_call #marshal.marshal #"WriteInt32"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt32) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#uint32T] (struct.field_ref #TimeStamp #"second"%go "t")) in
-    (func_call #marshal.marshal #"WriteInt32"%go) "$a0" "$a1") in
+    (func_call #marshal.WriteInt32) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
 (* go: timestamp.go:18:6 *)
-Definition UnmarshalTimeStamp : val :=
-  rec: "UnmarshalTimeStamp" "s" :=
+Definition UnmarshalTimeStampⁱᵐᵖˡ : val :=
+  λ: "s",
     exception_do (let: "s" := (mem.alloc "s") in
     let: "hour" := (mem.alloc (type.zero_val #uint32T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt32"%go) "$a0") in
+    (func_call #marshal.ReadInt32) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("hour" <-[#uint32T] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "minute" := (mem.alloc (type.zero_val #uint32T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt32"%go) "$a0") in
+    (func_call #marshal.ReadInt32) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("minute" <-[#uint32T] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
     let: "second" := (mem.alloc (type.zero_val #uint32T)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.marshal #"ReadInt32"%go) "$a0") in
+    (func_call #marshal.ReadInt32) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("second" <-[#uint32T] "$r0");;;
@@ -268,11 +294,11 @@ Definition UnmarshalTimeStamp : val :=
 
 Definition vars' : list (go_string * go_type) := [].
 
-Definition functions' : list (go_string * val) := [("MarshalCalendar"%go, MarshalCalendar); ("UnmarshalCalendar"%go, UnmarshalCalendar); ("MarshalPerson"%go, MarshalPerson); ("UnmarshalPerson"%go, UnmarshalPerson); ("MarshalEvent"%go, MarshalEvent); ("UnmarshalEvent"%go, UnmarshalEvent); ("MarshalTimeStamp"%go, MarshalTimeStamp); ("UnmarshalTimeStamp"%go, UnmarshalTimeStamp)].
+Definition functions' : list (go_string * val) := [(MarshalCalendar, MarshalCalendarⁱᵐᵖˡ); (UnmarshalCalendar, UnmarshalCalendarⁱᵐᵖˡ); (MarshalPerson, MarshalPersonⁱᵐᵖˡ); (UnmarshalPerson, UnmarshalPersonⁱᵐᵖˡ); (MarshalEvent, MarshalEventⁱᵐᵖˡ); (UnmarshalEvent, UnmarshalEventⁱᵐᵖˡ); (MarshalTimeStamp, MarshalTimeStampⁱᵐᵖˡ); (UnmarshalTimeStamp, UnmarshalTimeStampⁱᵐᵖˡ)].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [("Calendar"%go, []); ("Calendar'ptr"%go, []); ("Status"%go, []); ("Status'ptr"%go, []); ("Person"%go, []); ("Person'ptr"%go, []); ("Event"%go, []); ("Event'ptr"%go, []); ("TimeStamp"%go, []); ("TimeStamp'ptr"%go, [])].
+Definition msets' : list (go_string * (list (go_string * val))) := [(Calendarⁱᵈ, []); (ptrTⁱᵈ Calendarⁱᵈ, []); (Statusⁱᵈ, []); (ptrTⁱᵈ Statusⁱᵈ, []); (Personⁱᵈ, []); (ptrTⁱᵈ Personⁱᵈ, []); (Eventⁱᵈ, []); (ptrTⁱᵈ Eventⁱᵈ, []); (TimeStampⁱᵈ, []); (ptrTⁱᵈ TimeStampⁱᵈ, [])].
 
-#[global] Instance info' : PkgInfo new_example.main :=
+#[global] Instance info' : PkgInfo new_example.example :=
   {|
     pkg_vars := vars';
     pkg_functions := functions';
@@ -281,12 +307,13 @@ Definition msets' : list (go_string * (list (go_string * val))) := [("Calendar"%
   |}.
 
 Definition initialize' : val :=
-  rec: "initialize'" <> :=
-    globals.package_init new_example.main (λ: <>,
-      exception_do (do:  primitive.initialize';;;
-      do:  std.initialize';;;
-      do:  marshal.initialize')
+  λ: <>,
+    package.init #new_example.example (λ: <>,
+      exception_do (do:  (primitive.initialize' #());;;
+      do:  (std.initialize' #());;;
+      do:  (marshal.initialize' #());;;
+      do:  (package.alloc new_example.example #()))
       ).
 
 End code.
-End main.
+End example.

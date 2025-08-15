@@ -15,11 +15,15 @@ Module completeSlice_gk.
 Section completeSlice_gk.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!goGlobalsGS Σ}.
+Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
+Local Notation deps := (ltac2:(build_pkg_init_deps 'completeslice_gk) : iProp Σ) (only parsing).
 #[global]
 Program Instance : IsPkgInit completeslice_gk :=
-  ltac2:(build_pkg_init ()).
+  {|
+    is_pkg_init_def := True;
+    is_pkg_init_deps := deps;
+  |}.
 
 Record C :=
     mkC {
@@ -56,7 +60,7 @@ Lemma wp_Encode (args__t : completeslice_gk.S.t) (args__c : C) (pre_sl : slice.t
         own_slice pre_sl (DfracOwn 1) prefix ∗
         own_slice_cap w8 pre_sl (DfracOwn 1)
   }}}
-    completeslice_gk @ "Marshal" #pre_sl #args__t
+    @! completeslice_gk.Marshal #pre_sl #args__t
   {{{
         enc enc_sl, RET #enc_sl;
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -110,7 +114,7 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list 
         ⌜ has_encoding enc args__c ⌝ ∗
         own_slice enc_sl dq (enc ++ suffix)
   }}}
-    completeslice_gk @ "Unmarshal" #enc_sl
+    @! completeslice_gk.Unmarshal #enc_sl
   {{{
         args__t suff_sl, RET (#args__t, #suff_sl);
         own args__t args__c (DfracOwn 1) ∗ 

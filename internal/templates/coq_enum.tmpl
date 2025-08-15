@@ -7,7 +7,7 @@ Module << .Name >>_gk.
 Section << .Name >>_gk.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!goGlobalsGS Σ}.
+Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
 Definition name_map : gmap w32 go_string := list_to_map [
                                                 << range $idx, $val := .Values ->>
@@ -24,9 +24,17 @@ Definition value_map : gmap go_string w32 := list_to_map [
                                                  <<- end >>
                                                ].
 
-Definition own_initialized `{!<< lower .Name >>_gk.GlobalAddrs} : iProp Σ :=
-  "HglobalName" ∷ << lower .Name >>_gk.Name ↦${DfracDiscarded} name_map ∗
-  "HglobalValue" ∷ << lower .Name >>_gk.Value ↦${DfracDiscarded} value_map.
+Definition is_initialized : iProp Σ :=
+  "HglobalName" ∷ (global_addr << lower .Name >>_gk.Name) ↦${DfracDiscarded} name_map ∗
+  "HglobalValue" ∷ (global_addr << lower .Name >>_gk.Value) ↦${DfracDiscarded} value_map.
+
+Local Notation deps := (ltac2:(build_pkg_init_deps '<< lower .Name >>_gk) : iProp Σ) (only parsing).
+#[global]
+Program Instance : IsPkgInit << lower .Name >>_gk :=
+  {|
+    is_pkg_init_def := is_initialized;
+    is_pkg_init_deps := deps;
+  |}.
 
 Inductive I :=
 <<- range .Values >>

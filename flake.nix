@@ -19,7 +19,7 @@
         grackle = pkgs.buildGoModule {
           name = "grackle";
           src = ./.;
-          vendorHash = "sha256-c9+npmcdynfqSnxEZSdubVeN8Y3eYAwjya52vTJayY0=";
+          vendorHash = "sha256-HByv0JVhqfAGtfnhkoF3tqAW4YGw9O1IM41qc5JEnr0=";
           nativeBuildInputs = with pkgs; [protobuf];
         };
         goose = pkgs.buildGoModule {
@@ -27,8 +27,8 @@
           src = pkgs.fetchFromGitHub {
             owner = "goose-lang";
             repo = "goose";
-            rev = "768e220070010f73085af0c8757c9e069e1091ce"; # new
-            sha256 = "1s3ffcxz01wv2bixs8anfbvzrrkg2y1phrliksnasir1q61h2z41";
+            rev = "c14e8e8258e228f43f9e7525d127246e07496523";
+            hash = "sha256-FpgY75/ngEqpitCGGxEqCJKJ5NMpZ0+bV+XeA7UVmVo=";
           };
           proxyVendor = true;
           vendorHash = "sha256-MHo+sm5MUP5NVn128vu02zVcs2gpg24zC8o+UvBOnpI=";
