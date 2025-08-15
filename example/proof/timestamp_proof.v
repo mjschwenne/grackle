@@ -1,35 +1,39 @@
 From New.proof Require Import proof_prelude.
-From New.code Require Import github_com.mjschwenne.grackle.new_example.
-From Grackle.pg Require Import github_com.mjschwenne.grackle.new_example.
+From New.code Require Import github_com.mjschwenne.grackle.example.
+From Grackle.pg Require Import github_com.mjschwenne.grackle.example.
 From New.proof Require Import github_com.tchajed.marshal.
 
 Module TimeStamp_Proof.
   Section TimeStamp_Proof.
 
     Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-    Context `{!goGlobalsGS Σ}.
+    Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
+    Local Notation deps := (ltac2:(build_pkg_init_deps 'example) : iProp Σ) (only parsing).
     #[global]
-    Program Instance : IsPkgInit main :=
-        ltac2:(build_pkg_init ()).
+    Program Instance : IsPkgInit example :=
+      {|
+        is_pkg_init_def := True;
+        is_pkg_init_deps := deps;
+      |}.
 
-    Definition C := main.TimeStamp.t.
+    Definition C := example.TimeStamp.t.
     
     Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-      encoded = (u32_le args.(main.TimeStamp.hour')) ++ (u32_le args.(main.TimeStamp.minute'))
-                  ++ (u32_le args.(main.TimeStamp.second')).
+      encoded = (u32_le args.(example.TimeStamp.hour')) ++ (u32_le args.(example.TimeStamp.minute'))
+                  ++ (u32_le args.(example.TimeStamp.second')).
 
-    Definition own (v:main.TimeStamp.t) (c:C) (dq:dfrac) : iProp Σ :=
+    Definition own (v:example.TimeStamp.t) (c:C) (dq:dfrac) : iProp Σ :=
       ⌜ v = c ⌝.
 
-    Lemma wp_Encode (args__t : main.TimeStamp.t) (args__c:C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
+    Lemma wp_Encode (args__t : example.TimeStamp.t) (args__c:C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
       {{{
-            is_pkg_init main ∗
+            is_pkg_init example ∗
             own args__t args__c dq ∗
             own_slice pre_sl (DfracOwn 1) prefix ∗
             own_slice_cap w8 pre_sl (DfracOwn 1)
       }}}
-        main @ "MarshalTimeStamp" #pre_sl #args__t
+        @! example.MarshalTimeStamp #pre_sl #args__t
       {{{
             enc enc_sl, RET #enc_sl;
             ⌜ has_encoding enc args__c ⌝ ∗
@@ -58,11 +62,11 @@ Module TimeStamp_Proof.
 
     Lemma wp_Decode (enc: list u8) (enc_sl: slice.t) (args__c:C) (suffix: list u8) (dq: dfrac):
       {{{
-            is_pkg_init main ∗
+            is_pkg_init example ∗
             own_slice enc_sl dq (enc ++ suffix) ∗
             ⌜ has_encoding enc args__c ⌝
       }}}
-        main @ "UnmarshalTimeStamp" #enc_sl
+        @! example.UnmarshalTimeStamp #enc_sl
       {{{
             args__t suff_sl, RET (#args__t, #suff_sl);
             own args__t args__c dq ∗
@@ -84,9 +88,9 @@ Module TimeStamp_Proof.
 
       iApply "HΦ". iFrame.
       replace {|
-       main.TimeStamp.hour' := args__c.(main.TimeStamp.hour');
-       main.TimeStamp.minute' := args__c.(main.TimeStamp.minute');
-       main.TimeStamp.second' := args__c.(main.TimeStamp.second')
+       example.TimeStamp.hour' := args__c.(example.TimeStamp.hour');
+       example.TimeStamp.minute' := args__c.(example.TimeStamp.minute');
+       example.TimeStamp.second' := args__c.(example.TimeStamp.second')
         |} with args__c; last (destruct args__c; reflexivity).
       done.
     Qed.

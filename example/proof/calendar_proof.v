@@ -1,25 +1,21 @@
 From New.proof Require Import proof_prelude.
 From New.proof Require Import github_com.tchajed.marshal.
 From New.proof Require Import github_com.goose_lang.std.
-From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.calendar_gk.
-From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.calendar_gk.
-From Grackle.test Require Import event_proof_gk.
+From New.code Require Import github_com.mjschwenne.grackle.example.
+From Grackle.pg Require Import github_com.mjschwenne.grackle.example.
+From Grackle.example Require Import event_proof.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.event_gk.
 
-Module calendar_gk.
-Section calendar_gk.
+Module Calendar_Proof.
+Section Calendar_Proof.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!goGlobalsGS Σ}.
-
-#[global]
-Program Instance : IsPkgInit calendar_gk :=
-  ltac2:(build_pkg_init ()).
+Context `{!goGlobalsGS Σ} {go_ctx : GoContext}.
 
 Record C :=
     mkC {
         hash' : list u8;
-        events' : list Event_gk.C;
+        events' : list Event_Proof.C;
         }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
@@ -27,25 +23,25 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   encoded = (u64_le $ length $ args.(hash')) ++ args.(hash') ++
               (u64_le $ length $ args.(events')) ++ events_enc
   /\ length args.(hash') < 2^64
-  /\ encodes events_enc args.(events') Event_gk.has_encoding
+  /\ encodes events_enc args.(events') Event_Proof.has_encoding
   /\ length args.(events') < 2^64.
 
-Definition own (args__v: calendar_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
-  ∃ (l__events : list event_gk.S.t), 
-  "Hown_hash" ∷ own_slice args__v.(calendar_gk.S.Hash') dq args__c.(hash') ∗
+Definition own (args__v: example.Calendar.t) (args__c: C) (dq: dfrac) : iProp Σ :=
+  ∃ (l__events : list example.Event.t), 
+  "Hown_hash" ∷ own_slice args__v.(example.Calendar.hash') dq args__c.(hash') ∗
   "%Hown_hash_len" ∷ ⌜ length args__c.(hash') < 2^64 ⌝ ∗
-  "Hown_events_sl" ∷ own_slice args__v.(calendar_gk.S.Events') dq l__events ∗
-  "Hown_events_own" ∷ ([∗ list] x;c ∈ l__events;args__c.(events'), Event_gk.own x c dq) ∗
+  "Hown_events_sl" ∷ own_slice args__v.(example.Calendar.events') dq l__events ∗
+  "Hown_events_own" ∷ ([∗ list] x;c ∈ l__events;args__c.(events'), Event_Proof.own x c dq) ∗
   "%Hown_events_len" ∷ ⌜ length l__events < 2^64 ⌝.
 
-Lemma wp_Encode (args__t : calendar_gk.S.t) (args__c : C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
+Lemma wp_Encode (args__t : example.Calendar.t) (args__c : C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
-        is_pkg_init calendar_gk ∗
+        is_pkg_init example ∗
         own args__t args__c dq ∗ 
         own_slice pre_sl (DfracOwn 1) prefix ∗
         own_slice_cap w8 pre_sl (DfracOwn 1)
   }}}
-    calendar_gk @ "Marshal" #pre_sl #args__t
+    @! example.MarshalCalendar #pre_sl #args__t
   {{{
         enc enc_sl, RET #enc_sl;
         ⌜ has_encoding enc args__c ⌝ ∗
@@ -58,8 +54,7 @@ Proof.
   wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
 
   iDestruct (own_slice_len with "Hown_hash") as "%Hown_hash_sz".
-  wp_apply (wp_WriteInt with "[$Hsl $Hcap]"). iIntros (?) "[Hsl Hcap]". wp_auto.
-  wp_apply (wp_WriteBytes with "[$Hsl $Hcap $Hown_hash]").
+  wp_apply (wp_WriteLenPrefixedBytes with "[$Hsl $Hcap $Hown_hash]").
   iIntros (?) "(Hsl & Hcap & Hown_hash)". wp_auto.
 
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
@@ -72,7 +67,7 @@ Proof.
   {
     iIntros (????) "!>".
     iIntros (?) "(Hown & Hsl & Hcap) HΦ".
-    wp_apply (Event_gk.wp_Encode with "[$Hown $Hsl $Hcap]").
+    wp_apply (Event_Proof.wp_Encode with "[$Hown $Hsl $Hcap]").
     iApply "HΦ".
   }
   iIntros (events_enc events_sl') "(Hown_events & Hown_events_own & %Henc_events & Hsl & Hcap)".
@@ -97,11 +92,11 @@ Qed.
 
 Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
   {{{
-        is_pkg_init calendar_gk ∗
+        is_pkg_init example ∗
         ⌜ has_encoding enc args__c ⌝ ∗
         own_slice enc_sl dq (enc ++ suffix)
   }}}
-    calendar_gk @ "Unmarshal" #enc_sl
+    @! example.UnmarshalCalendar #enc_sl
   {{{
         args__t suff_sl, RET (#args__t, #suff_sl);
         own args__t args__c (DfracOwn 1) ∗ 
@@ -126,7 +121,7 @@ Proof.
     iSplit; first word.
     iIntros (????) "!>".
     iIntros (?) "[Hsl Henc] HΦ".
-    wp_apply (Event_gk.wp_Decode with "[$Hsl $Henc]").
+    wp_apply (Event_Proof.wp_Decode with "[$Hsl $Henc]").
     iApply "HΦ".
   }
   iIntros (???) "(Hown_events_sl & Hown_events_own & Hsl)". wp_auto.
@@ -137,6 +132,6 @@ Proof.
   done.
 Qed.
 
-End calendar_gk.
-End calendar_gk.
+End Calendar_Proof.
+End Calendar_Proof.
 

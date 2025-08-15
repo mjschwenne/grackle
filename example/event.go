@@ -1,6 +1,7 @@
-package main
+package example
 
 import (
+	"github.com/goose-lang/primitive"
 	"github.com/tchajed/marshal"
 )
 
@@ -11,40 +12,25 @@ type Event struct {
 	endTime   TimeStamp
 }
 
-func MarshalEvent(prefix []byte, e Event) []byte {
-	var enc = prefix
+func MarshalEvent(enc []byte, e Event) []byte {
 	enc = marshal.WriteInt32(enc, e.id)
-
-	nameByte := []byte(e.name)
-	enc = marshal.WriteInt(enc, uint64(len(nameByte)))
-	enc = marshal.WriteBytes(enc, nameByte)
-
+	primitive.AssumeNoStringOverflow(e.name)
+	enc = marshal.WriteLenPrefixedBytes(enc, []byte(e.name))
 	enc = MarshalTimeStamp(enc, e.startTime)
 	enc = MarshalTimeStamp(enc, e.endTime)
 	return enc
 }
 
 func UnmarshalEvent(s []byte) (Event, []byte) {
-	var enc = s // Needed for goose compatibility
-	var id uint32
-	var name string
-	var startTime TimeStamp
-	var endTime TimeStamp
+	id, s := marshal.ReadInt32(s)
+	nameBytes, s := marshal.ReadLenPrefixedBytes(s)
 
-	id, enc = marshal.ReadInt32(enc)
-
-	var nameLen uint64
-	var nameBytes []byte
-	nameLen, enc = marshal.ReadInt(enc)
-	nameBytes, enc = marshal.ReadBytesCopy(enc, nameLen)
-	name = string(nameBytes)
-
-	startTime, enc = UnmarshalTimeStamp(enc)
-	endTime, enc = UnmarshalTimeStamp(enc)
+	startTime, s := UnmarshalTimeStamp(s)
+	endTime, s := UnmarshalTimeStamp(s)
 	return Event{
 		id:        id,
-		name:      name,
+		name:      string(nameBytes),
 		startTime: startTime,
 		endTime:   endTime,
-	}, enc
+	}, s
 }

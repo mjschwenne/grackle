@@ -1,8 +1,7 @@
 # Grackle 
--Q example Grackle.example
--Q new_example/proof Grackle.new_ex
--Q new_example/pg Grackle.pg
--Q new_example/goose New.code
+-Q example/proof Grackle.example
+-Q example/pg Grackle.pg
+-Q example/goose New.code
 
 # Grackle tests 
 -Q testdata/out/pg New.generatedproof

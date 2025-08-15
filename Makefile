@@ -1,6 +1,6 @@
-SRC_DIRS := 'perennial' 'new_example' 'testdata/out'
+SRC_DIRS := 'perennial' 'example' 'testdata/out'
 ALL_VFILES := $(shell find $(SRC_DIRS) -not -path "perennial/external/coqutil/etc/coq-scripts/*" -name "*.v")
-PROJ_VFILES := $(shell find 'new_example' -name "*.v")
+PROJ_VFILES := $(shell find 'example' -name "*.v")
 
 # extract any global arguments for Rocq from _RocqProject
 ROCQ_PROJECT_ARGS := $(shell sed -E -e '/^\#/d' -e "s/'([^']*)'/\1/g" -e 's/-arg //g' _RocqProject)

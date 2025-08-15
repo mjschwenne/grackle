@@ -1,8 +1,6 @@
-package main
+package example
 
-import (
-	"github.com/tchajed/marshal"
-)
+import "github.com/tchajed/marshal"
 
 type TimeStamp struct {
 	hour   uint32
@@ -10,8 +8,7 @@ type TimeStamp struct {
 	second uint32
 }
 
-func MarshalTimeStamp(prefix []byte, t TimeStamp) []byte {
-	var enc = prefix
+func MarshalTimeStamp(enc []byte, t TimeStamp) []byte {
 	enc = marshal.WriteInt32(enc, t.hour)
 	enc = marshal.WriteInt32(enc, t.minute)
 	enc = marshal.WriteInt32(enc, t.second)
@@ -19,17 +16,13 @@ func MarshalTimeStamp(prefix []byte, t TimeStamp) []byte {
 }
 
 func UnmarshalTimeStamp(s []byte) (TimeStamp, []byte) {
-	var enc = s // Needed for goose compatibility
-	var hour uint32
-	var minute uint32
-	var second uint32
+	hour, s := marshal.ReadInt32(s)
+	minute, s := marshal.ReadInt32(s)
+	second, s := marshal.ReadInt32(s)
 
-	hour, enc = marshal.ReadInt32(enc)
-	minute, enc = marshal.ReadInt32(enc)
-	second, enc = marshal.ReadInt32(enc)
 	return TimeStamp{
 		hour:   hour,
 		minute: minute,
 		second: second,
-	}, enc
+	}, s
 }

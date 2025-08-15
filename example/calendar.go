@@ -1,29 +1,27 @@
-package main
+package example
 
-import (
-	"github.com/tchajed/marshal"
-)
+import "github.com/tchajed/marshal"
+import "github.com/goose-lang/std"
 
 type Calendar struct {
+	hash   []byte
 	events []Event
 }
 
-func MarshalCalendar(prefix []byte, c Calendar) []byte {
-	var enc = prefix
-
+func MarshalCalendar(enc []byte, c Calendar) []byte {
+	enc = marshal.WriteLenPrefixedBytes(enc, c.hash)
 	enc = marshal.WriteInt(enc, uint64(len(c.events)))
-	enc = marshal.WriteSlice[Event](enc, c.events, MarshalEvent)
-
-	return enc
+	return marshal.WriteSlice[Event](enc, c.events, MarshalEvent)
 }
 
 func UnmarshalCalendar(s []byte) (Calendar, []byte) {
-	var enc = s
-	var events []Event
-	var eventsLen uint64
+	hash, s := marshal.ReadLenPrefixedBytes(s)
+	hash = std.BytesClone(hash)
+	eventsLen, s := marshal.ReadInt(s)
+	events, s := marshal.ReadSlice[Event](s, eventsLen, UnmarshalEvent)
 
-	eventsLen, enc = marshal.ReadInt(enc)
-	events, enc = marshal.ReadSlice[Event](enc, eventsLen, UnmarshalEvent)
-
-	return Calendar{events: events}, enc
+	return Calendar{
+		hash:   hash,
+		events: events,
+	}, s
 }

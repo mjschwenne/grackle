@@ -1,8 +1,8 @@
 From New.proof Require Import proof_prelude.
 From New.proof Require Import github_com.tchajed.marshal.
 From New.proof Require Import github_com.goose_lang.std.
-From New.code Require Import github_com.mjschwenne.grackle.new_example.
-From Grackle.pg Require Import github_com.mjschwenne.grackle.new_example.
+From New.code Require Import github_com.mjschwenne.grackle.example.
+From Grackle.pg Require Import github_com.mjschwenne.grackle.example.
 From New.proof.github_com.goose_lang Require Import primitive.
 From Perennial.Helpers Require Import NamedProps.
 
@@ -10,11 +10,15 @@ Module Person_Proof.
   Section Person_Proof.
 
     Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-    Context `{!goGlobalsGS Σ}.
+    Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
+    Local Notation deps := (ltac2:(build_pkg_init_deps 'example) : iProp Σ) (only parsing).
     #[global]
-      Program Instance : IsPkgInit main :=
-      ltac2:(build_pkg_init ()).
+    Program Instance : IsPkgInit example :=
+      {|
+        is_pkg_init_def := True;
+        is_pkg_init_deps := deps;
+      |}.
 
     Inductive Status :=
       | STATUS_UNSPECIFIED
@@ -40,18 +44,18 @@ Module Person_Proof.
       encoded = (u64_le $ length args.(name')) ++ args.(name') ++ (u64_le (to_tag args.(status')))
                                                                /\ length args.(name') < 2^64.
       
-    Definition own (args__v:main.Person.t) (args__c:C) (dq:dfrac) : iProp Σ :=
-      "%Hname" ∷ ⌜ args__v.(main.Person.Name') = args__c.(name') ⌝ ∗
-      "%Hstatus" ∷ ⌜ args__v.(main.Person.Status') = (to_tag args__c.(status')) ⌝.
+    Definition own (args__v:example.Person.t) (args__c:C) (dq:dfrac) : iProp Σ :=
+      "%Hname" ∷ ⌜ args__v.(example.Person.Name') = args__c.(name') ⌝ ∗
+      "%Hstatus" ∷ ⌜ args__v.(example.Person.Status') = (to_tag args__c.(status')) ⌝.
 
-    Lemma wp_Enocde (args__t:main.Person.t) (args__c:C) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac):
+    Lemma wp_Enocde (args__t:example.Person.t) (args__c:C) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac):
       {{{
-            is_pkg_init main ∗
+            is_pkg_init example ∗
             own args__t args__c dq ∗
             own_slice pre_sl (DfracOwn 1) prefix ∗
             own_slice_cap w8 pre_sl (DfracOwn 1)
       }}}
-        main @ "MarshalPerson" #pre_sl #args__t
+        @! example.MarshalPerson #pre_sl #args__t
       {{{
             enc enc_sl, RET #enc_sl;
             ⌜ has_encoding enc args__c ⌝ ∗
@@ -83,11 +87,11 @@ Module Person_Proof.
 
     Lemma wp_Decode (enc: list u8) (enc_sl: slice.t) (args__c:C) (suffix: list u8) (dq: dfrac):
       {{{
-            is_pkg_init main ∗
+            is_pkg_init example ∗
             own_slice enc_sl dq (enc ++ suffix) ∗
             ⌜ has_encoding enc args__c ⌝
       }}}
-        main @ "UnmarshalPerson" #enc_sl
+        @! example.UnmarshalPerson #enc_sl
       {{{
             args__t suff_sl, RET (#args__t, #suff_sl);
             own args__t args__c (DfracOwn 1) ∗

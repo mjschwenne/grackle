@@ -1,46 +1,44 @@
 From New.proof Require Import proof_prelude.
-From New.code Require Import github_com.mjschwenne.grackle.new_example.
-From Grackle.pg Require Import github_com.mjschwenne.grackle.new_example.
+From New.code Require Import github_com.mjschwenne.grackle.example.
+From Grackle.pg Require Import github_com.mjschwenne.grackle.example.
 From New.proof Require Import github_com.tchajed.marshal.
-From Grackle.new_ex Require Import timestamp_proof.
+From Grackle.example Require Import timestamp_proof.
 From New.proof.github_com.goose_lang Require Import primitive.
 
 Module Event_Proof.
   Section Event_Proof.
 
     Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-    Context `{!goGlobalsGS Σ}.
+    Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-    #[global]
-      Program Instance : IsPkgInit main :=
-        ltac2:(build_pkg_init ()).
+    (* Timestamp defined IsPkgInit instance *)
 
-    Definition C := main.Event.t.
+    Definition C := example.Event.t.
 
     Definition has_encoding (encoded:list u8) (args:C) : Prop :=
       ∃ start_enc end_enc,
-        encoded = (u32_le args.(main.Event.id')) ++
-                    (u64_le $ length $ args.(main.Event.name')) ++
-                    args.(main.Event.name') ++
+        encoded = (u32_le args.(example.Event.id')) ++
+                    (u64_le $ length $ args.(example.Event.name')) ++
+                    args.(example.Event.name') ++
                     start_enc ++ end_enc
-        /\ length args.(main.Event.name') < 2^64
-        /\ TimeStamp_Proof.has_encoding start_enc args.(main.Event.startTime')
-        /\ TimeStamp_Proof.has_encoding end_enc args.(main.Event.endTime').
+        /\ length args.(example.Event.name') < 2^64
+        /\ TimeStamp_Proof.has_encoding start_enc args.(example.Event.startTime')
+        /\ TimeStamp_Proof.has_encoding end_enc args.(example.Event.endTime').
 
-    Definition own (v:main.Event.t) (c:C) (dq:dfrac) : iProp Σ :=
-      "%Hid" ∷ ⌜ v.(main.Event.id') = c.(main.Event.id') ⌝ ∗
-      "%Hname" ∷ ⌜ v.(main.Event.name') = c.(main.Event.name') ⌝ ∗
-      "HstartTime" ∷ TimeStamp_Proof.own v.(main.Event.startTime') c.(main.Event.startTime') dq ∗
-      "HendTime" ∷ TimeStamp_Proof.own v.(main.Event.endTime') c.(main.Event.endTime') dq.
+    Definition own (v:example.Event.t) (c:C) (dq:dfrac) : iProp Σ :=
+      "%Hid" ∷ ⌜ v.(example.Event.id') = c.(example.Event.id') ⌝ ∗
+      "%Hname" ∷ ⌜ v.(example.Event.name') = c.(example.Event.name') ⌝ ∗
+      "HstartTime" ∷ TimeStamp_Proof.own v.(example.Event.startTime') c.(example.Event.startTime') dq ∗
+      "HendTime" ∷ TimeStamp_Proof.own v.(example.Event.endTime') c.(example.Event.endTime') dq.
 
-    Lemma wp_Encode (args__t:main.Event.t) (args__c:C) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac):
+    Lemma wp_Encode (args__t:example.Event.t) (args__c:C) (pre_sl:slice.t) (prefix:list u8) (dq:dfrac):
       {{{
-            is_pkg_init main ∗
+            is_pkg_init example ∗
             own args__t args__c dq ∗
             own_slice pre_sl (DfracOwn 1) prefix ∗
             own_slice_cap w8 pre_sl (DfracOwn 1)
       }}}
-        main @ "MarshalEvent" #pre_sl #args__t
+        @! example.MarshalEvent #pre_sl #args__t
       {{{
             enc enc_sl, RET #enc_sl;
             ⌜ has_encoding enc args__c ⌝ ∗
@@ -82,11 +80,11 @@ Module Event_Proof.
 
     Lemma wp_Decode (enc: list u8) (enc_sl: slice.t) (args__c:C) (suffix: list u8) (dq: dfrac):
       {{{
-            is_pkg_init main ∗
+            is_pkg_init example ∗
             own_slice enc_sl dq (enc ++ suffix) ∗
             ⌜ has_encoding enc args__c ⌝
       }}}
-        main @ "UnmarshalEvent" #enc_sl
+        @! example.UnmarshalEvent #enc_sl
       {{{
             args__t suff_sl, RET (#args__t, #suff_sl);
             own args__t args__c (DfracOwn 1) ∗
