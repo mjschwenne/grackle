@@ -22,13 +22,11 @@ Definition own (args__v: << lower .Name >>_gk.S.t) (args__c: C) (dq: dfrac) : iP
   <<- else if isCoqType . "u8" >>
   "Hown_<< .Name >>" ∷ own_slice args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') dq args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) ∗
   "%Hown_<< .Name >>_len" ∷ ⌜ length args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) < 2^64 ⌝
-  <<- else if isCoqType . "message" >>
+  <<- else if isCoqType . "message|enum" >>
   "Hown_<< .Name >>" ∷ << .TypeName >>_gk.own args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) dq
   <<- else if isCoqType . "go_string" >>
   "%Hown_<< .Name >>" ∷ ⌜ args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') = args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) ⌝ ∗
   "%Hown_<< .Name >>_len" ∷ ⌜ length args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) < 2^64 ⌝
-  <<- else if isCoqType . "enum" >>
-  "%Hown_<< .Name >>" ∷ ⌜ args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') = << goModuleName . >>.to_tag args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) ⌝  
   <<- else >>
   "%Hown_<< .Name >>" ∷ ⌜ args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') = args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) ⌝
   <<- end >>

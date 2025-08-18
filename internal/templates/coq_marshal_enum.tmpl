@@ -1,3 +1,4 @@
 
-  wp_apply (wp_WriteInt32 with "[$Hsl $Hcap]").
-  iIntros (?) "[Hsl Hcap]". wp_auto.
+  wp_apply (<<- .TypeName ->>_gk.wp_Encode with "[$Hsl $Hcap $Hown_<< .Name >>]").
+  iIntros (<< .Name >>_enc ?) "(%Hargs_<< .Name >>_enc & Hown_<< .Name >> & Hsl & Hcap)".
+  wp_auto.

@@ -1,10 +1,7 @@
 func Unmarshal(s []byte) (S, []byte) {
     << range .Fields ->>
-    <<- if and (isMessage .) (not (isRepeatedType .)) >>
+    <<- if and (or (isMessage .) (isGoType . "enum")) (not (isRepeatedType .)) >>
     << .Name >>, s := << goModuleName . >>.Unmarshal(s)
-    <<- else if isGoType . "enum" >>
-    << .Name >>_int, s := marshal.ReadInt32(s)
-    << .Name >> := << goType . >>(<< .Name >>_int)
     <<- else if or (isGoType . "string") (and (isSliceType . ) (isGoType . "byte")) >>
     << .Name >>Bytes, s := marshal.ReadLenPrefixedBytes(s)
     << .Name >> := << if isGoType . "string" >>string(<< end >>std.BytesClone(<< .Name >>Bytes)<< if isGoType . "string" >>)<< end >>

@@ -9,7 +9,7 @@ Proof.
     << .Name >>_enc & << end ->>
     Henc
     <<- range .Fields >>
-    <<- if or (isMessage .) (isPredSliceType .) >> & Henc_<< .Name >>
+    <<- if or (isGoType . "message|enum") (isPredSliceType .) >> & Henc_<< .Name >>
     <<- if isPredSliceType . >> & H<< .Name >>_sz <<- end ->>
     <<- else if isCoqType . "go_string|u8" >> & Hlen_<< .Name >>
     <<- end >>

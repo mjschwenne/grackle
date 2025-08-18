@@ -34,14 +34,16 @@ Record C :=
         }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
+  ∃ (err_enc : list u8), 
   encoded = (u64_le $ length $ args.(op')) ++ args.(op') ++
-              (u32_le $ error_gk.to_tag args.(err'))
-  /\ length args.(op') < 2^64.
+              err_enc
+  /\ length args.(op') < 2^64
+  /\ error_gk.has_encoding err_enc args.(err').
 
 Definition own (args__v: enum_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
   "%Hown_op" ∷ ⌜ args__v.(enum_gk.S.Op') = args__c.(op') ⌝ ∗
   "%Hown_op_len" ∷ ⌜ length args__c.(op') < 2^64 ⌝ ∗
-  "%Hown_err" ∷ ⌜ args__v.(enum_gk.S.Err') = error_gk.to_tag args__c.(err') ⌝.
+  "Hown_err" ∷ error_gk.own args__v.(enum_gk.S.Err') args__c.(err') dq.
 
 Lemma wp_Encode (args__t : enum_gk.S.t) (args__c : C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
@@ -67,15 +69,16 @@ Proof.
   wp_apply (wp_WriteLenPrefixedBytes with "[$Hsl $Hcap $HopBytes]").
   iIntros (?) "(Hsl & Hcap & HopBytes)". wp_auto.
 
-  wp_apply (wp_WriteInt32 with "[$Hsl $Hcap]").
-  iIntros (?) "[Hsl Hcap]". wp_auto.
+  wp_apply (error_gk.wp_Encode with "[$Hsl $Hcap $Hown_err]").
+  iIntros (err_enc ?) "(%Hargs_err_enc & Hown_err & Hsl & Hcap)".
+  wp_auto.
 
   iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
   unfold has_encoding.
   split; last done.
-  
+  exists err_enc.
   split. all: congruence || done. 
 Qed.
 
@@ -95,7 +98,7 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list 
 Proof.
   wp_start as "[%Henc Hsl]". wp_auto.
   unfold has_encoding in Henc.
-  destruct Henc as (Henc & Hlen_op ).
+  destruct Henc as (err_enc & Henc & Hlen_op & Henc_err ).
   rewrite Henc. rewrite -?app_assoc.
 
   wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
@@ -105,7 +108,8 @@ Proof.
   wp_apply (wp_StringFromBytes with "[$Hop_byt]").
   iIntros "Hop_byt". wp_auto.
 
-  wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
+  wp_apply (error_gk.wp_Decode err_enc with "[$Hsl]"); first done.
+  iIntros (err__v ?) "[Hown_err Hsl]". wp_auto.
 
   iApply "HΦ". iFrame.
   done.

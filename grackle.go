@@ -146,7 +146,7 @@ func setupTemplates(files *descriptorpb.FileDescriptorSet) *template.Template {
 			return util.Filter(fields, func(f *field) bool { return !util.IsMessageType(f) })
 		},
 		"extEncFields": func(fields []*field) []*field {
-			return util.Filter(fields, func(f *field) bool { return util.IsMessageType(f) || util.IsRepeatedType(f) })
+			return util.Filter(fields, func(f *field) bool { return util.IsGoType(f, "message|enum") || util.IsRepeatedType(f) })
 		},
 		"allNestedMsgs":  func(m string) []string { return util.GetAllNestedMessages(m, []string{}, msgDict) },
 		"sliceFields":    func(fields []*field) []*field { return util.Filter(fields, util.IsSliceType) },

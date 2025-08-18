@@ -1,5 +1,7 @@
 package << lower .Name >>_gk
 
+import "github.com/tchajed/marshal"
+
 type E uint32
 
 const (
@@ -7,6 +9,15 @@ const (
     << goName .GetName >> E = << .GetNumber >>
     <<- end >>
 )
+
+func Marshal(enc []byte, e E) []byte {
+    return marshal.WriteInt32(enc, uint32(e))
+}
+
+func Unmarshal(s []byte) (E, []byte) {
+    e_raw, s := marshal.ReadInt32(s)
+    return E(e_raw), s
+}
 
 var Name = map[uint32]string{
     <<- range .GetValue >>

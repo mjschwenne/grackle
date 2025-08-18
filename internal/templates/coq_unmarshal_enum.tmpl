@@ -1,2 +1,3 @@
 
-  wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
+  wp_apply (<< coqModuleName . >>.wp_Decode << .Name >>_enc with "[$Hsl]"); first done.
+  iIntros (<< .Name >>__v ?) "[Hown_<< .Name >> Hsl]". wp_auto.

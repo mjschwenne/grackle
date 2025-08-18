@@ -1,18 +1,13 @@
 func Marshal(enc []byte, <<- param .Name >> S) []byte {
     << range .Fields ->>
-    << if and (isMessage .) (not (isRepeatedType .)) ->>
+    << if and (or (isMessage .) (isGoType . "enum")) (not (isRepeatedType .)) ->>
     enc = << goModuleName . >>.Marshal(enc, << param $.Name ->>.<< goName .Name >>)
     << else if (and (isGoType . "byte") (isSliceType .)) ->>
     enc = marshal.WriteInt(enc, uint64(len(<< param $.Name >>.<< goName .Name >>)))
     enc = marshal.WriteBytes(enc, << param $.Name >>.<< goName .Name >>)
-    << else if and (isGoType . "enum") (isSliceType .) >>
-    enc = marshal.WriteInt(enc, uint64(len(<< param $.Name >>.<< goName .Name >>)))
-    enc = marshal.WriteSlice[<< goType . >>](enc, << param $.Name >>.<< goName .Name >>, << goModuleName . >>.Marshal)
     << else if isSliceType . >>
     enc = marshal.WriteInt(enc, uint64(len(<< param $.Name >>.<< goName .Name >>)))
-    enc = marshal.WriteSlice[<< goType . >>](enc, << param $.Name >>.<< goName .Name >>, << if isMessage . >><< goModuleName . >>.Marshal<< else >>marshal.Write<< marshalType . >><< end >>)
-    << else if isGoType . "enum" ->>
-    enc = marshal.WriteInt32(enc, uint32(<< param $.Name >>.<< goName .Name >>))
+    enc = marshal.WriteSlice[<< goType . >>](enc, << param $.Name >>.<< goName .Name >>, << if or (isMessage .) (isGoType . "enum") >><< goModuleName . >>.Marshal<< else >>marshal.Write<< marshalType . >><< end >>)
     << else if isGoType . "string" ->>
     primitive.AssumeNoStringOverflow(<< param $.Name >>.<< goName .Name >>)
     enc = marshal.WriteLenPrefixedBytes(enc, []byte(<< param $.Name >>.<< goName .Name >>))

@@ -65,8 +65,7 @@ Module Person_Proof.
 
       iApply "HΦ". iFrame.
       iPureIntro. unfold status_has_encoding.
-      rewrite Hstatus_eq.
-      split; try reflexivity.
+      subst. split; try reflexivity.
     Qed.
 
     Lemma wp_Status_Decode (enc: list u8) (enc_sl: slice.t) (args__c:Status) (suffix: list u8) (dq: dfrac):
@@ -83,8 +82,7 @@ Module Person_Proof.
       }}}.
     Proof.
       wp_start as "(Hsl & %Henc)". wp_auto.
-      unfold status_has_encoding in Henc.
-      rewrite Henc. 
+      unfold status_has_encoding in Henc. subst.
 
       wp_apply (wp_ReadInt with "[$Hsl]").
       iIntros (?) "Hsl". wp_auto.

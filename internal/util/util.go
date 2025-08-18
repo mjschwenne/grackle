@@ -191,7 +191,8 @@ func GetGoModuleName(field *field) string {
 }
 
 func GetCoqModuleName(field *field) string {
-	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE ||
+		field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
 		return field.GetTypeName() + "_gk"
 	}
 

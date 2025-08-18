@@ -16,7 +16,7 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
   encoded = << range $idx, $field := .Fields ->>
               << if $idx >> ++
               << end >>
-              <<- if and (isMessage .) (not (isSliceType .)) ->>
+              <<- if and (isGoType . "message|enum") (not (isSliceType .)) ->>
               << $field.Name ->>_enc
               <<- else if isCoqType . "go_string|u8" ->>
               (u64_le $ length $ args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>)) ++ args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>)
@@ -24,18 +24,16 @@ Definition has_encoding (encoded:list u8) (args:C) : Prop :=
               (u64_le $ length $ args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>)) ++ << $field.Name >>_enc
               <<- else if (isCoqType . "bool") ->>
               [if args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) then W8 1 else W8 0]
-              <<- else if (isCoqType . "enum") ->>
-              (u32_le $ << goModuleName . >>.to_tag args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>))
               <<- else ->>
               (<<- coqType $field >>_le args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>))
               <<- end ->><<- end ->>
   <<- range $idx, $field := .Fields >>
   <<- if isRepeatedType $field >>
-  /\ encodes << $field.Name >>_enc args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) << if isCoqType . "message" >><< .TypeName >>_gk.has_encoding<< else >><< goType . >>_has_encoding<< end >>
+  /\ encodes << $field.Name >>_enc args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) << if isCoqType . "message|enum" >><< .TypeName >>_gk.has_encoding<< else >><< goType . >>_has_encoding<< end >>
   /\ length args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) < 2^64
   <<- else if (isCoqType $field "go_string|u8") >>
   /\ length args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) < 2^64
-  <<- else if isMessage . >>
+  <<- else if isGoType . "message|enum" >>
   /\ << $field.TypeName ->>_gk.has_encoding << $field.Name ->>_enc args.(<< template "rocq_record_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>)
   <<- end ->>
   <<- end ->>.

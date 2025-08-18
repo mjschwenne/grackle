@@ -1,7 +1,9 @@
 << template "coq_autogen_notice.tmpl" >>
 From New.proof Require Import proof_prelude.
+From New.proof Require Import github_com.tchajed.marshal.
 From New.code Require Import << cleanCoqName .GoPackage >>.<< lower .Name >>_gk.
 From New.generatedproof Require Import << cleanCoqName .GoPackage >>.<< lower .Name >>_gk.
+From Perennial.Helpers Require Import NamedProps.
 
 Module << .Name >>_gk.
 Section << .Name >>_gk.
@@ -47,6 +49,64 @@ Definition to_tag i : w32 :=
   | << .Name >> => W32 << .Number >>
   <<- end >>
   end.
+
+Definition has_encoding (encoded : list u8) (args : I) : Prop :=
+  encoded = u32_le $ to_tag $ args.
+
+Definition own (args__v : << lower .Name >>_gk.E.t) (args__c : I) (dq : dfrac) : iProp Σ :=
+  "%H<< lower .Name >>_eq" ∷ ⌜ args__v = to_tag args__c ⌝.
+
+Lemma wp_Encode (args__t : << lower .Name >>_gk.E.t) (args__c : I) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
+  {{{
+        is_pkg_init << lower .Name >>_gk ∗
+        own args__t args__c dq ∗
+        own_slice pre_sl (DfracOwn 1) prefix ∗
+        own_slice_cap w8 pre_sl (DfracOwn 1)
+  }}}
+    @! << lower .Name >>_gk.Marshal #pre_sl #args__t
+  {{{
+        enc enc_sl, RET #enc_sl;
+        ⌜ has_encoding enc args__c ⌝ ∗
+        own args__t args__c dq ∗
+        own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
+        own_slice_cap w8 enc_sl (DfracOwn 1)
+  }}}.
+
+Proof.
+  wp_start as "(Hown & Hsl & Hcap)".
+  unfold own. iNamed "Hown". 
+  wp_auto.
+
+  wp_apply (wp_WriteInt32 with "[$Hsl $Hcap]").
+  iIntros (?) "[Hsl Hcap]". wp_auto.
+
+  iApply "HΦ". iFrame.
+  iPureIntro. unfold has_encoding.
+  subst. split; try reflexivity.
+Qed.
+
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : I) (suffix : list u8) (dq : dfrac):
+  {{{
+        is_pkg_init << lower .Name >>_gk ∗  
+        own_slice enc_sl dq (enc ++ suffix) ∗
+        ⌜ has_encoding enc args__c ⌝
+  }}}
+    @! << lower .Name >>_gk.Unmarshal #enc_sl
+  {{{
+        args__t suff_sl, RET (#args__t, #suff_sl);
+        own args__t args__c (DfracOwn 1) ∗
+        own_slice suff_sl dq suffix
+  }}}.
+
+Proof.
+  wp_start as "(Hsl & %Henc)". wp_auto.
+  unfold has_encoding in Henc. subst.
+
+  wp_apply (wp_ReadInt32 with "[$Hsl]").
+  iIntros (?) "Hsl". wp_auto.
+
+  iApply "HΦ". iFrame. done.
+Qed.
 
 End << .Name >>_gk.
 End << .Name >>_gk.

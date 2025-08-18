@@ -34,7 +34,7 @@ Definition Marshalⁱᵐᵖˡ : val :=
     do:  ("enc" <-[#sliceT] "$r0");;;
     let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
     let: "$a1" := (![#error_gk.E] (struct.field_ref #S #"Err"%go "e")) in
-    (func_call #marshal.WriteInt32) "$a0" "$a1") in
+    (func_call #error_gk.Marshal) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
@@ -55,16 +55,13 @@ Definition Unmarshalⁱᵐᵖˡ : val :=
     let: "$r0" := (string.from_bytes (let: "$a0" := (![#sliceT] "opBytes") in
     (func_call #std.BytesClone) "$a0")) in
     do:  ("op" <-[#stringT] "$r0");;;
-    let: "err_int" := (mem.alloc (type.zero_val #uint32T)) in
+    let: "err" := (mem.alloc (type.zero_val #error_gk.E)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
-    (func_call #marshal.ReadInt32) "$a0") in
+    (func_call #error_gk.Unmarshal) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("err_int" <-[#uint32T] "$r0");;;
-    do:  ("s" <-[#sliceT] "$r1");;;
-    let: "err" := (mem.alloc (type.zero_val #error_gk.E)) in
-    let: "$r0" := (![#uint32T] "err_int") in
     do:  ("err" <-[#error_gk.E] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
     return: (let: "$Op" := (![#stringT] "op") in
      let: "$Err" := (![#error_gk.E] "err") in
      struct.make #S [{
