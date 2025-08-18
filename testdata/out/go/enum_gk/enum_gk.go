@@ -14,14 +14,18 @@ import (
 )
 
 type S struct {
-	Op  string
-	Err error_gk.E
+	Op   string
+	Err  error_gk.E
+	Errs []error_gk.E
 }
 
 func Marshal(enc []byte, e S) []byte {
 	primitive.AssumeNoStringOverflow(e.Op)
 	enc = marshal.WriteLenPrefixedBytes(enc, []byte(e.Op))
 	enc = error_gk.Marshal(enc, e.Err)
+
+	enc = marshal.WriteInt(enc, uint64(len(e.Errs)))
+	enc = marshal.WriteSlice[error_gk.E](enc, e.Errs, error_gk.Marshal)
 
 	return enc
 }
@@ -31,9 +35,12 @@ func Unmarshal(s []byte) (S, []byte) {
 	opBytes, s := marshal.ReadLenPrefixedBytes(s)
 	op := string(std.BytesClone(opBytes))
 	err, s := error_gk.Unmarshal(s)
+	errsLen, s := marshal.ReadInt(s)
+	errs, s := marshal.ReadSlice[error_gk.E](s, errsLen, error_gk.Unmarshal)
 
 	return S{
-		Op:  op,
-		Err: err,
+		Op:   op,
+		Err:  err,
+		Errs: errs,
 	}, s
 }

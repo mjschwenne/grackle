@@ -31,19 +31,27 @@ Record C :=
     mkC {
         op' :  go_string;
         err' :  error_gk.I;
+        errs' : list error_gk.I;
         }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-  ∃ (err_enc : list u8), 
+  ∃ (err_enc errs_enc : list u8), 
   encoded = (u64_le $ length $ args.(op')) ++ args.(op') ++
-              err_enc
+              err_enc ++
+              (u64_le $ length $ args.(errs')) ++ errs_enc
   /\ length args.(op') < 2^64
-  /\ error_gk.has_encoding err_enc args.(err').
+  /\ error_gk.has_encoding err_enc args.(err')
+  /\ encodes errs_enc args.(errs') error_gk.has_encoding
+  /\ length args.(errs') < 2^64.
 
 Definition own (args__v: enum_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
+  ∃ (l__errs : list error_gk.E.t), 
   "%Hown_op" ∷ ⌜ args__v.(enum_gk.S.Op') = args__c.(op') ⌝ ∗
   "%Hown_op_len" ∷ ⌜ length args__c.(op') < 2^64 ⌝ ∗
-  "Hown_err" ∷ error_gk.own args__v.(enum_gk.S.Err') args__c.(err') dq.
+  "Hown_err" ∷ error_gk.own args__v.(enum_gk.S.Err') args__c.(err') dq ∗
+  "Hown_errs_sl" ∷ own_slice args__v.(enum_gk.S.Errs') dq l__errs ∗
+  "Hown_errs_own" ∷ ([∗ list] x;c ∈ l__errs;args__c.(errs'), error_gk.own x c dq) ∗
+  "%Hown_errs_len" ∷ ⌜ length l__errs < 2^64 ⌝.
 
 Lemma wp_Encode (args__t : enum_gk.S.t) (args__c : C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
@@ -73,13 +81,36 @@ Proof.
   iIntros (err_enc ?) "(%Hargs_err_enc & Hown_err & Hsl & Hcap)".
   wp_auto.
 
+  wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
+  iIntros (?) "[Hsl Hcap]". wp_auto.
+
+  iDestruct (own_slice_len with "Hown_errs_sl") as "%Hown_errs_sz".
+  iDestruct (big_sepL2_length with "Hown_errs_own") as "%Hown_errs_sz'".
+  rewrite Hown_errs_sz' in Hown_errs_sz.
+  wp_apply (wp_WriteSlice with "[$Hsl $Hcap $Hown_errs_sl $Hown_errs_own]").
+  {
+    iIntros (????) "!>".
+    iIntros (?) "(Hown & Hsl & Hcap) HΦ".
+    wp_apply (error_gk.wp_Encode with "[$Hown $Hsl $Hcap]").
+    iApply "HΦ".
+  }
+  iIntros (errs_enc errs_sl') "(Hown_errs & Hown_errs_own & %Henc_errs & Hsl & Hcap)".
+  wp_auto.
+
   iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
   unfold has_encoding.
   split; last done.
-  exists err_enc.
-  split. all: congruence || done. 
+  exists err_enc, errs_enc.
+  split.
+  {
+     rewrite Hown_errs_sz.
+     rewrite ?w64_to_nat_id.
+     congruence.
+  }
+  rewrite <- Hown_errs_sz'.
+  done. 
 Qed.
 
 Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
@@ -98,7 +129,7 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list 
 Proof.
   wp_start as "[%Henc Hsl]". wp_auto.
   unfold has_encoding in Henc.
-  destruct Henc as (err_enc & Henc & Hlen_op & Henc_err ).
+  destruct Henc as (err_enc & errs_enc & Henc & Hlen_op & Henc_err & Henc_errs & Herrs_sz ).
   rewrite Henc. rewrite -?app_assoc.
 
   wp_apply (wp_ReadLenPrefixedBytes with "[$Hsl]"); first word.
@@ -110,6 +141,20 @@ Proof.
 
   wp_apply (error_gk.wp_Decode err_enc with "[$Hsl]"); first done.
   iIntros (err__v ?) "[Hown_err Hsl]". wp_auto.
+
+  wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
+  wp_apply (wp_ReadSlice  with "[$Hsl]").
+  {
+    iSplit; auto.
+    iSplit; first word.
+    iIntros (????) "!>".
+    iIntros (?) "[Hsl Henc] HΦ".
+    wp_apply (error_gk.wp_Decode with "[$Hsl $Henc]").
+    iApply "HΦ".
+  }
+  iIntros (???) "(Hown_errs_sl & Hown_errs_own & Hsl)". wp_auto.
+  iDestruct (big_sepL2_length with "Hown_errs_own") as "%Hown_errs_sz".
+  rewrite <- Hown_errs_sz in Herrs_sz.
 
   iApply "HΦ". iFrame.
   done.

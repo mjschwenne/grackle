@@ -30,6 +30,7 @@ message structSlice {
 message enum {
   string op = 1;
   error err = 2;
+  repeated error errs = 3;
 }
 
 message complete {

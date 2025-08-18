@@ -16,12 +16,13 @@ Definition Sⁱᵈ : go_string := "github.com/mjschwenne/grackle/testdata/out/go
 
 Definition S : go_type := structT [
   "Op" :: stringT;
-  "Err" :: error_gk.E
+  "Err" :: error_gk.E;
+  "Errs" :: sliceT
 ].
 
 Definition Marshal : go_string := "github.com/mjschwenne/grackle/testdata/out/go/enum_gk.Marshal"%go.
 
-(* go: enum_gk.go:21:6 *)
+(* go: enum_gk.go:22:6 *)
 Definition Marshalⁱᵐᵖˡ : val :=
   λ: "enc" "e",
     exception_do (let: "e" := (mem.alloc "e") in
@@ -36,11 +37,21 @@ Definition Marshalⁱᵐᵖˡ : val :=
     let: "$a1" := (![#error_gk.E] (struct.field_ref #S #"Err"%go "e")) in
     (func_call #error_gk.Marshal) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
+    let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] (struct.field_ref #S #"Errs"%go "e")) in
+    slice.len "$a0")) in
+    (func_call #marshal.WriteInt) "$a0" "$a1") in
+    do:  ("enc" <-[#sliceT] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
+    let: "$a1" := (![#sliceT] (struct.field_ref #S #"Errs"%go "e")) in
+    let: "$a2" := (func_call #error_gk.Marshal) in
+    (func_call #marshal.WriteSlice #error_gk.E) "$a0" "$a1" "$a2") in
+    do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
 Definition Unmarshal : go_string := "github.com/mjschwenne/grackle/testdata/out/go/enum_gk.Unmarshal"%go.
 
-(* go: enum_gk.go:29:6 *)
+(* go: enum_gk.go:33:6 *)
 Definition Unmarshalⁱᵐᵖˡ : val :=
   λ: "s",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -62,11 +73,29 @@ Definition Unmarshalⁱᵐᵖˡ : val :=
     let: "$r1" := "$ret1" in
     do:  ("err" <-[#error_gk.E] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
+    let: "errsLen" := (mem.alloc (type.zero_val #uint64T)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    (func_call #marshal.ReadInt) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("errsLen" <-[#uint64T] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
+    let: "errs" := (mem.alloc (type.zero_val #sliceT)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    let: "$a1" := (![#uint64T] "errsLen") in
+    let: "$a2" := (func_call #error_gk.Unmarshal) in
+    (func_call #marshal.ReadSlice #error_gk.E) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("errs" <-[#sliceT] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
     return: (let: "$Op" := (![#stringT] "op") in
      let: "$Err" := (![#error_gk.E] "err") in
+     let: "$Errs" := (![#sliceT] "errs") in
      struct.make #S [{
        "Op" ::= "$Op";
-       "Err" ::= "$Err"
+       "Err" ::= "$Err";
+       "Errs" ::= "$Errs"
      }], ![#sliceT] "s")).
 
 Definition vars' : list (go_string * go_type) := [].

@@ -1,13 +1,13 @@
 func Unmarshal(s []byte) (S, []byte) {
     << range .Fields ->>
-    <<- if and (or (isMessage .) (isGoType . "enum")) (not (isRepeatedType .)) >>
+    <<- if and (isGoType . "message|enum") (not (isRepeatedType .)) >>
     << .Name >>, s := << goModuleName . >>.Unmarshal(s)
     <<- else if or (isGoType . "string") (and (isSliceType . ) (isGoType . "byte")) >>
     << .Name >>Bytes, s := marshal.ReadLenPrefixedBytes(s)
     << .Name >> := << if isGoType . "string" >>string(<< end >>std.BytesClone(<< .Name >>Bytes)<< if isGoType . "string" >>)<< end >>
     <<- else if isSliceType . >>
     << .Name >>Len, s := marshal.ReadInt(s)
-    << .Name >>, s := marshal.ReadSlice[<< goType . >>](s, << .Name >>Len, << if isMessage . >><< goModuleName . >>.Unmarshal<< else >>marshal.Read<< marshalType . >><< end >>)
+    << .Name >>, s := marshal.ReadSlice[<< goType . >>](s, << .Name >>Len, << if isGoType . "message|enum" >><< goModuleName . >>.Unmarshal<< else >>marshal.Read<< marshalType . >><< end >>)
     <<- else >>
     << .Name >>, s := marshal.Read<<- marshalType . ->>(s)
     <<- end ->> <<- end >>

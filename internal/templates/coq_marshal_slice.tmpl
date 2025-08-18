@@ -5,11 +5,11 @@
   iDestruct (own_slice_len with "Hown_<< .Name >>_sl") as "%Hown_<< .Name >>_sz".
   iDestruct (big_sepL2_length with "Hown_<< .Name >>_own") as "%Hown_<< .Name >>_sz'".
   rewrite Hown_<< .Name >>_sz' in Hown_<< .Name >>_sz.
-  wp_apply (wp_WriteSlice << if not (isMessage .) >>_ _ _ _ _ << goType . >>_has_encoding << end >>with "[$Hsl $Hcap $Hown_<< .Name >>_sl $Hown_<< .Name >>_own]").
+  wp_apply (wp_WriteSlice << if not (isGoType . "message|enum") >>_ _ _ _ _ << goType . >>_has_encoding << end >>with "[$Hsl $Hcap $Hown_<< .Name >>_sl $Hown_<< .Name >>_own]").
   {
     iIntros (????) "!>".
     iIntros (?) "(Hown & Hsl & Hcap) HΦ".
-    <<- if isMessage . >>
+    <<- if isGoType . "message|enum" >>
     wp_apply (<< .TypeName >>_gk.wp_Encode with "[$Hown $Hsl $Hcap]").
     iApply "HΦ".
     <<- else >>

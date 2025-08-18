@@ -1,12 +1,12 @@
 
   wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
-  wp_apply (wp_ReadSlice << if not (isMessage .) >>_ _ _ _ _ own_prim << end >> with "[$Hsl]").
+  wp_apply (wp_ReadSlice << if not (isGoType . "message|enum") >>_ _ _ _ _ own_prim << end >> with "[$Hsl]").
   {
     iSplit; auto.
     iSplit; first word.
     iIntros (????) "!>".
     iIntros (?) "[Hsl Henc] HΦ".
-    <<- if isMessage . >>
+    <<- if isGoType . "message|enum" >>
     wp_apply (<< .TypeName >>_gk.wp_Decode with "[$Hsl $Henc]").
     iApply "HΦ".
     <<- else >>

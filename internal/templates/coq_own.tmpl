@@ -10,14 +10,14 @@ Definition own (args__v: << lower .Name >>_gk.S.t) (args__c: C) (dq: dfrac) : iP
   <<- $reps := (repeatedFields .Fields) ->>
   <<- if (len $reps) >>
   ∃ << range $idx, $field := $reps ->>
-  (l__<< $field.Name >> : list << if isCoqType . "message" >><< goType . >>.t<< else >><< coqType . >><< end >>)
+  (l__<< $field.Name >> : list << if isCoqType . "message|enum" >><< goType . >>.t<< else >><< coqType . >><< end >>)
     <<- end ->>
   , << end >>
   <<- range $idx, $field := .Fields >>
   <<- if $idx >> ∗<< end ->>
   <<- if isRepeatedType . >>
   "Hown_<< .Name >>_sl" ∷ own_slice args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') dq l__<< .Name >> ∗
-  "Hown_<< .Name >>_own" ∷ ([∗ list] x;c ∈ l__<< .Name >>;args__c.(<< .Name >>'), << if isCoqType . "message" >><< .TypeName >>_gk.own<< else >>own_prim<< end >> x c dq) ∗
+  "Hown_<< .Name >>_own" ∷ ([∗ list] x;c ∈ l__<< .Name >>;args__c.(<< .Name >>'), << if isCoqType . "message|enum" >><< .TypeName >>_gk.own<< else >>own_prim<< end >> x c dq) ∗
   "%Hown_<< .Name >>_len" ∷ ⌜ length l__<< .Name >> < 2^64 ⌝
   <<- else if isCoqType . "u8" >>
   "Hown_<< .Name >>" ∷ own_slice args__v.(<< lower $.Name >>_gk.S.<< goName .Name >>') dq args__c.(<< template "rocq_own_field_name" dict "Name" $.Name "Simple" $.Simple "Field" $field >>) ∗

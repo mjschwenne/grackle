@@ -19,6 +19,7 @@ Context `{ffi_syntax}.
 Record t := mk {
   Op' : go_string;
   Err' : error_gk.E.t;
+  Errs' : slice.t;
 }.
 End def.
 End S.
@@ -27,18 +28,19 @@ Section instances.
 Context `{ffi_syntax}.
 
 Global Instance settable_S : Settable S.t :=
-  settable! S.mk < S.Op'; S.Err' >.
+  settable! S.mk < S.Op'; S.Err'; S.Errs' >.
 Global Instance into_val_S : IntoVal S.t :=
   {| to_val_def v :=
     struct.val_aux enum_gk.S [
     "Op" ::= #(S.Op' v);
-    "Err" ::= #(S.Err' v)
+    "Err" ::= #(S.Err' v);
+    "Errs" ::= #(S.Errs' v)
     ]%struct
   |}.
 
 Global Program Instance into_val_typed_S : IntoValTyped S.t enum_gk.S :=
 {|
-  default_val := S.mk (default_val _) (default_val _);
+  default_val := S.mk (default_val _) (default_val _) (default_val _);
 |}.
 Next Obligation. solve_to_val_type. Qed.
 Next Obligation. solve_zero_val. Qed.
@@ -51,22 +53,27 @@ Proof. solve_into_val_struct_field. Qed.
 Global Instance into_val_struct_field_S_Err : IntoValStructField "Err" enum_gk.S S.Err'.
 Proof. solve_into_val_struct_field. Qed.
 
+Global Instance into_val_struct_field_S_Errs : IntoValStructField "Errs" enum_gk.S S.Errs'.
+Proof. solve_into_val_struct_field. Qed.
+
 
 Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_S Op' Err':
+Global Instance wp_struct_make_S Op' Err' Errs':
   PureWp True
     (struct.make #enum_gk.S (alist_val [
       "Op" ::= #Op';
-      "Err" ::= #Err'
+      "Err" ::= #Err';
+      "Errs" ::= #Errs'
     ]))%struct
-    #(S.mk Op' Err').
+    #(S.mk Op' Err' Errs').
 Proof. solve_struct_make_pure_wp. Qed.
 
 
 Global Instance S_struct_fields_split dq l (v : S.t) :
   StructFieldsSplit dq l v (
     "HOp" ∷ l ↦s[enum_gk.S :: "Op"]{dq} v.(S.Op') ∗
-    "HErr" ∷ l ↦s[enum_gk.S :: "Err"]{dq} v.(S.Err')
+    "HErr" ∷ l ↦s[enum_gk.S :: "Err"]{dq} v.(S.Err') ∗
+    "HErrs" ∷ l ↦s[enum_gk.S :: "Errs"]{dq} v.(S.Errs')
   ).
 Proof.
   rewrite /named.
@@ -75,6 +82,7 @@ Proof.
 
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
   simpl_one_flatten_struct (# (S.Op' v)) (enum_gk.S) "Op"%go.
+  simpl_one_flatten_struct (# (S.Err' v)) (enum_gk.S) "Err"%go.
 
   solve_field_ref_f.
 Qed.
