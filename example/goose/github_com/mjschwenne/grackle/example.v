@@ -107,16 +107,45 @@ Definition STATUS_STAFF : expr := #(W64 2).
 
 Definition STATUS_PROFESSOR : expr := #(W64 3).
 
+Definition MarshalStatus : go_string := "github.com/mjschwenne/grackle/example.MarshalStatus"%go.
+
+(* Wrapper for type aliasing compliance
+
+   go: enum.go:18:6 *)
+Definition MarshalStatusⁱᵐᵖˡ : val :=
+  λ: "enc" "s",
+    exception_do (let: "s" := (mem.alloc "s") in
+    let: "enc" := (mem.alloc "enc") in
+    return: (let: "$a0" := (![#sliceT] "enc") in
+     let: "$a1" := (![#Status] "s") in
+     (func_call #marshal.WriteInt) "$a0" "$a1")).
+
+Definition UnmarshalStatus : go_string := "github.com/mjschwenne/grackle/example.UnmarshalStatus"%go.
+
+(* go: enum.go:22:6 *)
+Definition UnmarshalStatusⁱᵐᵖˡ : val :=
+  λ: "s",
+    exception_do (let: "s" := (mem.alloc "s") in
+    let: "status_raw" := (mem.alloc (type.zero_val #uint64T)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    (func_call #marshal.ReadInt) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("status_raw" <-[#uint64T] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
+    return: (![#uint64T] "status_raw", ![#sliceT] "s")).
+
 Definition Personⁱᵈ : go_string := "github.com/mjschwenne/grackle/example.Person"%go.
 
 Definition Person : go_type := structT [
   "Name" :: stringT;
-  "Status" :: Status
+  "Status" :: Status;
+  "Statuses" :: sliceT
 ].
 
 Definition MarshalPerson : go_string := "github.com/mjschwenne/grackle/example.MarshalPerson"%go.
 
-(* go: enum.go:22:6 *)
+(* go: enum.go:33:6 *)
 Definition MarshalPersonⁱᵐᵖˡ : val :=
   λ: "enc" "p",
     exception_do (let: "p" := (mem.alloc "p") in
@@ -131,11 +160,21 @@ Definition MarshalPersonⁱᵐᵖˡ : val :=
     let: "$a1" := (![#Status] (struct.field_ref #Person #"Status"%go "p")) in
     (func_call #marshal.WriteInt) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
+    let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] (struct.field_ref #Person #"Statuses"%go "p")) in
+    slice.len "$a0")) in
+    (func_call #marshal.WriteInt) "$a0" "$a1") in
+    do:  ("enc" <-[#sliceT] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
+    let: "$a1" := (![#sliceT] (struct.field_ref #Person #"Statuses"%go "p")) in
+    let: "$a2" := (func_call #MarshalStatus) in
+    (func_call #marshal.WriteSlice #Status) "$a0" "$a1" "$a2") in
+    do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
 Definition UnmarshalPerson : go_string := "github.com/mjschwenne/grackle/example.UnmarshalPerson"%go.
 
-(* go: enum.go:29:6 *)
+(* go: enum.go:43:6 *)
 Definition UnmarshalPersonⁱᵐᵖˡ : val :=
   λ: "s",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -156,11 +195,29 @@ Definition UnmarshalPersonⁱᵐᵖˡ : val :=
     let: "status" := (mem.alloc (type.zero_val #Status)) in
     let: "$r0" := (![#uint64T] "status_int") in
     do:  ("status" <-[#Status] "$r0");;;
+    let: "statuses_len" := (mem.alloc (type.zero_val #uint64T)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    (func_call #marshal.ReadInt) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("statuses_len" <-[#uint64T] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
+    let: "statuses" := (mem.alloc (type.zero_val #sliceT)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    let: "$a1" := (![#uint64T] "statuses_len") in
+    let: "$a2" := (func_call #UnmarshalStatus) in
+    (func_call #marshal.ReadSlice #Status) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("statuses" <-[#sliceT] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
     return: (let: "$Name" := (string.from_bytes (![#sliceT] "name")) in
      let: "$Status" := (![#Status] "status") in
+     let: "$Statuses" := (![#sliceT] "statuses") in
      struct.make #Person [{
        "Name" ::= "$Name";
-       "Status" ::= "$Status"
+       "Status" ::= "$Status";
+       "Statuses" ::= "$Statuses"
      }], ![#sliceT] "s")).
 
 Definition Eventⁱᵈ : go_string := "github.com/mjschwenne/grackle/example.Event"%go.
@@ -294,7 +351,7 @@ Definition UnmarshalTimeStampⁱᵐᵖˡ : val :=
 
 Definition vars' : list (go_string * go_type) := [].
 
-Definition functions' : list (go_string * val) := [(MarshalCalendar, MarshalCalendarⁱᵐᵖˡ); (UnmarshalCalendar, UnmarshalCalendarⁱᵐᵖˡ); (MarshalPerson, MarshalPersonⁱᵐᵖˡ); (UnmarshalPerson, UnmarshalPersonⁱᵐᵖˡ); (MarshalEvent, MarshalEventⁱᵐᵖˡ); (UnmarshalEvent, UnmarshalEventⁱᵐᵖˡ); (MarshalTimeStamp, MarshalTimeStampⁱᵐᵖˡ); (UnmarshalTimeStamp, UnmarshalTimeStampⁱᵐᵖˡ)].
+Definition functions' : list (go_string * val) := [(MarshalCalendar, MarshalCalendarⁱᵐᵖˡ); (UnmarshalCalendar, UnmarshalCalendarⁱᵐᵖˡ); (MarshalStatus, MarshalStatusⁱᵐᵖˡ); (UnmarshalStatus, UnmarshalStatusⁱᵐᵖˡ); (MarshalPerson, MarshalPersonⁱᵐᵖˡ); (UnmarshalPerson, UnmarshalPersonⁱᵐᵖˡ); (MarshalEvent, MarshalEventⁱᵐᵖˡ); (UnmarshalEvent, UnmarshalEventⁱᵐᵖˡ); (MarshalTimeStamp, MarshalTimeStampⁱᵐᵖˡ); (UnmarshalTimeStamp, UnmarshalTimeStampⁱᵐᵖˡ)].
 
 Definition msets' : list (go_string * (list (go_string * val))) := [(Calendarⁱᵈ, []); (ptrTⁱᵈ Calendarⁱᵈ, []); (Statusⁱᵈ, []); (ptrTⁱᵈ Statusⁱᵈ, []); (Personⁱᵈ, []); (ptrTⁱᵈ Personⁱᵈ, []); (Eventⁱᵈ, []); (ptrTⁱᵈ Eventⁱᵈ, []); (TimeStampⁱᵈ, []); (ptrTⁱᵈ TimeStampⁱᵈ, [])].
 

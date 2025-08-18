@@ -95,6 +95,7 @@ Context `{ffi_syntax}.
 Record t := mk {
   Name' : go_string;
   Status' : Status.t;
+  Statuses' : slice.t;
 }.
 End def.
 End Person.
@@ -103,18 +104,19 @@ Section instances.
 Context `{ffi_syntax}.
 
 Global Instance settable_Person : Settable Person.t :=
-  settable! Person.mk < Person.Name'; Person.Status' >.
+  settable! Person.mk < Person.Name'; Person.Status'; Person.Statuses' >.
 Global Instance into_val_Person : IntoVal Person.t :=
   {| to_val_def v :=
     struct.val_aux example.Person [
     "Name" ::= #(Person.Name' v);
-    "Status" ::= #(Person.Status' v)
+    "Status" ::= #(Person.Status' v);
+    "Statuses" ::= #(Person.Statuses' v)
     ]%struct
   |}.
 
 Global Program Instance into_val_typed_Person : IntoValTyped Person.t example.Person :=
 {|
-  default_val := Person.mk (default_val _) (default_val _);
+  default_val := Person.mk (default_val _) (default_val _) (default_val _);
 |}.
 Next Obligation. solve_to_val_type. Qed.
 Next Obligation. solve_zero_val. Qed.
@@ -127,22 +129,27 @@ Proof. solve_into_val_struct_field. Qed.
 Global Instance into_val_struct_field_Person_Status : IntoValStructField "Status" example.Person Person.Status'.
 Proof. solve_into_val_struct_field. Qed.
 
+Global Instance into_val_struct_field_Person_Statuses : IntoValStructField "Statuses" example.Person Person.Statuses'.
+Proof. solve_into_val_struct_field. Qed.
+
 
 Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_Person Name' Status':
+Global Instance wp_struct_make_Person Name' Status' Statuses':
   PureWp True
     (struct.make #example.Person (alist_val [
       "Name" ::= #Name';
-      "Status" ::= #Status'
+      "Status" ::= #Status';
+      "Statuses" ::= #Statuses'
     ]))%struct
-    #(Person.mk Name' Status').
+    #(Person.mk Name' Status' Statuses').
 Proof. solve_struct_make_pure_wp. Qed.
 
 
 Global Instance Person_struct_fields_split dq l (v : Person.t) :
   StructFieldsSplit dq l v (
     "HName" ∷ l ↦s[example.Person :: "Name"]{dq} v.(Person.Name') ∗
-    "HStatus" ∷ l ↦s[example.Person :: "Status"]{dq} v.(Person.Status')
+    "HStatus" ∷ l ↦s[example.Person :: "Status"]{dq} v.(Person.Status') ∗
+    "HStatuses" ∷ l ↦s[example.Person :: "Statuses"]{dq} v.(Person.Statuses')
   ).
 Proof.
   rewrite /named.
@@ -151,6 +158,7 @@ Proof.
 
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
   simpl_one_flatten_struct (# (Person.Name' v)) (example.Person) "Name"%go.
+  simpl_one_flatten_struct (# (Person.Status' v)) (example.Person) "Status"%go.
 
   solve_field_ref_f.
 Qed.
@@ -331,6 +339,14 @@ Global Instance wp_func_call_MarshalCalendar :
 
 Global Instance wp_func_call_UnmarshalCalendar :
   WpFuncCall example.UnmarshalCalendar _ (is_pkg_defined example) :=
+  ltac:(apply wp_func_call'; reflexivity).
+
+Global Instance wp_func_call_MarshalStatus :
+  WpFuncCall example.MarshalStatus _ (is_pkg_defined example) :=
+  ltac:(apply wp_func_call'; reflexivity).
+
+Global Instance wp_func_call_UnmarshalStatus :
+  WpFuncCall example.UnmarshalStatus _ (is_pkg_defined example) :=
   ltac:(apply wp_func_call'; reflexivity).
 
 Global Instance wp_func_call_MarshalPerson :

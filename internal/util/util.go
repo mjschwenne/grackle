@@ -104,7 +104,7 @@ var TypeMap = map[fieldType]TypeData{
 		ProtoType:   "enum",
 		CoqType:     "enum",
 		GoType:      "enum",
-		MarshalType: "enum",
+		MarshalType: "Int32",
 	},
 }
 
