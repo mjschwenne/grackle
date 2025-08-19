@@ -15,23 +15,23 @@ Section error_gk.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-Definition name_map : gmap w32 go_string := list_to_map [
+Definition name_map_def : gmap w32 go_string := list_to_map [
                                                 ((W32 0), "eOk"%go);
                                                 ((W32 1), "eEndOfFile"%go);
                                                 ((W32 2), "eUnknown"%go)
                                               ].
-Definition value_map : gmap go_string w32 := list_to_map [
+Definition value_map_def : gmap go_string w32 := list_to_map [
                                                  ("eOk"%go, (W32 0));
                                                  ("eEndOfFile"%go, (W32 1));
                                                  ("eUnknown"%go, (W32 2))
                                                ].
 
 Definition is_initialized : iProp Σ :=
-  ∃ nameMap valueMap, 
-  "HglobalName" ∷ (global_addr error_gk.Name) ↦□ nameMap ∗
-  "HnameMap" ∷ nameMap ↦$□ name_map ∗
-  "HglobalValue" ∷ (global_addr error_gk.Value) ↦□ valueMap ∗
-  "HvalueMap" ∷ valueMap ↦$□ value_map.
+  ∃ name_map value_map,
+  "HglobalName" ∷ (global_addr error_gk.Name) ↦□ name_map ∗
+  "Hname" ∷ name_map ↦$□ name_map_def ∗
+  "HglobalValue" ∷ (global_addr error_gk.Value) ↦□ value_map ∗
+  "Hvalue" ∷ value_map ↦$□ value_map_def.
 
 Local Notation deps := (ltac2:(build_pkg_init_deps 'error_gk) : iProp Σ) (only parsing).
 #[global]
@@ -48,36 +48,34 @@ Lemma wp_initialize' get_is_pkg_init :
   {{{ RET #(); own_initializing ∗ is_pkg_init error_gk }}}.
 
 Proof.
-  intros Hinit. wp_start as "(Hown & #Hinit & #Hdef)".
-  wp_call. wp_apply (wp_package_init with "[$Hown $Hinit]").
-  2:{ rewrite Hinit //. }
+  intros Hinit. wp_start as "(Hown & #Hinit & #Hdef)". wp_call.
+  wp_apply (wp_package_init with "[$Hown $Hinit]"); last rewrite Hinit //.
   iIntros "Hown". wp_auto.
 
   wp_apply (marshal.wp_initialize' with "[$Hown $Hinit]") as "[Hown #?]".
   { admit. } { admit. }
   iFrame. wp_call.
 
-  wp_auto.
-  wp_apply wp_globals_get.
-  wp_apply assume.wp_assume.
-  rewrite bool_decide_eq_true. iIntros (<-).
-  iDestruct "addr" as "Hname_ptr".
-
-  wp_auto.
-  wp_apply wp_globals_get.
-  wp_apply assume.wp_assume.
-  rewrite bool_decide_eq_true. iIntros (<-).
-  iDestruct "addr" as "Hvalue_ptr". wp_auto. 
-
-  wp_apply (wp_map_literal); first done.
-  iIntros (?) "Hname".
   wp_auto. wp_apply wp_globals_get.
+  wp_apply assume.wp_assume.
+  rewrite bool_decide_eq_true. iIntros (<-).
+  iDestruct "addr" as "Hname_ptr". 
+
+  wp_auto. wp_apply wp_globals_get.
+  wp_apply assume.wp_assume.
+  rewrite bool_decide_eq_true. iIntros (<-).
+  iDestruct "addr" as "Hvalue_ptr". 
+
+  wp_auto.
+
+  wp_apply wp_map_literal; first done.
+  iIntros (?) "Hname". wp_auto.
+  wp_apply wp_globals_get.
   iPersist "Hname_ptr Hname".
 
-  wp_apply (wp_map_literal); first done.
-  iIntros (?) "Hvalue".
-  wp_auto. rewrite -wp_fupd.
-  wp_apply wp_globals_get.
+  wp_apply wp_map_literal; first done.
+  iIntros (?) "Hvalue". wp_auto.
+  rewrite -wp_fupd. wp_apply wp_globals_get.
   iPersist "Hvalue_ptr Hvalue".
 
   iModIntro.
