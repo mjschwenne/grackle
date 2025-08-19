@@ -27,8 +27,11 @@ Definition value_map : gmap go_string w32 := list_to_map [
                                                ].
 
 Definition is_initialized : iProp Σ :=
-  "HglobalName" ∷ (global_addr error_gk.Name) ↦${DfracDiscarded} name_map ∗
-  "HglobalValue" ∷ (global_addr error_gk.Value) ↦${DfracDiscarded} value_map.
+  ∃ nameMap valueMap, 
+  "HglobalName" ∷ (global_addr error_gk.Name) ↦□ nameMap ∗
+  "HnameMap" ∷ nameMap ↦$□ name_map ∗
+  "HglobalValue" ∷ (global_addr error_gk.Value) ↦□ valueMap ∗
+  "HvalueMap" ∷ valueMap ↦$□ value_map.
 
 Local Notation deps := (ltac2:(build_pkg_init_deps 'error_gk) : iProp Σ) (only parsing).
 #[global]
@@ -37,6 +40,50 @@ Program Instance : IsPkgInit error_gk :=
     is_pkg_init_def := is_initialized;
     is_pkg_init_deps := deps;
   |}.
+
+Lemma wp_initialize' get_is_pkg_init :
+  get_is_pkg_init error_gk = (is_pkg_init error_gk) ->
+  {{{ own_initializing ∗ is_initialization get_is_pkg_init ∗ is_pkg_defined error_gk }}}
+    error_gk.initialize' #()
+  {{{ RET #(); own_initializing ∗ is_pkg_init error_gk }}}.
+
+Proof.
+  intros Hinit. wp_start as "(Hown & #Hinit & #Hdef)".
+  wp_call. wp_apply (wp_package_init with "[$Hown $Hinit]").
+  2:{ rewrite Hinit //. }
+  iIntros "Hown". wp_auto.
+
+  wp_apply (marshal.wp_initialize' with "[$Hown $Hinit]") as "[Hown #?]".
+  { admit. } { admit. }
+  iFrame. wp_call.
+
+  wp_auto.
+  wp_apply wp_globals_get.
+  wp_apply assume.wp_assume.
+  rewrite bool_decide_eq_true. iIntros (<-).
+  iDestruct "addr" as "Hname_ptr".
+
+  wp_auto.
+  wp_apply wp_globals_get.
+  wp_apply assume.wp_assume.
+  rewrite bool_decide_eq_true. iIntros (<-).
+  iDestruct "addr" as "Hvalue_ptr". wp_auto. 
+
+  wp_apply (wp_map_literal); first done.
+  iIntros (?) "Hname".
+  wp_auto. wp_apply wp_globals_get.
+  iPersist "Hname_ptr Hname".
+
+  wp_apply (wp_map_literal); first done.
+  iIntros (?) "Hvalue".
+  wp_auto. rewrite -wp_fupd.
+  wp_apply wp_globals_get.
+  iPersist "Hvalue_ptr Hvalue".
+
+  iModIntro.
+  iEval (rewrite Hinit is_pkg_init_unfold /=).
+  iFrame "∗#".
+Admitted.
 
 Inductive I :=
 | eOk
