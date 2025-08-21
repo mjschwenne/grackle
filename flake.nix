@@ -25,7 +25,6 @@
         };
         grackle = pkgs.callPackage ./nix/grackle {};
         goose = pkgs.callPackage ./nix/goose {};
-        rocqv = pkgs.rocq-core.rocq-version;
         perennial-pkg = perennial.packages.${system}.default;
         rocq-build = pkgs.callPackage ./nix/rocq-build {perennial = perennial-pkg;};
       in {
@@ -57,7 +56,6 @@
             ];
             shellHook = ''
               unset COQPATH
-              export ROCQPATH=${perennial-pkg}/lib/coq/${rocqv}/user-contrib:$ROCQPATH
             '';
           };
       }
