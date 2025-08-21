@@ -27,9 +27,10 @@
         goose = pkgs.callPackage ./nix/goose {};
         rocqv = pkgs.rocq-core.rocq-version;
         perennial-pkg = perennial.packages.${system}.default;
+        rocq-build = pkgs.callPackage ./nix/rocq-build {perennial = perennial-pkg;};
       in {
         packages = {
-          inherit grackle goose;
+          inherit grackle goose rocq-build;
           default = grackle;
         };
         devShells.default = with pkgs;
