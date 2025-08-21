@@ -32,11 +32,11 @@ Global Instance wp_func_call_Unmarshal :
   ltac:(apply wp_func_call'; reflexivity).
 
 Global Instance wp_method_call_E_String :
-  WpMethodCall error_gk.Eⁱᵈ "String" _ (is_pkg_defined error_gk) :=
+  WpMethodCall error_gk.E.id "String" _ (is_pkg_defined error_gk) :=
   ltac:(apply wp_method_call'; reflexivity).
 
 Global Instance wp_method_call_E'ptr_String :
-  WpMethodCall (ptrTⁱᵈ error_gk.Eⁱᵈ) "String" _ (is_pkg_defined error_gk) :=
+  WpMethodCall (ptrT.id error_gk.E.id) "String" _ (is_pkg_defined error_gk) :=
   ltac:(apply wp_method_call'; reflexivity).
 
 End names.
