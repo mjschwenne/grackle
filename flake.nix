@@ -2,7 +2,7 @@
   description = "A Flake for Grackle Development";
 
   inputs = {
-    nixpkgs.url = "nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/a595dde4d0d31606e19dcec73db02279db59d201";
     flake-utils.url = "github:numtide/flake-utils";
     perennial = {
       # The github fecther doesn't support submodules for some reason...
