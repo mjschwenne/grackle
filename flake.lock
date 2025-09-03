@@ -75,11 +75,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1755874937,
-        "narHash": "sha256-RpILlnohSaAbKdz1hZDHHR+S3XNGMwHehd7q+FMKtTU=",
+        "lastModified": 1756921878,
+        "narHash": "sha256-FqkOjW0vXkKUtoC097DHO8milVlqh7PoOAeaO530gxI=",
         "ref": "refs/heads/master",
-        "rev": "923cc22cbc77d016c8e5197b83192138bdd0ae63",
-        "revCount": 8667,
+        "rev": "88a5de1c339fba6287a4ce90b478c0b6a2ec8c56",
+        "revCount": 8735,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/mit-pdos/perennial.git"
