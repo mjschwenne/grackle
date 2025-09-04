@@ -15,13 +15,7 @@ Section TimeStamp_gk.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-Local Notation deps := (ltac2:(build_pkg_init_deps 'timestamp_gk) : iProp Σ) (only parsing).
-#[global]
-Program Instance : IsPkgInit timestamp_gk :=
-  {|
-    is_pkg_init_def := True;
-    is_pkg_init_deps := deps;
-  |}.
+#[global] Instance : IsPkgInit timestamp_gk := define_is_pkg_init True%I.
 
 Definition C := timestamp_gk.S.t.
 

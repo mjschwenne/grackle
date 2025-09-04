@@ -331,47 +331,69 @@ Section names.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!globalsGS Σ}.
-Context `{!GoContext}.
+Context {go_ctx : GoContext}.
+#[local] Transparent is_pkg_defined is_pkg_defined_pure.
+
+Global Instance is_pkg_defined_pure_example : IsPkgDefinedPure example :=
+  {|
+    is_pkg_defined_pure_def go_ctx :=
+      is_pkg_defined_pure_single example ∧
+      is_pkg_defined_pure code.github_com.tchajed.marshal.marshal ∧
+      is_pkg_defined_pure code.github_com.goose_lang.std.std ∧
+      is_pkg_defined_pure code.github_com.goose_lang.primitive.primitive;
+  |}.
+
+#[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
+Global Program Instance is_pkg_defined_example : IsPkgDefined example :=
+  {|
+    is_pkg_defined_def go_ctx :=
+      (is_pkg_defined_single example ∗
+       is_pkg_defined code.github_com.tchajed.marshal.marshal ∗
+       is_pkg_defined code.github_com.goose_lang.std.std ∗
+       is_pkg_defined code.github_com.goose_lang.primitive.primitive)%I
+  |}.
+Final Obligation. iIntros. iFrame "#%". Qed.
+#[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
 
 Global Instance wp_func_call_MarshalCalendar :
   WpFuncCall example.MarshalCalendar _ (is_pkg_defined example) :=
-  ltac:(apply wp_func_call'; reflexivity).
+  ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_UnmarshalCalendar :
   WpFuncCall example.UnmarshalCalendar _ (is_pkg_defined example) :=
-  ltac:(apply wp_func_call'; reflexivity).
+  ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_MarshalStatus :
   WpFuncCall example.MarshalStatus _ (is_pkg_defined example) :=
-  ltac:(apply wp_func_call'; reflexivity).
+  ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_UnmarshalStatus :
   WpFuncCall example.UnmarshalStatus _ (is_pkg_defined example) :=
-  ltac:(apply wp_func_call'; reflexivity).
+  ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_MarshalPerson :
   WpFuncCall example.MarshalPerson _ (is_pkg_defined example) :=
-  ltac:(apply wp_func_call'; reflexivity).
+  ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_UnmarshalPerson :
   WpFuncCall example.UnmarshalPerson _ (is_pkg_defined example) :=
-  ltac:(apply wp_func_call'; reflexivity).
+  ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_MarshalEvent :
   WpFuncCall example.MarshalEvent _ (is_pkg_defined example) :=
-  ltac:(apply wp_func_call'; reflexivity).
+  ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_UnmarshalEvent :
   WpFuncCall example.UnmarshalEvent _ (is_pkg_defined example) :=
-  ltac:(apply wp_func_call'; reflexivity).
+  ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_MarshalTimeStamp :
   WpFuncCall example.MarshalTimeStamp _ (is_pkg_defined example) :=
-  ltac:(apply wp_func_call'; reflexivity).
+  ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_UnmarshalTimeStamp :
   WpFuncCall example.UnmarshalTimeStamp _ (is_pkg_defined example) :=
-  ltac:(apply wp_func_call'; reflexivity).
+  ltac:(solve_wp_func_call).
 
 End names.
 End example.

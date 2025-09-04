@@ -21,13 +21,7 @@ Section complete_gk.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-Local Notation deps := (ltac2:(build_pkg_init_deps 'complete_gk) : iProp Σ) (only parsing).
-#[global]
-Program Instance : IsPkgInit complete_gk :=
-  {|
-    is_pkg_init_def := True;
-    is_pkg_init_deps := deps;
-  |}.
+#[global] Instance : IsPkgInit complete_gk := define_is_pkg_init True%I.
 
 Record C :=
     mkC {
@@ -104,7 +98,7 @@ Proof.
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
-  iDestruct (own_slice_len with "Hown_sslice_sl") as "%Hown_sslice_sz".
+  iDestruct (own_slice_len with "Hown_sslice_sl") as "[%Hown_sslice_sz %Hown_sslice_sz_nonneg]".
   iDestruct (big_sepL2_length with "Hown_sslice_own") as "%Hown_sslice_sz'".
   rewrite Hown_sslice_sz' in Hown_sslice_sz.
   wp_apply (wp_WriteSlice with "[$Hsl $Hcap $Hown_sslice_sl $Hown_sslice_own]").
@@ -120,7 +114,7 @@ Proof.
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
-  iDestruct (own_slice_len with "Hown_iints_sl") as "%Hown_iints_sz".
+  iDestruct (own_slice_len with "Hown_iints_sl") as "[%Hown_iints_sz %Hown_iints_sz_nonneg]".
   iDestruct (big_sepL2_length with "Hown_iints_own") as "%Hown_iints_sz'".
   rewrite Hown_iints_sz' in Hown_iints_sz.
   wp_apply (wp_WriteSlice _ _ _ _ _ uint64_has_encoding with "[$Hsl $Hcap $Hown_iints_sl $Hown_iints_own]").
@@ -141,7 +135,7 @@ Proof.
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
-  iDestruct (own_slice_len with "Hown_sints_sl") as "%Hown_sints_sz".
+  iDestruct (own_slice_len with "Hown_sints_sl") as "[%Hown_sints_sz %Hown_sints_sz_nonneg]".
   iDestruct (big_sepL2_length with "Hown_sints_own") as "%Hown_sints_sz'".
   rewrite Hown_sints_sz' in Hown_sints_sz.
   wp_apply (wp_WriteSlice _ _ _ _ _ uint32_has_encoding with "[$Hsl $Hcap $Hown_sints_sl $Hown_sints_own]").
@@ -165,15 +159,9 @@ Proof.
   unfold has_encoding.
   split; last done.
   exists int_enc, slc_enc, sslice_enc, iints_enc, sints_enc.
-  split.
-  {
-     rewrite Hown_success.
-     rewrite Hown_sslice_sz.
-     rewrite Hown_iints_sz.
-     rewrite Hown_sints_sz.
-     rewrite ?w64_to_nat_id.
-     congruence.
-  }
+  split; first repeat (f_equal; try word).
+  { rewrite Hown_success. done. } 
+  all: try done.
   rewrite <- Hown_sslice_sz'.
   rewrite <- Hown_iints_sz'.
   rewrite <- Hown_sints_sz'.

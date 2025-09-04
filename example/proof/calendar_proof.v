@@ -53,14 +53,14 @@ Lemma wp_Encode (args__t : example.Calendar.t) (args__c : C) (pre_sl : slice.t) 
 Proof.
   wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
 
-  iDestruct (own_slice_len with "Hown_hash") as "%Hown_hash_sz".
+  iDestruct (own_slice_len with "Hown_hash") as "[%Hown_hash_sz %Hown_hash_sz_nonneg]".
   wp_apply (wp_WriteLenPrefixedBytes with "[$Hsl $Hcap $Hown_hash]").
   iIntros (?) "(Hsl & Hcap & Hown_hash)". wp_auto.
 
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
-  iDestruct (own_slice_len with "Hown_events_sl") as "%Hown_events_sz".
+  iDestruct (own_slice_len with "Hown_events_sl") as "[%Hown_events_sz %Hown_events_sz_nonneg]".
   iDestruct (big_sepL2_length with "Hown_events_own") as "%Hown_events_sz'".
   rewrite Hown_events_sz' in Hown_events_sz.
   wp_apply (wp_WriteSlice with "[$Hsl $Hcap $Hown_events_sl $Hown_events_own]").
@@ -79,13 +79,7 @@ Proof.
   unfold has_encoding.
   split; last done.
   exists events_enc.
-  split.
-  {
-     rewrite Hown_hash_sz.
-     rewrite Hown_events_sz.
-     rewrite ?w64_to_nat_id.
-     congruence.
-  }
+  split; first repeat (f_equal; try word).
   rewrite <- Hown_events_sz'.
   done. 
 Qed.

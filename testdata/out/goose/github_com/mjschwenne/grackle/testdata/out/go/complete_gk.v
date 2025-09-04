@@ -176,7 +176,7 @@ Definition msets' : list (go_string * (list (go_string * val))) := [(S.id, []); 
     pkg_vars := vars';
     pkg_functions := functions';
     pkg_msets := msets';
-    pkg_imported_pkgs := [marshal.marshal; completeint_gk.completeint_gk; completeslice_gk.completeslice_gk; structslice_gk.structslice_gk];
+    pkg_imported_pkgs := [code.github_com.tchajed.marshal.marshal; code.github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.completeint_gk; code.github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.completeslice_gk; code.github_com.mjschwenne.grackle.testdata.out.go.structslice_gk.structslice_gk];
   |}.
 
 Definition initialize' : val :=

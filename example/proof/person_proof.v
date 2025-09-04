@@ -12,13 +12,7 @@ Module Person_Proof.
     Context `{hG: heapGS Σ, !ffi_semantics _ _}.
     Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-    Local Notation deps := (ltac2:(build_pkg_init_deps 'example) : iProp Σ) (only parsing).
-    #[global]
-    Program Instance : IsPkgInit example :=
-      {|
-        is_pkg_init_def := True;
-        is_pkg_init_deps := deps;
-      |}.
+    #[global] Instance : IsPkgInit example := define_is_pkg_init True%I.
 
     Inductive Status :=
       | STATUS_UNSPECIFIED
@@ -149,7 +143,7 @@ Module Person_Proof.
       wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
       iIntros (?) "[Hsl Hcap]". wp_auto.
 
-      iDestruct (own_slice_len with "Hown_statuses_sl") as "%Hown_statuses_sz".
+      iDestruct (own_slice_len with "Hown_statuses_sl") as "[%Hown_statuses_sz %Hown_statueses_nonneg]".
       iDestruct (big_sepL2_length with "Hown_statuses_own") as "%Hown_statuses_sz'".
       rewrite Hown_statuses_sz' in Hown_statuses_sz.
       wp_apply (wp_WriteSlice with "[$Hsl $Hcap $Hown_statuses_sl $Hown_statuses_own]").
@@ -168,12 +162,8 @@ Module Person_Proof.
       unfold has_encoding.
       split; last done.
       exists statuses_enc.
-      split.
-      {
-        rewrite Hown_statuses_sz.
-        rewrite ?w64_to_nat_id.
-        congruence.
-      }
+      split; first repeat (f_equal; try word).
+      all: try done.
       rewrite <- Hown_statuses_sz'.
       done. 
     Qed.

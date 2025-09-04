@@ -9,13 +9,7 @@ Module TimeStamp_Proof.
     Context `{hG: heapGS Σ, !ffi_semantics _ _}.
     Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-    Local Notation deps := (ltac2:(build_pkg_init_deps 'example) : iProp Σ) (only parsing).
-    #[global]
-    Program Instance : IsPkgInit example :=
-      {|
-        is_pkg_init_def := True;
-        is_pkg_init_deps := deps;
-      |}.
+    #[global] Instance : IsPkgInit example := define_is_pkg_init True%I.
 
     Definition C := example.TimeStamp.t.
     

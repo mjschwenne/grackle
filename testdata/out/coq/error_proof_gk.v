@@ -33,27 +33,24 @@ Definition is_initialized : iProp Σ :=
   "HglobalValue" ∷ (global_addr error_gk.Value) ↦□ value_map ∗
   "Hvalue" ∷ value_map ↦$□ value_map_def.
 
-Local Notation deps := (ltac2:(build_pkg_init_deps 'error_gk) : iProp Σ) (only parsing).
-#[global]
-Program Instance : IsPkgInit error_gk :=
-  {|
-    is_pkg_init_def := is_initialized;
-    is_pkg_init_deps := deps;
-  |}.
+#[global] Instance : IsPkgInit error_gk := define_is_pkg_init is_initialized.
+#[global] Instance : GetIsPkgInitWf error_gk := build_get_is_pkg_init_wf.
 
 Lemma wp_initialize' get_is_pkg_init :
-  get_is_pkg_init error_gk = (is_pkg_init error_gk) ->
-  {{{ own_initializing ∗ is_initialization get_is_pkg_init ∗ is_pkg_defined error_gk }}}
+  get_is_pkg_init_prop error_gk get_is_pkg_init ->
+  {{{ own_initializing get_is_pkg_init ∗ is_go_context ∗ □ is_pkg_defined error_gk }}}
     error_gk.initialize' #()
-  {{{ RET #(); own_initializing ∗ is_pkg_init error_gk }}}.
+  {{{ RET #(); own_initializing get_is_pkg_init ∗ is_pkg_init error_gk }}}.
 
 Proof.
-  intros Hinit. wp_start as "(Hown & #Hinit & #Hdef)". wp_call.
-  wp_apply (wp_package_init with "[$Hown $Hinit]"); last rewrite Hinit //.
+  intros Hinit. wp_start as "(Hown & #? & #Hdef)". wp_call.
+  wp_apply (wp_package_init with "[$Hown] HΦ").
+  { destruct Hinit as (-> & ?); done. }
   iIntros "Hown". wp_auto.
 
-  wp_apply (marshal.wp_initialize' with "[$Hown $Hinit]") as "[Hown #?]".
-  { admit. } { admit. }
+  wp_apply (marshal.wp_initialize' with "[$Hown]") as "[Hown #?]".
+  { naive_solver. }
+  { iModIntro. iEval simpl_is_pkg_defined in "Hdef". iPkgInit. }
   iFrame. wp_call.
 
   wp_auto. wp_apply wp_globals_get.
@@ -79,9 +76,9 @@ Proof.
   iPersist "Hvalue_ptr Hvalue".
 
   iModIntro.
-  iEval (rewrite Hinit is_pkg_init_unfold /=).
+  iEval (rewrite is_pkg_init_unfold /=).
   iFrame "∗#".
-Admitted.
+Qed.
 
 Inductive I :=
 | eOk

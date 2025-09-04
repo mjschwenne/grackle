@@ -2,7 +2,7 @@
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
-  iDestruct (own_slice_len with "Hown_<< .Name >>_sl") as "%Hown_<< .Name >>_sz".
+  iDestruct (own_slice_len with "Hown_<< .Name >>_sl") as "[%Hown_<< .Name >>_sz %Hown_<< .Name >>_sz_nonneg]".
   iDestruct (big_sepL2_length with "Hown_<< .Name >>_own") as "%Hown_<< .Name >>_sz'".
   rewrite Hown_<< .Name >>_sz' in Hown_<< .Name >>_sz.
   wp_apply (wp_WriteSlice << if not (isGoType . "message|enum") >>_ _ _ _ _ << goType . >>_has_encoding << end >>with "[$Hsl $Hcap $Hown_<< .Name >>_sl $Hown_<< .Name >>_own]").

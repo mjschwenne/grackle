@@ -19,13 +19,7 @@ Section enum_gk.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-Local Notation deps := (ltac2:(build_pkg_init_deps 'enum_gk) : iProp Σ) (only parsing).
-#[global]
-Program Instance : IsPkgInit enum_gk :=
-  {|
-    is_pkg_init_def := True;
-    is_pkg_init_deps := deps;
-  |}.
+#[global] Instance : IsPkgInit enum_gk := define_is_pkg_init True%I.
 
 Record C :=
     mkC {
@@ -84,7 +78,7 @@ Proof.
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
-  iDestruct (own_slice_len with "Hown_errs_sl") as "%Hown_errs_sz".
+  iDestruct (own_slice_len with "Hown_errs_sl") as "[%Hown_errs_sz %Hown_errs_sz_nonneg]".
   iDestruct (big_sepL2_length with "Hown_errs_own") as "%Hown_errs_sz'".
   rewrite Hown_errs_sz' in Hown_errs_sz.
   wp_apply (wp_WriteSlice with "[$Hsl $Hcap $Hown_errs_sl $Hown_errs_own]").
@@ -103,12 +97,8 @@ Proof.
   unfold has_encoding.
   split; last done.
   exists err_enc, errs_enc.
-  split.
-  {
-     rewrite Hown_errs_sz.
-     rewrite ?w64_to_nat_id.
-     congruence.
-  }
+  split; first repeat (f_equal; try word).
+  all: try done.
   rewrite <- Hown_errs_sz'.
   done. 
 Qed.

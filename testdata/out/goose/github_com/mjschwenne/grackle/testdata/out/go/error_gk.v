@@ -60,8 +60,8 @@ Definition vars' : list (go_string * go_type) := [(Name, mapT uint32T stringT); 
 
 Definition functions' : list (go_string * val) := [(Marshal, Marshalⁱᵐᵖˡ); (Unmarshal, Unmarshalⁱᵐᵖˡ)].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [(E.id, [("String"%go, E__Stringⁱᵐᵖˡ)]); (ptrT.id E.id, [("String"%go, (λ: "$recvAddr",
-                 method_call #error_gk.error_gk #"E" #"String" (![#E] "$recvAddr")
+Definition msets' : list (go_string * (list (go_string * val))) := [(E.id, [("String"%go, E__Stringⁱᵐᵖˡ)]); (ptrT.id E.id, [("String"%go, (λ: "$r",
+                 method_call #E.id #"String"%go (![#E] "$r")
                  )%V)])].
 
 #[global] Instance info' : PkgInfo error_gk.error_gk :=
@@ -69,7 +69,7 @@ Definition msets' : list (go_string * (list (go_string * val))) := [(E.id, [("St
     pkg_vars := vars';
     pkg_functions := functions';
     pkg_msets := msets';
-    pkg_imported_pkgs := [marshal.marshal];
+    pkg_imported_pkgs := [code.github_com.tchajed.marshal.marshal];
   |}.
 
 Definition initialize' : val :=

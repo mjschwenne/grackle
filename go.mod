@@ -3,7 +3,7 @@ module github.com/mjschwenne/grackle
 go 1.24.2
 
 require (
-	github.com/goose-lang/goose v0.5.4-0.20250820024314-b49ba60dd19a
+	github.com/goose-lang/goose v0.5.4-0.20250903195059-da51f4aebe46
 	github.com/goose-lang/primitive v0.2.0
 	github.com/goose-lang/std v0.6.1
 	github.com/tchajed/marshal v0.6.5

@@ -11,21 +11,19 @@
   <<- end >>.<< end >>
   <<- $bbl := (filterByCoqType .Fields "u8|list|bool") ->>
   << if gt (len $bbl) 0 >>
-  split.
-  {
-     << range $bbl ->>
-     << if isCoqType . "bool" ->>
-     rewrite Hown_<< .Name >>.
-     << else ->>
-     rewrite Hown_<< .Name >>_sz.
-     << end >><< end ->>
-     rewrite ?w64_to_nat_id.
-     congruence.
-  }
-  << range (repeatedFields .Fields) ->>
-  rewrite <- Hown_<< .Name >>_sz'.
+  split; first repeat (f_equal; try word).
+  << range (filterByCoqType $bbl "bool") ->> 
+  { rewrite Hown_<< .Name >>. done. } 
   << end ->>
-  done.<< else if gt (len (filterByCoqType .Fields "message|go_string|u8")) 0 >>
+  all: try done.
+  << $fs := repeatedFields .Fields ->>
+  << range $idx, $f := $fs ->>
+  rewrite <- Hown_<< .Name >>_sz'.
+  << if eq (succ $idx) (len $fs) ->>
+  done.
+  <<- end >>
+  <<- end ->>
+  << else if gt (len (filterByCoqType .Fields "message|go_string|u8")) 0 >>
   split. all: congruence || done.
   <<- else >>
   congruence.<< end >> 

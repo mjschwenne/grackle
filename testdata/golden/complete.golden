@@ -34,27 +34,24 @@ Definition is_initialized : iProp Σ :=
   "HglobalValue" ∷ (global_addr error_gk.Value) ↦□ value_map ∗
   "Hvalue" ∷ value_map ↦$□ value_map_def.
 
-Local Notation deps := (ltac2:(build_pkg_init_deps 'error_gk) : iProp Σ) (only parsing).
-#[global]
-Program Instance : IsPkgInit error_gk :=
-  {|
-    is_pkg_init_def := is_initialized;
-    is_pkg_init_deps := deps;
-  |}.
+#[global] Instance : IsPkgInit error_gk := define_is_pkg_init is_initialized.
+#[global] Instance : GetIsPkgInitWf error_gk := build_get_is_pkg_init_wf.
 
 Lemma wp_initialize' get_is_pkg_init :
-  get_is_pkg_init error_gk = (is_pkg_init error_gk) ->
-  {{{ own_initializing ∗ is_initialization get_is_pkg_init ∗ is_pkg_defined error_gk }}}
+  get_is_pkg_init_prop error_gk get_is_pkg_init ->
+  {{{ own_initializing get_is_pkg_init ∗ is_go_context ∗ □ is_pkg_defined error_gk }}}
     error_gk.initialize' #()
-  {{{ RET #(); own_initializing ∗ is_pkg_init error_gk }}}.
+  {{{ RET #(); own_initializing get_is_pkg_init ∗ is_pkg_init error_gk }}}.
 
 Proof.
-  intros Hinit. wp_start as "(Hown & #Hinit & #Hdef)". wp_call.
-  wp_apply (wp_package_init with "[$Hown $Hinit]"); last rewrite Hinit //.
+  intros Hinit. wp_start as "(Hown & #? & #Hdef)". wp_call.
+  wp_apply (wp_package_init with "[$Hown] HΦ").
+  { destruct Hinit as (-> & ?); done. }
   iIntros "Hown". wp_auto.
 
-  wp_apply (marshal.wp_initialize' with "[$Hown $Hinit]") as "[Hown #?]".
-  { admit. } { admit. }
+  wp_apply (marshal.wp_initialize' with "[$Hown]") as "[Hown #?]".
+  { naive_solver. }
+  { iModIntro. iEval simpl_is_pkg_defined in "Hdef". iPkgInit. }
   iFrame. wp_call.
 
   wp_auto. wp_apply wp_globals_get.
@@ -80,9 +77,9 @@ Proof.
   iPersist "Hvalue_ptr Hvalue".
 
   iModIntro.
-  iEval (rewrite Hinit is_pkg_init_unfold /=).
+  iEval (rewrite is_pkg_init_unfold /=).
   iFrame "∗#".
-Admitted.
+Qed.
 
 Inductive I :=
 | eOk
@@ -213,13 +210,7 @@ Section completeInt_gk.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-Local Notation deps := (ltac2:(build_pkg_init_deps 'completeint_gk) : iProp Σ) (only parsing).
-#[global]
-Program Instance : IsPkgInit completeint_gk :=
-  {|
-    is_pkg_init_def := True;
-    is_pkg_init_deps := deps;
-  |}.
+#[global] Instance : IsPkgInit completeint_gk := define_is_pkg_init True%I.
 
 Definition C := completeint_gk.S.t.
 
@@ -393,13 +384,7 @@ Section completeSlice_gk.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-Local Notation deps := (ltac2:(build_pkg_init_deps 'completeslice_gk) : iProp Σ) (only parsing).
-#[global]
-Program Instance : IsPkgInit completeslice_gk :=
-  {|
-    is_pkg_init_def := True;
-    is_pkg_init_deps := deps;
-  |}.
+#[global] Instance : IsPkgInit completeslice_gk := define_is_pkg_init True%I.
 
 Record C :=
     mkC {
@@ -474,14 +459,9 @@ Proof.
   unfold has_encoding.
   split; last done.
   
-  split.
-  {
-     rewrite Hown_bytes_sz.
-     rewrite Hown_bytes2_sz.
-     rewrite ?w64_to_nat_id.
-     congruence.
-  }
-  done. 
+  split; first repeat (f_equal; try word).
+  all: try done.
+   
 Qed.
 
 Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
@@ -610,13 +590,7 @@ Section structSlice_gk.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-Local Notation deps := (ltac2:(build_pkg_init_deps 'structslice_gk) : iProp Σ) (only parsing).
-#[global]
-Program Instance : IsPkgInit structslice_gk :=
-  {|
-    is_pkg_init_def := True;
-    is_pkg_init_deps := deps;
-  |}.
+#[global] Instance : IsPkgInit structslice_gk := define_is_pkg_init True%I.
 
 Record C :=
     mkC {
@@ -664,7 +638,7 @@ Proof.
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
-  iDestruct (own_slice_len with "Hown_slices_sl") as "%Hown_slices_sz".
+  iDestruct (own_slice_len with "Hown_slices_sl") as "[%Hown_slices_sz %Hown_slices_sz_nonneg]".
   iDestruct (big_sepL2_length with "Hown_slices_own") as "%Hown_slices_sz'".
   rewrite Hown_slices_sz' in Hown_slices_sz.
   wp_apply (wp_WriteSlice with "[$Hsl $Hcap $Hown_slices_sl $Hown_slices_own]").
@@ -680,7 +654,7 @@ Proof.
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
-  iDestruct (own_slice_len with "Hown_ints_sl") as "%Hown_ints_sz".
+  iDestruct (own_slice_len with "Hown_ints_sl") as "[%Hown_ints_sz %Hown_ints_sz_nonneg]".
   iDestruct (big_sepL2_length with "Hown_ints_own") as "%Hown_ints_sz'".
   rewrite Hown_ints_sz' in Hown_ints_sz.
   wp_apply (wp_WriteSlice with "[$Hsl $Hcap $Hown_ints_sl $Hown_ints_own]").
@@ -699,13 +673,8 @@ Proof.
   unfold has_encoding.
   split; last done.
   exists slices_enc, ints_enc.
-  split.
-  {
-     rewrite Hown_slices_sz.
-     rewrite Hown_ints_sz.
-     rewrite ?w64_to_nat_id.
-     congruence.
-  }
+  split; first repeat (f_equal; try word).
+  all: try done.
   rewrite <- Hown_slices_sz'.
   rewrite <- Hown_ints_sz'.
   done. 
@@ -832,13 +801,7 @@ Section enum_gk.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-Local Notation deps := (ltac2:(build_pkg_init_deps 'enum_gk) : iProp Σ) (only parsing).
-#[global]
-Program Instance : IsPkgInit enum_gk :=
-  {|
-    is_pkg_init_def := True;
-    is_pkg_init_deps := deps;
-  |}.
+#[global] Instance : IsPkgInit enum_gk := define_is_pkg_init True%I.
 
 Record C :=
     mkC {
@@ -897,7 +860,7 @@ Proof.
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
-  iDestruct (own_slice_len with "Hown_errs_sl") as "%Hown_errs_sz".
+  iDestruct (own_slice_len with "Hown_errs_sl") as "[%Hown_errs_sz %Hown_errs_sz_nonneg]".
   iDestruct (big_sepL2_length with "Hown_errs_own") as "%Hown_errs_sz'".
   rewrite Hown_errs_sz' in Hown_errs_sz.
   wp_apply (wp_WriteSlice with "[$Hsl $Hcap $Hown_errs_sl $Hown_errs_own]").
@@ -916,12 +879,8 @@ Proof.
   unfold has_encoding.
   split; last done.
   exists err_enc, errs_enc.
-  split.
-  {
-     rewrite Hown_errs_sz.
-     rewrite ?w64_to_nat_id.
-     congruence.
-  }
+  split; first repeat (f_equal; try word).
+  all: try done.
   rewrite <- Hown_errs_sz'.
   done. 
 Qed.
@@ -1049,13 +1008,7 @@ Section complete_gk.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-Local Notation deps := (ltac2:(build_pkg_init_deps 'complete_gk) : iProp Σ) (only parsing).
-#[global]
-Program Instance : IsPkgInit complete_gk :=
-  {|
-    is_pkg_init_def := True;
-    is_pkg_init_deps := deps;
-  |}.
+#[global] Instance : IsPkgInit complete_gk := define_is_pkg_init True%I.
 
 Record C :=
     mkC {
@@ -1132,7 +1085,7 @@ Proof.
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
-  iDestruct (own_slice_len with "Hown_sslice_sl") as "%Hown_sslice_sz".
+  iDestruct (own_slice_len with "Hown_sslice_sl") as "[%Hown_sslice_sz %Hown_sslice_sz_nonneg]".
   iDestruct (big_sepL2_length with "Hown_sslice_own") as "%Hown_sslice_sz'".
   rewrite Hown_sslice_sz' in Hown_sslice_sz.
   wp_apply (wp_WriteSlice with "[$Hsl $Hcap $Hown_sslice_sl $Hown_sslice_own]").
@@ -1148,7 +1101,7 @@ Proof.
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
-  iDestruct (own_slice_len with "Hown_iints_sl") as "%Hown_iints_sz".
+  iDestruct (own_slice_len with "Hown_iints_sl") as "[%Hown_iints_sz %Hown_iints_sz_nonneg]".
   iDestruct (big_sepL2_length with "Hown_iints_own") as "%Hown_iints_sz'".
   rewrite Hown_iints_sz' in Hown_iints_sz.
   wp_apply (wp_WriteSlice _ _ _ _ _ uint64_has_encoding with "[$Hsl $Hcap $Hown_iints_sl $Hown_iints_own]").
@@ -1169,7 +1122,7 @@ Proof.
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
 
-  iDestruct (own_slice_len with "Hown_sints_sl") as "%Hown_sints_sz".
+  iDestruct (own_slice_len with "Hown_sints_sl") as "[%Hown_sints_sz %Hown_sints_sz_nonneg]".
   iDestruct (big_sepL2_length with "Hown_sints_own") as "%Hown_sints_sz'".
   rewrite Hown_sints_sz' in Hown_sints_sz.
   wp_apply (wp_WriteSlice _ _ _ _ _ uint32_has_encoding with "[$Hsl $Hcap $Hown_sints_sl $Hown_sints_own]").
@@ -1193,15 +1146,9 @@ Proof.
   unfold has_encoding.
   split; last done.
   exists int_enc, slc_enc, sslice_enc, iints_enc, sints_enc.
-  split.
-  {
-     rewrite Hown_success.
-     rewrite Hown_sslice_sz.
-     rewrite Hown_iints_sz.
-     rewrite Hown_sints_sz.
-     rewrite ?w64_to_nat_id.
-     congruence.
-  }
+  split; first repeat (f_equal; try word).
+  { rewrite Hown_success. done. } 
+  all: try done.
   rewrite <- Hown_sslice_sz'.
   rewrite <- Hown_iints_sz'.
   rewrite <- Hown_sints_sz'.

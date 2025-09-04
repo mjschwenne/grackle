@@ -84,15 +84,37 @@ Section names.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!globalsGS Σ}.
-Context `{!GoContext}.
+Context {go_ctx : GoContext}.
+#[local] Transparent is_pkg_defined is_pkg_defined_pure.
+
+Global Instance is_pkg_defined_pure_structslice_gk : IsPkgDefinedPure structslice_gk :=
+  {|
+    is_pkg_defined_pure_def go_ctx :=
+      is_pkg_defined_pure_single structslice_gk ∧
+      is_pkg_defined_pure code.github_com.tchajed.marshal.marshal ∧
+      is_pkg_defined_pure code.github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.completeint_gk ∧
+      is_pkg_defined_pure code.github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.completeslice_gk;
+  |}.
+
+#[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
+Global Program Instance is_pkg_defined_structslice_gk : IsPkgDefined structslice_gk :=
+  {|
+    is_pkg_defined_def go_ctx :=
+      (is_pkg_defined_single structslice_gk ∗
+       is_pkg_defined code.github_com.tchajed.marshal.marshal ∗
+       is_pkg_defined code.github_com.mjschwenne.grackle.testdata.out.go.completeint_gk.completeint_gk ∗
+       is_pkg_defined code.github_com.mjschwenne.grackle.testdata.out.go.completeslice_gk.completeslice_gk)%I
+  |}.
+Final Obligation. iIntros. iFrame "#%". Qed.
+#[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
 
 Global Instance wp_func_call_Marshal :
   WpFuncCall structslice_gk.Marshal _ (is_pkg_defined structslice_gk) :=
-  ltac:(apply wp_func_call'; reflexivity).
+  ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_Unmarshal :
   WpFuncCall structslice_gk.Unmarshal _ (is_pkg_defined structslice_gk) :=
-  ltac:(apply wp_func_call'; reflexivity).
+  ltac:(solve_wp_func_call).
 
 End names.
 End structslice_gk.

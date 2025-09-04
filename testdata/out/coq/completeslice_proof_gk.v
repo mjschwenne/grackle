@@ -17,13 +17,7 @@ Section completeSlice_gk.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-Local Notation deps := (ltac2:(build_pkg_init_deps 'completeslice_gk) : iProp Σ) (only parsing).
-#[global]
-Program Instance : IsPkgInit completeslice_gk :=
-  {|
-    is_pkg_init_def := True;
-    is_pkg_init_deps := deps;
-  |}.
+#[global] Instance : IsPkgInit completeslice_gk := define_is_pkg_init True%I.
 
 Record C :=
     mkC {
@@ -98,14 +92,9 @@ Proof.
   unfold has_encoding.
   split; last done.
   
-  split.
-  {
-     rewrite Hown_bytes_sz.
-     rewrite Hown_bytes2_sz.
-     rewrite ?w64_to_nat_id.
-     congruence.
-  }
-  done. 
+  split; first repeat (f_equal; try word).
+  all: try done.
+   
 Qed.
 
 Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):

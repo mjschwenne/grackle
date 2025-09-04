@@ -15,13 +15,7 @@ Section completeInt_gk.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
-Local Notation deps := (ltac2:(build_pkg_init_deps 'completeint_gk) : iProp Σ) (only parsing).
-#[global]
-Program Instance : IsPkgInit completeint_gk :=
-  {|
-    is_pkg_init_def := True;
-    is_pkg_init_deps := deps;
-  |}.
+#[global] Instance : IsPkgInit completeint_gk := define_is_pkg_init True%I.
 
 Definition C := completeint_gk.S.t.
 
