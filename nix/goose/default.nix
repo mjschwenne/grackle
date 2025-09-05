@@ -3,12 +3,12 @@
   fetchFromGitHub,
 }: let
   pname = "goose";
-  version = "0.9.2-unstable-2025-09-03";
+  version = "0.9.2-unstable-2025-09-04";
   src = fetchFromGitHub {
     owner = "goose-lang";
     repo = "goose";
-    rev = "da51f4aebe46ab4099e1d175bea738dda1614c07";
-    hash = "sha256-j04SzgF32CKvbe8WloY/Mdciz68s7yJMcOtdDXvujoY=";
+    rev = "5db12193b2b38ce47516e76e156db5ee11d300e3";
+    hash = "sha256-9XZRJNSbu/IS+fk0EIWC0CfkHJigsqQDVH0E+ffaAGU=";
   };
 in
   buildGoModule {

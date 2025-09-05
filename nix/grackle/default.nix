@@ -7,6 +7,6 @@ buildGoModule {
   pname = "grackle";
   version = "new";
   src = ../../.;
-  vendorHash = "sha256-rVcPOrdDsBaQqkBJx2oE5ofsFJwFsSTAptq2o7rm15U=";
+  vendorHash = "sha256-9SPrti4GPjY078yi2xok7eW/XRntChdmowaJ1xTdE8M=";
   nativeBuildInputs = [protobuf];
 }
