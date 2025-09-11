@@ -24,6 +24,11 @@ End Calendar.
 
 Section instances.
 Context `{ffi_syntax}.
+#[local] Transparent example.Calendar.
+#[local] Typeclasses Transparent example.Calendar.
+
+Global Instance Calendar_wf : struct.Wf example.Calendar.
+Proof. apply _. Qed.
 
 Global Instance settable_Calendar : Settable Calendar.t :=
   settable! Calendar.mk < Calendar.hash'; Calendar.events' >.
@@ -82,6 +87,9 @@ End instances.
 
 (* type example.Status *)
 Module Status.
+
+#[global] Transparent example.Status.
+#[global] Typeclasses Transparent example.Status.
 Section def.
 Context `{ffi_syntax}.
 Definition t := w64.
@@ -102,6 +110,11 @@ End Person.
 
 Section instances.
 Context `{ffi_syntax}.
+#[local] Transparent example.Person.
+#[local] Typeclasses Transparent example.Person.
+
+Global Instance Person_wf : struct.Wf example.Person.
+Proof. apply _. Qed.
 
 Global Instance settable_Person : Settable Person.t :=
   settable! Person.mk < Person.Name'; Person.Status'; Person.Statuses' >.
@@ -179,6 +192,11 @@ End TimeStamp.
 
 Section instances.
 Context `{ffi_syntax}.
+#[local] Transparent example.TimeStamp.
+#[local] Typeclasses Transparent example.TimeStamp.
+
+Global Instance TimeStamp_wf : struct.Wf example.TimeStamp.
+Proof. apply _. Qed.
 
 Global Instance settable_TimeStamp : Settable TimeStamp.t :=
   settable! TimeStamp.mk < TimeStamp.hour'; TimeStamp.minute'; TimeStamp.second' >.
@@ -257,6 +275,11 @@ End Event.
 
 Section instances.
 Context `{ffi_syntax}.
+#[local] Transparent example.Event.
+#[local] Typeclasses Transparent example.Event.
+
+Global Instance Event_wf : struct.Wf example.Event.
+Proof. apply _. Qed.
 
 Global Instance settable_Event : Settable Event.t :=
   settable! Event.mk < Event.id'; Event.name'; Event.startTime'; Event.endTime' >.

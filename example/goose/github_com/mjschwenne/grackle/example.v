@@ -22,6 +22,8 @@ Definition Calendar : go_type := structT [
   "hash" :: sliceT;
   "events" :: sliceT
 ].
+#[global] Typeclasses Opaque Calendar.
+#[global] Opaque Calendar.
 
 Definition MarshalCalendar : go_string := "github.com/mjschwenne/grackle/example.MarshalCalendar"%go.
 
@@ -30,6 +32,8 @@ Definition TimeStamp : go_type := structT [
   "minute" :: uint32T;
   "second" :: uint32T
 ].
+#[global] Typeclasses Opaque TimeStamp.
+#[global] Opaque TimeStamp.
 
 Definition Event : go_type := structT [
   "id" :: uint32T;
@@ -37,6 +41,8 @@ Definition Event : go_type := structT [
   "startTime" :: TimeStamp;
   "endTime" :: TimeStamp
 ].
+#[global] Typeclasses Opaque Event.
+#[global] Opaque Event.
 
 Definition MarshalEvent : go_string := "github.com/mjschwenne/grackle/example.MarshalEvent"%go.
 
@@ -101,14 +107,16 @@ Definition UnmarshalCalendarⁱᵐᵖˡ : val :=
      }], ![#sliceT] "s")).
 
 Definition Status : go_type := uint64T.
+#[global] Typeclasses Opaque Status.
+#[global] Opaque Status.
 
-Definition STATUS_UNSPECIFIED : expr := #(W64 0).
+Definition STATUS_UNSPECIFIED : val := #(W64 0).
 
-Definition STATUS_STUDENT : expr := #(W64 1).
+Definition STATUS_STUDENT : val := #(W64 1).
 
-Definition STATUS_STAFF : expr := #(W64 2).
+Definition STATUS_STAFF : val := #(W64 2).
 
-Definition STATUS_PROFESSOR : expr := #(W64 3).
+Definition STATUS_PROFESSOR : val := #(W64 3).
 
 Definition MarshalStatus : go_string := "github.com/mjschwenne/grackle/example.MarshalStatus"%go.
 
@@ -143,6 +151,8 @@ Definition Person : go_type := structT [
   "Status" :: Status;
   "Statuses" :: sliceT
 ].
+#[global] Typeclasses Opaque Person.
+#[global] Opaque Person.
 
 Definition MarshalPerson : go_string := "github.com/mjschwenne/grackle/example.MarshalPerson"%go.
 
