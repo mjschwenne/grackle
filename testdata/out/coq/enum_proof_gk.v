@@ -64,7 +64,9 @@ Lemma wp_Encode (args__t : enum_gk.S.t) (args__c : C) (pre_sl : slice.t) (prefix
   }}}.
 
 Proof.
-  wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
+  wp_start as "(Hown & Hsl & Hcap)".
+  iUnfold own in "Hown". iNamed "Hown".
+  wp_auto.
 
   wp_apply wp_AssumeNoStringOverflow. iIntros "%HopLen". wp_auto.
   wp_apply wp_StringToBytes. iIntros (?) "HopBytes". wp_auto.
@@ -146,8 +148,7 @@ Proof.
   iDestruct (big_sepL2_length with "Hown_errs_own") as "%Hown_errs_sz".
   rewrite <- Hown_errs_sz in Herrs_sz.
 
-  iApply "HΦ". iFrame.
-  done.
+  iApply "HΦ". iFrame; done.
 Qed.
 
 End enum_gk.

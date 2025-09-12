@@ -62,7 +62,9 @@ Lemma wp_Encode (args__t : structslice_gk.S.t) (args__c : C) (pre_sl : slice.t) 
   }}}.
 
 Proof.
-  wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
+  wp_start as "(Hown & Hsl & Hcap)".
+  iUnfold own in "Hown". iNamed "Hown".
+  wp_auto.
 
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
@@ -156,8 +158,7 @@ Proof.
   iDestruct (big_sepL2_length with "Hown_ints_own") as "%Hown_ints_sz".
   rewrite <- Hown_ints_sz in Hints_sz.
 
-  iApply "HΦ". iFrame.
-  done.
+  iApply "HΦ". iFrame; done.
 Qed.
 
 End structSlice_gk.

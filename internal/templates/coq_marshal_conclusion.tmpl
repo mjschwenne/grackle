@@ -3,13 +3,15 @@
   iFrame. iPureIntro.
 
   unfold has_encoding.
+  <<- if ne (len (filterByCoqType .Fields "enum")) (len .Fields) >>
   split; last done.
+  <<- end >>
   << $eenc := (extEncFields .Fields) ->>
   << if gt (len $eenc) 0 >>exists << range $idx, $field := $eenc ->>
   <<- if $idx >>, << end ->>
   <<- .Name ->>_enc
   <<- end >>.<< end >>
-  <<- $bbl := (filterByCoqType .Fields "u8|list|bool") ->>
+  <<- $bbl := (filterByCoqType .Fields "u8|list|bool|enum") ->>
   << if gt (len $bbl) 0 >>
   split; first repeat (f_equal; try word).
   << range (filterByCoqType $bbl "bool") ->> 

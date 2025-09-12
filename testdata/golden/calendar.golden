@@ -47,7 +47,9 @@ Lemma wp_Encode (args__t : timestamp_gk.S.t) (args__c : C) (pre_sl : slice.t) (p
   }}}.
 
 Proof.
-  wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
+  wp_start as "(Hown & Hsl & Hcap)".
+  iUnfold own in "Hown". iNamed "Hown".
+  wp_auto.
 
   wp_apply (wp_WriteInt32 with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
@@ -90,8 +92,7 @@ Proof.
 
   wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
 
-  iApply "HΦ". iFrame.
-  done.
+  iApply "HΦ". iFrame; done.
 Qed.
 
 End TimeStamp_gk.
@@ -197,7 +198,9 @@ Lemma wp_Encode (args__t : event_gk.S.t) (args__c : C) (pre_sl : slice.t) (prefi
   }}}.
 
 Proof.
-  wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
+  wp_start as "(Hown & Hsl & Hcap)".
+  iUnfold own in "Hown". iNamed "Hown".
+  wp_auto.
 
   wp_apply (wp_WriteInt32 with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
@@ -258,8 +261,7 @@ Proof.
   wp_apply (TimeStamp_gk.wp_Decode endTime_enc with "[$Hsl]"); first done.
   iIntros (endTime__v ?) "[Hown_endTime Hsl]". wp_auto.
 
-  iApply "HΦ". iFrame.
-  done.
+  iApply "HΦ". iFrame; done.
 Qed.
 
 End Event_gk.
@@ -377,7 +379,9 @@ Lemma wp_Encode (args__t : calendar_gk.S.t) (args__c : C) (pre_sl : slice.t) (pr
   }}}.
 
 Proof.
-  wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
+  wp_start as "(Hown & Hsl & Hcap)".
+  iUnfold own in "Hown". iNamed "Hown".
+  wp_auto.
 
   iDestruct (own_slice_len with "Hown_hash") as "%Hown_hash_sz".
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]"). iIntros (?) "[Hsl Hcap]". wp_auto.
@@ -450,8 +454,7 @@ Proof.
   iDestruct (big_sepL2_length with "Hown_events_own") as "%Hown_events_sz".
   rewrite <- Hown_events_sz in Hevents_sz.
 
-  iApply "HΦ". iFrame.
-  done.
+  iApply "HΦ". iFrame; done.
 Qed.
 
 End calendar_gk.

@@ -27,6 +27,16 @@ message structSlice {
   repeated completeInt ints = 2;
 }
 
+message justEnum {
+  error err = 1;
+}
+
+message mostlyEnum {
+  error err = 1;
+  error err2 = 2;
+  uint64 msg = 3;
+}
+
 message enum {
   string op = 1;
   error err = 2;

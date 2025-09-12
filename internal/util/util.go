@@ -105,6 +105,7 @@ var TypeMap = map[fieldType]TypeData{
 		CoqType:     "enum",
 		GoType:      "enum",
 		MarshalType: "Int32",
+		ValType:     true,
 	},
 }
 

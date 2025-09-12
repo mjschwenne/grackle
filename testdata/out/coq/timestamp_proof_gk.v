@@ -46,7 +46,9 @@ Lemma wp_Encode (args__t : timestamp_gk.S.t) (args__c : C) (pre_sl : slice.t) (p
   }}}.
 
 Proof.
-  wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
+  wp_start as "(Hown & Hsl & Hcap)".
+  iUnfold own in "Hown". iNamed "Hown".
+  wp_auto.
 
   wp_apply (wp_WriteInt32 with "[$Hsl $Hcap]").
   iIntros (?) "[Hsl Hcap]". wp_auto.
@@ -89,8 +91,7 @@ Proof.
 
   wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
 
-  iApply "HΦ". iFrame.
-  done.
+  iApply "HΦ". iFrame; done.
 Qed.
 
 End TimeStamp_gk.

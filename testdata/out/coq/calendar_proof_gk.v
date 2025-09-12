@@ -59,7 +59,9 @@ Lemma wp_Encode (args__t : calendar_gk.S.t) (args__c : C) (pre_sl : slice.t) (pr
   }}}.
 
 Proof.
-  wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
+  wp_start as "(Hown & Hsl & Hcap)".
+  iUnfold own in "Hown". iNamed "Hown".
+  wp_auto.
 
   iDestruct (own_slice_len with "Hown_hash") as "%Hown_hash_sz".
   wp_apply (wp_WriteInt with "[$Hsl $Hcap]"). iIntros (?) "[Hsl Hcap]". wp_auto.
@@ -132,8 +134,7 @@ Proof.
   iDestruct (big_sepL2_length with "Hown_events_own") as "%Hown_events_sz".
   rewrite <- Hown_events_sz in Hevents_sz.
 
-  iApply "HΦ". iFrame.
-  done.
+  iApply "HΦ". iFrame; done.
 Qed.
 
 End calendar_gk.

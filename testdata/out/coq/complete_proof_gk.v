@@ -82,7 +82,9 @@ Lemma wp_Encode (args__t : complete_gk.S.t) (args__c : C) (pre_sl : slice.t) (pr
   }}}.
 
 Proof.
-  wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
+  wp_start as "(Hown & Hsl & Hcap)".
+  iUnfold own in "Hown". iNamed "Hown".
+  wp_auto.
 
   wp_apply (completeInt_gk.wp_Encode with "[$Hsl $Hcap $Hown_int]").
   iIntros (int_enc ?) "(%Hargs_int_enc & Hown_int & Hsl & Hcap)".
@@ -251,8 +253,7 @@ Proof.
   iDestruct (big_sepL2_length with "Hown_sints_own") as "%Hown_sints_sz".
   rewrite <- Hown_sints_sz in Hsints_sz.
 
-  iApply "HΦ". iFrame.
-  done.
+  iApply "HΦ". iFrame; done.
 Qed.
 
 End complete_gk.

@@ -64,7 +64,9 @@ Lemma wp_Encode (args__t : completeslice_gk.S.t) (args__c : C) (pre_sl : slice.t
   }}}.
 
 Proof.
-  wp_start as "(Hown & Hsl & Hcap)". iNamed "Hown". wp_auto.
+  wp_start as "(Hown & Hsl & Hcap)".
+  iUnfold own in "Hown". iNamed "Hown".
+  wp_auto.
 
   wp_apply wp_AssumeNoStringOverflow. iIntros "%HstrgLen". wp_auto.
   wp_apply wp_StringToBytes. iIntros (?) "HstrgBytes". wp_auto.
@@ -140,8 +142,7 @@ Proof.
   wp_apply (wp_BytesClone with "[$Hown_bytes2]").
   iIntros (?) "[Hown_bytes2 Hown_bytes2_cap]". wp_auto.
 
-  iApply "HΦ". iFrame.
-  done.
+  iApply "HΦ". iFrame; done.
 Qed.
 
 End completeSlice_gk.
