@@ -1,6 +1,6 @@
 Proof.
   wp_start as "[%Henc Hsl]". wp_auto.
-  << $refs := (extValFields .Fields) ->>
+  << $refs := (filterByCoqType .Fields "go_string|u8|message|enum") ->>
   << $psls := (repeatedFields .Fields) ->>
   << if or (len $psls) (len $refs)  ->>
   unfold has_encoding in Henc.
