@@ -39,7 +39,7 @@ Definition is_initialized : iProp Σ :=
 Lemma wp_initialize' get_is_pkg_init :
   get_is_pkg_init_prop << lower .Name >>_gk get_is_pkg_init ->
   {{{ own_initializing get_is_pkg_init ∗ is_go_context ∗ □ is_pkg_defined << lower .Name >>_gk }}}
-    error_gk.initialize' #()
+    << lower .Name >>_gk.initialize' #()
   {{{ RET #(); own_initializing get_is_pkg_init ∗ is_pkg_init << lower .Name >>_gk }}}.
 
 Proof.
