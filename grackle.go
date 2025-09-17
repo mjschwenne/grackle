@@ -240,6 +240,8 @@ func processMessage(fileOpts *fileParams, msgName string, descDict map[string]*d
 				// we can safely assume the messages aren't simple since that's really just
 				// enables more convenient reasoning in rocq.
 				simple = false
+			} else if util.IsRepeatedType(f) {
+				simple = false
 			}
 			if !slices.Contains(nested, realName) {
 				nested = append(nested, realName)
@@ -271,7 +273,7 @@ func processMessages(descs []*descriptorpb.DescriptorProto, fileOpts *fileParams
 		descDict[desc.GetName()] = desc
 	}
 	msgDict := make(map[string]*messageParams)
-	for n, _ := range descDict {
+	for n := range descDict {
 		processMessage(fileOpts, n, descDict, msgDict)
 	}
 	return msgDict
