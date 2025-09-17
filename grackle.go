@@ -208,31 +208,52 @@ func setupTemplates(files *descriptorpb.FileDescriptorSet) *template.Template {
 	return tmpl
 }
 
-func generateMsg(message *descriptorpb.DescriptorProto, fileOpts *fileParams) messageParams {
-	// A message is simple if it has no repeated fields (or enums/oneof)
+func processMessage(fileOpts *fileParams, msgName string, descDict map[string]*descriptorpb.DescriptorProto, msgDict map[string]*messageParams) {
+	if _, exists := msgDict[msgName]; exists {
+		return
+	}
+
+	msgDesc := descDict[msgName]
+	msgDict[msgName] = nil // Add to msgDict here to prevent infinite recursion
 	simple := true
 	var fields []*field
 	var nested []string
-	for _, f := range message.GetField() {
-		if f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE ||
-			f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
-			realName := (f.GetTypeName())[1:]
+	for _, f := range msgDesc.GetField() {
+		if f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
+			simple = false
+			realName := f.GetTypeName()[1:]
 			f.TypeName = &realName
 			if !slices.Contains(nested, realName) {
 				nested = append(nested, realName)
 			}
-		}
-		if util.IsRepeatedType(f) || util.IsCoqType(f, "u8") ||
-			f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
+		} else if f.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+			// Might generate some duplicate function calls, but they will immediately return if already processed
+			realName := f.GetTypeName()[1:]
+			f.TypeName = &realName
+			processMessage(fileOpts, realName, descDict, msgDict)
+			if f_msg, exists := msgDict[realName]; exists && (f_msg == nil || !f_msg.Simple) {
+				// If f_msg is nil, then we actually have mutually recursive messages,
+				// or a chain of mutually recursive messages and the result of the message
+				// earlier in the chain depends on the current message.
+				//
+				// Good luck reasoning about this in rocq, but from Grackle's prespective,
+				// we can safely assume the messages aren't simple since that's really just
+				// enables more convenient reasoning in rocq.
+				simple = false
+			}
+			if !slices.Contains(nested, realName) {
+				nested = append(nested, realName)
+			}
+		} else if util.IsRepeatedType(f) || util.IsCoqType(f, "u8") {
 			simple = false
 		}
 		fields = append(fields, f)
 	}
 
-	coqOutputPath := util.GetCoqOutputPath(fileOpts.CoqPhysicalPath, message.Name)
-	goOutputPath := util.GetGoOutputPath(fileOpts.GoOutputPath, message.Name)
-	messageOpts := messageParams{
-		Name:            message.Name,
+	coqOutputPath := util.GetCoqOutputPath(fileOpts.CoqPhysicalPath, &msgName)
+	goOutputPath := util.GetGoOutputPath(fileOpts.GoOutputPath, &msgName)
+	msgDict[msgName] = &messageParams{
+		Name:            &msgName,
 		GooseOutput:     fileOpts.GooseOutput,
 		CoqLogicalPath:  fileOpts.CoqLogicalPath,
 		CoqPhysicalPath: &coqOutputPath,
@@ -242,8 +263,18 @@ func generateMsg(message *descriptorpb.DescriptorProto, fileOpts *fileParams) me
 		NestedMessages:  nested,
 		Fields:          fields,
 	}
+}
 
-	return messageOpts
+func processMessages(descs []*descriptorpb.DescriptorProto, fileOpts *fileParams) map[string]*messageParams {
+	descDict := make(map[string]*descriptorpb.DescriptorProto)
+	for _, desc := range descs {
+		descDict[desc.GetName()] = desc
+	}
+	msgDict := make(map[string]*messageParams)
+	for n, _ := range descDict {
+		processMessage(fileOpts, n, descDict, msgDict)
+	}
+	return msgDict
 }
 
 func setupEnum(enum *descriptorpb.EnumDescriptorProto, fileOpts *fileParams) enumParams {
@@ -372,10 +403,11 @@ func Grackle(protoDir *string,
 				gooseTranslate(gooseOutput, proofGenOutput, goRoot, filepath.Dir(goPhysicalPath))
 			}
 		}
-		for _, message := range file.MessageType {
-			msg := generateMsg(message, fileOpts)
+		msgs := processMessages(file.MessageType, fileOpts)
+		for _, mdesc := range file.MessageType {
 			var coqOut io.Writer
 			var goOut io.Writer
+			msg := msgs[mdesc.GetName()]
 
 			if *coqPhysicalPath != "" {
 				if debug != nil {
