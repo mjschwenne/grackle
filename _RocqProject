@@ -6,7 +6,7 @@
 # Grackle tests 
 -Q testdata/out/pg New.generatedproof
 -Q testdata/out/goose New.code
--Q testdata/out/coq Grackle.test
+-Q testdata/out/rocq Grackle.test
 
 -arg -w -arg -ssr-search-moved
 -arg -w -arg +deprecated-instance-without-locality
