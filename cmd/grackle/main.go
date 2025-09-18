@@ -13,8 +13,8 @@ import (
 func main() {
 	// Parse command line arguments
 	var gooseOutputPath = flag.String("goose-output", "", "Directory to write the goose output")
-	var coqLogicalPath = flag.String("coq-logical-path", "", "Logical path to import the marshal proofs from")
-	var coqPhysicalPath = flag.String("coq-physical-path", "", "Physical output path for coq proofs")
+	var coqLogicalPath = flag.String("rocq-logical-path", "", "Logical path to import the marshal proofs from")
+	var coqPhysicalPath = flag.String("rocq-physical-path", "", "Physical output path for rocq proofs")
 	var proofGenPath = flag.String("proofgen-path", "", "Physical output path for proofgen files")
 	var debug = flag.Bool("debug", false, "Output all generated code to stdout")
 	var goOutputPath = flag.String("go-output-path", "", "Physical path to output go code into")
