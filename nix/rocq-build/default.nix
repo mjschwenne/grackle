@@ -34,6 +34,6 @@ in
       cp -r example/goose $out/lib/coq/${rocqv}/user-contrib/New/code
       cp -r testdata/out/pg $out/lib/coq/${rocqv}/user-contrib/New/generatedproof
       cp -r testdata/out/goose $out/lib/coq/${rocqv}/user-contrib/New/code
-      cp -r testdata/out/coq $out/lib/coq/${rocqv}/user-contrib/Grackle/test
+      cp -r testdata/out/rocq $out/lib/coq/${rocqv}/user-contrib/Grackle/test
     '';
   }
