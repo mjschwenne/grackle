@@ -1,13 +1,12 @@
 #+title: Grackle
 
-Grackle is a project to automate the marshaling and unmarshaling code for [[https://github.com/mit-pdos/grove][grove]].
-Effectively, it aims to build on top of the old marshaling code found [[https://github.com/tchajed/marshal][here]] by
-creating a compiler capable of taking a subset of the [[https://protobuf.dev/][Protobuf]] specification
-(=.proto= file) and emitting the Go code which can perform the marshaling and
-unmarshaling of the described buffers and a Gallia script which enables
-reasoning about the marshaling process.
+Grackle is a project to automate the marshaling and unmarshaling code for verified =go= programs using
+the [[https://github.com/mit-pdos/perennial][perennial framework]]. Effectively, it aims to build on top of the [[https://github.com/tchajed/marshal][existing marshaling library]] by
+creating a compiler capable of taking a subset of the [[https://protobuf.dev/][Protobuf]] specification (=.proto= file) and
+emitting the Go code which can perform the marshaling and unmarshaling of the described messages and
+a rocq proof which enables reasoning about the marshaling process in other verified projects.
 
-** Table of Contents :toc_3_gh:
+** Table of Contents :toc_4_gh:
   - [[#usage][Usage]]
   - [[#why-grackle][Why "Grackle"]]
   - [[#compatibility-with-protoc][Compatibility with =protoc=]]
@@ -17,72 +16,79 @@ reasoning about the marshaling process.
     - [[#unsupported][Unsupported]]
   - [[#grackle-wire-format][Grackle Wire Format]]
   - [[#generated-code-guide][Generated Code Guide]]
-    - [[#go][Go]]
-    - [[#coq][Coq]]
+    - [[#protobuf-messages][Protobuf Messages]]
+      - [[#go][Go]]
+      - [[#rocq][Rocq]]
+    - [[#protobuf-enums][Protobuf Enums]]
+      - [[#go-1][Go]]
+      - [[#rocq-1][Rocq]]
   - [[#technical-considerations][Technical Considerations]]
     - [[#stateless-design][Stateless Design]]
+    - [[#open-and-closed-enums][Open and Closed Enums]]
+    - [[#map-literals][Map Literals]]
+    - [[#simple-message-optimization][Simple Message Optimization]]
     - [[#proof-structure][Proof Structure]]
     - [[#go-templates][Go Templates]]
   - [[#development][Development]]
 
 ** Usage
 
-Grackle is capable of generating three outputs for an input directory of proto
-files:
+Grackle is capable of generating three outputs for an input directory of proto files:
 1. Go code which marshals and unmarshals the messages.
-2. [[https://github.com/goose-lang/goose][Goose]] output, a representation of the generated go code in goose lang.
-3. Coq proofs using [[https://github.com/mit-pdos/perennial][perennial]] that the generated go code is correct.
+2. [[https://github.com/goose-lang/goose][Goose]] output, a representation of the generated go code in goose lang and some low-level
+   generated rocq projects from the =proofgen= tool.
+3. Rocq proofs using [[https://github.com/mit-pdos/perennial][perennial]] that the generated go code is correct.
 
-Grackle can generate just the go code, just the coq code, go and goose code, coq
-and go or all three. Basically, the go and coq code generation can happen
-separately, but goose code can only be generated when go code it.
+Grackle can generate just the go code, just the rocq proofs, go and goose code, rocq and go or all
+three. Basically, the go and rocq proof generation can happen separately, but goose code can only be
+generated when go code is.
 
 #+begin_src
-Usage of grackle [-options] <proto file directory>:
-  -coq-logical-path string
-        Logical path to import the marshal proofs from
-  -coq-physical-path string
-        Physical output path for coq proofs
+Usage: grackle [options] <path to protobuf files>
   -debug
-        Output all generated code to stdout
+    	Output all generated code to stdout
   -go-output-path string
-        Physical path to output go code into
+    	Physical path to output go code into
   -go-package string
-        Fully qualified root package for the output packages
+    	Fully qualified root package for the output packages
   -goose-output string
-        Directory to write the goose output
+    	Directory to write the goose output
+  -proofgen-path string
+    	Physical output path for proofgen files
+  -rocq-logical-path string
+    	Logical path to import the marshal proofs from
+  -rocq-physical-path string
+    	Physical output path for rocq proofs
 #+end_src
 
 To use grackle, the tool needs at least three pieces of information, a directory
 with the =.proto= files and either
 
-- the two =coq= flags
+- the two =rocq= flags
 - the two =go= flags
 
 The other flags are optional. A full invocation of grackle would be
 
 #+begin_src
-grackle -coq-logical-path Grackle.test -coq-physical-path testdata/out/coq/
--go-output-path testdata/out/go -go-package github.com/mjschwenne/grackle/testdata/out/go
--goose-output testdata/out/goose/ testdata/proto/calendar
+grackle -rocq-logical-path Grackle.test -rocq-physical-path testdata/out/rocq/
+-proofgen-path testdata/out/pg -go-output-path testdata/out/go -go-package
+github.com/mjschwenne/grackle/testdata/out/go -goose-output testdata/out/goose/
+testdata/proto/calendar
 #+end_src
 
 A more detailed description of the flags and ideas is given below
 
-- =coq-logical-path= : The Coq import systems works by mapping physical
-  directories on disk into /logical directories/ which are referenced in the
-  proofs to perform the imports. This flag provides the logical path where the
-  output coq proofs will be written. For any message with nested messages, this
-  is the logical path where the proofs of the other messages will be imported
-  from. The proofs will always import the corresponding =goose= output from a
-  logical directory named =Goose=. This is a standard assumption for perennial and
-  related projects.
-- =coq-physical-path= : This is where on disk to write the coq proofs. There is no
-  strict relation between the coq physical path and the corresponding coq
-  logical path. The two should be linked via a =-Q= flag in the =_CoqProject= file.
-  Grackle will create this directory if it doesn't exist.
-- =debug= : Causes the generated go and coq code to be written to standard output.
-  The format for this output is
+- =rocq-logical-path= : The Rocq import systems works by mapping physical directories on disk into
+  /logical directories/ which are referenced in the proofs to perform the imports. This flag provides
+  the logical path where the output rocq proofs will be written. For any message with nested
+  messages, this is the logical path where the proofs of the other messages will be imported
+  from. The proofs will always import the corresponding =goose= output from a logical directory named
+  =New.code=. This is a standard assumption for perennial and related projects with new goose.
+- =rocq-physical-path= : This is where on disk to write the rocq proofs. There is no strict relation
+  between the rocq physical path and the corresponding rocq logical path. The two should be linked
+  via a =-Q= flag in the =_RocqProject= file.  Grackle will create this directory if it doesn't exist.
+- =debug= : Causes the generated go and rocq code to be written to standard output.  The format for
+  this output is
   #+begin_src
   --- Begin: < file output path > ---
 
@@ -95,52 +101,51 @@ A more detailed description of the flags and ideas is given below
 
   --- End: < next file output path > ---
   #+end_src
-- =go-output-path= : The path on disk to write the go output from grackle. As
-  explained later, each message in the proto files of the input directories will
-  get it's own go package, so grackle will create a nested directory within the
-  provided one.
-- =go-package= : The full path name for the go package that would correspond to
-  the =go-output-path=. Unlike the coq logical and physical paths, there is an
-  expected (but not required) correspondence between the package name and the
-  output path. For projected hosted on GitHub, go convention expects the package
-  name to start with =github.com/<user name>/<repo name>=, for example importing
-  something from grackle as a library would start with
-  =github.com/mjschwenne/grackle=. From this base, go convention expects the
-  package name to be basically the relative path to the repository root to the
-  directory the package lives in, =go-output-path=. As with the coq logical path,
-  the generated go code will import from the go code for any message containing
-  enumerations or nested messages from this package.
-- =goose-output= : If this flag is set, call =goose= programmatically on the output
-  =go= files, writing the output to this directory. The output will follow the
-  standard =goose= practice of writing the output into subdirectories that follow
-  the full go package name.
+- =go-output-path= : The path on disk to write the go output from grackle. As explained later, each
+  message in the proto files of the input directories will get it's own go package, so grackle will
+  create a nested directory within the provided one.
+- =go-package= : The full path name for the go package that would correspond to the
+  =go-output-path=. Unlike the rocq logical and physical paths, there is an expected (but not
+  required) correspondence between the package name and the output path. For projected hosted on
+  GitHub, go convention expects the package name to start with =github.com/<user name>/<repo name>=,
+  for example importing something from grackle as a library would start with
+  =github.com/mjschwenne/grackle=. From this base, go convention expects the package name to be
+  basically the relative path to the repository root to the directory the package lives in,
+  =go-output-path=. As with the rocq logical path, the generated go code will import from the go code
+  for any message containing enumerations or nested messages from this package.
+- =goose-output= : If this flag is set, call =goose= programmatically on the output =go= files, writing
+  the output to this directory. The output will follow the standard =goose= practice of writing the
+  output into subdirectories that follow the full go package name.
+- =proofgen-path=: If this flag is set, and the =goose= output flag is set, call the =proofgen= tool
+  programmatically on the output =go= files, writing the output to this directory. The output will
+  follow the standard =proofgen= practice of writing the output into subdirectories that mirror the
+  full go package name.
 
 ** Why "Grackle"
 
-A [[https://en.wikipedia.org/wiki/Common_grackle][grackle]] is a bird capable of mimicking other birds and even human speech if it
-wants to, and it's also a bird whose name starts with 'g' to complement [[https://github.com/goose-lang/goose][goose]], a
-project which converts a subset of Go to Coq and is used as part of grackle.
+A [[https://en.wikipedia.org/wiki/Common_grackle][grackle]] is a bird capable of mimicking other birds and even human speech if it wants to, which
+seems approate for a tool focused on allowing verified distributed systems to communicate. It's also
+a bird whose name starts with 'g' to complement [[https://github.com/goose-lang/goose][goose]], a project which converts a subset of Go to
+Rocq and is used as part of grackle.
 
 ** Compatibility with =protoc=
 
-Grackle is *not* compatible with =protoc=. Neither the wire format grackle uses nor
-the generated go API is compatible. Some major differences are highlighted
-below.
+Grackle is *not* compatible with =protoc=. Neither the wire format grackle uses nor the generated go API
+is compatible. Some major differences are highlighted below.
 
-- The =int32= and =int64= fields are treated as unsigned, rather than signed.
-- The wire format is markedly different, see [[#grackle-wire-format][Grackle Wire Format]] for more
-  information. Probably the most notable two differences is that the grackle
-  wire format does not use variable width integer encodings and fields are not
-  tagged with the field number, but rather serialized in order as they appear in
-  the proto file.
-- Go code generation is structured differently. The =protoc= compiler outputs one
-  file per proto file while grackle outputs one go package per message (and
-  enum).
-- Recursive messages, naturally including mutually recursive message, are not
-  supported by grackle despite being supported by =protoc=.
-- Grackle appends a =_gk= suffix to generated go packages and proof file names. On
-  the Coq side, output modules do not include the suffix and are referenced
-  directly by the name of the proto messages.
+- The =int32= and =int64= fields are treated as unsigned, rather than signed, since support for signed
+  integers in Perennial is still developing.
+- The wire format is markedly different, see [[#grackle-wire-format][Grackle Wire Format]] for more information. Probably the
+  most notable two differences is that the grackle wire format does not use variable width integer
+  encodings and fields are not tagged with the field number, but rather serialized in order as they
+  appear in the proto file.
+- Go code generation is structured differently. The =protoc= compiler outputs one file per proto file
+  while grackle outputs one go package per message (and enum).
+- Recursive messages, naturally including mutually recursive messages, are not supported by grackle
+  despite being supported by =protoc=. I believe =go= code generation may work, but the output rocq
+  proofs certainly won't compile.
+- Grackle appends a =_gk= suffix to generated go packages and proof file names. On the Rocq side,
+  output modules use a =_proof_gk= suffix.
 
 ** Supported Protobuf Features
 
@@ -153,10 +158,9 @@ features as well as any commentary on them.
 
 - Messages, including nested messages. (Mutually) recursive use of messages is
   not supported, regardless of if it is supported by =protoc=.
-- Integer fields, although all of the integers are mapped to unsigned integers
-  in both go and coq. This is mostly due to limited support for signed integers
-  within perennial. Should support improve, support for signed integers may be
-  added.
+- Integer fields, although all of the integers are mapped to unsigned integers in both go and
+  rocq. This is mostly due to limited support for signed integers within perennial. Should support
+  improve, support for signed integers may be added.
   - =int32=
   - =uint32=
   - =fixed32=
@@ -166,19 +170,16 @@ features as well as any commentary on them.
 - Boolean fields, =bool=.
 - String fields, =string=.
 - Byte fields, =bytes=.
-- Imports between proto files in the input proto directory or a subdirectory of
-  the input proto directory.
+- Enums, defined with =enum <name> { ... }=
+- Repeated fields of scalar types, message types and enum types.
+- Imports between proto files in the input proto directory or a subdirectory of the input proto
+  directory.
 
 *** Planned Support
 
-- Slices of fields. These are represented with the =repeated= label, i.e.
-  =repeated uint32=. Slices will support types that do not have pointers in them
-  due to coq proof limitations rather than go code generation.
-- Enumerations. Go code generation is nearly complete, but the coq proofs cannot
-  handle the use of enumerations in the proofs /yet/.
-- Maps. After slices, map support is important and used in several places in the
-  perennial ecosystem.
-
+- Maps. After slices, map support is important and used in several places in the perennial
+  ecosystem.
+  
 *** Unsupported
 
 - Signed integer fields =sint32=, =sfixed32=, =sint64= and =sfixed64=. This is mostly
@@ -187,7 +188,7 @@ features as well as any commentary on them.
   grackle treats them as unsigned. It is unclear at this point if support for
   signed integers would change the interpretation of these fields, which would
   be a breaking change.
-- Recursive messages. This issue seems particularly challenging on the coq side,
+- Recursive messages. This issue seems particularly challenging on the rocq side,
   although go code generation is unlikely to be significant issue.
 - Nested messages declaration. Referencing other top-level messages for a field
   is supported. However, protobuf supports declaring nested messages within a
@@ -260,55 +261,69 @@ may not be kept up to date, but the files in [[file:testdata/out/][testdata/out]
 For this example, grackle might be invoked as
 
 #+begin_src
-grackle -coq-logical-path Grackle.test -coq-physical-path testdata/out/coq/
--go-output-path testdata/out/go -go-package github.com/mjschwenne/grackle/testdata/out/go
--goose-output testdata/out/goose/ testdata/proto/calendar
+grackle -rocq-logical-path Grackle.test -rocq-physical-path testdata/out/rocq/
+-proofgen-path testdata/out/pg -go-output-path testdata/out/go -go-package
+github.com/mjschwenne/grackle/testdata/out/go -goose-output testdata/out/goose/
+testdata/proto/calendar
 #+end_src
 
 Which would generate these files (which can be accessed in the [[file:testdata/out/][testdata/out]]
 directory of this repository, along with the other test files):
 
 #+begin_src
-testdata/out
-├── coq
-│   ├── event_proof.v
-│   └── timestamp_proof.v
+testdata/out/
 ├── go
+│   ├── calendar_gk
+│   │   └── calendar_gk.go
 │   ├── event_gk
 │   │   └── event_gk.go
 │   └── timestamp_gk
 │       └── timestamp_gk.go
-└── goose
-    └── github_com
-        └── mjschwenne
-            └── grackle
-                └── testdata
-                    └── out
-                        └── go
-                            ├── event_gk.v
-                            └── timestamp_gk.v
+├── goose
+│   └── github_com
+│       └── mjschwenne
+│           └── grackle
+│               └── testdata
+│                   └── out
+│                       └── go
+│                           ├── calendar_gk.v
+│                           ├── event_gk.v
+│                           └── timestamp_gk.v
+├── pg
+│   └── github_com
+│       └── mjschwenne
+│           └── grackle
+│               └── testdata
+│                   └── out
+│                       └── go
+│                           ├── calendar_gk.v
+│                           ├── event_gk.v
+│                           └── timestamp_gk.v
+└── rocq
+    ├── calendar_proof_gk.v
+    ├── event_proof_gk.v
+    └── timestamp_proof_gk.v
 #+end_src
 
-*** Go
+*** Protobuf Messages
+
+**** Go
 
 For a top-level message, grackle will output:
-- A go package with the name of the message, all lowercase, and the =_gk= suffix,
-  such as =event_gk=. Inside the package is one file with the same name.
+- A go package with the name of the message, all lowercase, and the =_gk= suffix, such as
+  =event_gk=. Inside the package is one file with the same name.
 - That file contains
-  - A struct definition =S=. Since go access patterns always use the package name,
-    every message will have =S= as the struct name. It can be accessed from
-    outside the package as, e.g. =event_gk.S= which will differentiate between
-    separate messages.
-  - A =Marshal= function which takes an =S= and a byte slice =prefix= and returns
-    =prefix= with the encoding of =S= appended to it.
-  - An =Unmarshal= function which takes a byte slice and returns an =S= struct and
-    the unused =suffix=.
+  - A struct definition =S=. Since go access patterns always use the package name, every message will
+    have =S= as the struct name. It can be accessed from outside the package as, e.g. =event_gk.S= which
+    will differentiate between separate messages.
+  - A =Marshal= function which takes an =S= and a byte slice =prefix= and returns =prefix= with the encoding
+    of =S= appended to it.
+  - An =Unmarshal= function which takes a byte slice and returns an =S= struct and the unused =suffix=.
 
-The use of =prefix= and =suffix= enable a stateless marshaling design which is
-easier to reason about and more compositional. More information can be found in
-the [[#technical-consideration][Technical Considerations]] section.
+The use of =prefix= and =suffix= enable a stateless marshaling design which is easier to reason about
+and more compositional. More information can be found in the [[#technical-consideration][Technical Considerations]] section.
 
-**** Go Struct
+***** Go Struct
 
 Here is an example of the generated =struct= definition for the =Event= message:
 
@@ -321,109 +336,89 @@ type S struct {
 }
 #+end_src
 
-**** Marshal Function
+***** Marshal Function
 
-Now we have the =Marshal= function. As a common pattern in grackle, this function
-can be broken into three parts:
-- Setup : Including the function signature and first line of the function, which
-  is needed for goose compatibility.
-- Fields : Loop over the fields of the message, performing the same action on
-  each one of them. In this case, serializing each field and appending it to =enc=.
-- Conclusion : Return the byte slice containing =prefix= and the newly encoded =Event=.
+Now we have the =Marshal= function. This function encodes in the input event by serializing each field
+in the order declared in the source =proto= file. The =primitive.AssumeNoStringOverflow= function comes
+from the goose lang primitive library, which allows us to inject the assumption that the string is
+less than 2^64 bytes long in the rocq proof.
 
 #+begin_src go
-func Marshal(e S, prefix []byte) []byte {
-	var enc = prefix
-
+func Marshal(enc []byte, e S) []byte {
 	enc = marshal.WriteInt32(enc, e.Id)
-	nameBytes := []byte(e.Name)
-	enc = marshal.WriteInt(enc, uint64(len(nameBytes)))
-	enc = marshal.WriteBytes(enc, nameBytes)
-	enc = timestamp_gk.Marshal(e.StartTime, enc)
-	enc = timestamp_gk.Marshal(e.EndTime, enc)
+	primitive.AssumeNoStringOverflow(e.Name)
+	enc = marshal.WriteLenPrefixedBytes(enc, []byte(e.Name))
+	enc = timestamp_gk.Marshal(enc, e.StartTime)
+	enc = timestamp_gk.Marshal(enc, e.EndTime)
 
 	return enc
 }
 #+end_src
 
-**** Unmarshal Function
+***** Unmarshal Function
 
-Finally we have the =Unmarshal= function. This function follows the same three
-steps, although the setup is more complex than one line. Goose does not support
-mixed variable assignment and initialization using the =:== operator when a
-function returns multiple return values, so grackle creates the variables
-beforehand. Then iterates through the fields of the struct, deserializing them
-one at a time. In the function conclusion the values read from the serialized
-byte slice are packed into a struct and returned, along with the remaining bytes
-in the input byte slice.
+Finally we have the =Unmarshal= function. This function iterates through the fields of the struct,
+deserializing them one at a time. In the function conclusion the values read from the serialized
+byte slice are packed into a struct and returned, along with the remaining bytes in the input byte
+slice. Notice that strings are first read as bytes, then converted back to strings. Both bytes and
+strings need to be cloned during the unmarshaling process for proof reasons, basically so that full
+ownership of the new structure can be returned in the case that the input byte slice has fractional ownership.
 
 #+begin_src go
 func Unmarshal(s []byte) (S, []byte) {
-	var enc = s // Needed for goose compatibility
-	var id uint32
-	var name string
-	var startTime timestamp_gk.S
-	var endTime timestamp_gk.S
-
-	id, enc = marshal.ReadInt32(enc)
-	var nameLen uint64
-	var nameBytes []byte
-	nameLen, enc = marshal.ReadInt(enc)
-	nameBytes, enc = marshal.ReadBytesCopy(enc, nameLen)
-	name = string(nameBytes)
-	startTime, enc = timestamp_gk.Unmarshal(enc)
-	endTime, enc = timestamp_gk.Unmarshal(enc)
+	id, s := marshal.ReadInt32(s)
+	nameBytes, s := marshal.ReadLenPrefixedBytes(s)
+	name := string(std.BytesClone(nameBytes))
+	startTime, s := timestamp_gk.Unmarshal(s)
+	endTime, s := timestamp_gk.Unmarshal(s)
 
 	return S{
 		Id:        id,
 		Name:      name,
 		StartTime: startTime,
 		EndTime:   endTime,
-	}, enc
+	}, s
 }
 #+end_src
 
-The go code generation is the simple part, while the Coq +code+ proof generation
+The go code generation is the simple part, while the rocq +code+ proof generation
 is much more complex.
 
-*** Coq
+**** Rocq
 
 For a top-level message, grackle will generate a proof file with the lower-cased
-message name plus the =_gk= suffix. That file will contain:
-- A coq record =C= corresponding to the go struct and the proto message.
+message name plus the =_proof_gk= suffix. That file will contain:
+- A rocq type =C= corresponding to the go struct and the proto message. This could either be a rocq
+  record or an alias to the goose type directly. See the [[Simple Message Optimization]] for more details.
 - A definition =has_encoding= of what it means for a byte slice (or list of bytes
-  in coq) to encode the record.
+  in rocq) to encode the record.
 - A separation logic proposition =own= about what it means to own a struct.
-- A function =to_val'= to convert a record into a goose lang value.
-- A function =from_val'= to convert a goose lang value into a record.
-- Proof that the into value and from value functions define what it means to
-  have a record as a value, =<message name>_into_val=.
-- Proof that having the value form of the record correctly encodes the goose
-  lang struct definition, =<message name>_into_val_for_type=.
 - An encoding lemma =wp_Encode= which describes the behavior of calling the
   =Marhsal= function, as well as a proof of correctness.
 - A decoding lemma =wp_Decode= which describes the behavior of calling the
   =Unmarshal= function, as well as a proof of correctness.
 
-**** Coq Record
+***** Rocq Record
 
-Just like with the Go code, grackle starts by outputing a Coq record. For the
-running =Event= example, that looks like this:
+Just like with the Go code, grackle starts by outputing a Rocq record. Since the running example,
+=Event=, is a simple message, this definition is an alias for the goose output struct.
+
+#+begin_src coq
+  Definition C := event_gk.S.t.
+#+end_src
+
+For a more complex example, like [[testdata/out/rocq/calendar_proof_gk.v][calendar_gk]], the generated struct will closely match the go struct
+=S=.
 
 #+begin_src coq
 Record C :=
-  mkC {
-      id : u32 ;
-      name : string ;
-      startTime : TimeStamp.C ;
-      endTime : TimeStamp.C ;
-    }.
+    mkC {
+        hash' : list u8;
+        events' : list Event_gk.C;
+        }.
 #+end_src
 
-The structure of the records is intentionally similar to that of the go struct
-=S= and of course the proto message.
-
-**** Has Encoding
+***** Has Encoding
 
 Next grackle produces a =has_encoding= definition which relates the record =C= to
 the wire format. In cases where the field is an integer or similar stand-alone
@@ -435,187 +430,65 @@ bytes which faithfully encodes the =startTime= and =endTime= time stamps using t
 
 #+begin_src coq
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-  ∃ start_enc end_enc,
-    encoded = (u32_le args.(id)) ++
-              (u64_le $ length $ string_to_bytes args.(name)) ++ string_to_bytes args.(name) ++
-              start_enc ++ end_enc
-    /\ TimeStamp.has_encoding start_enc args.(startTime)
-    /\ TimeStamp.has_encoding end_enc args.(endTime).
+  ∃ (startTime_enc endTime_enc : list u8), 
+  encoded = (u32_le args.(event_gk.S.Id')) ++
+              (u64_le $ length $ args.(event_gk.S.Name')) ++ args.(event_gk.S.Name') ++
+              startTime_enc ++
+              endTime_enc
+  /\ length args.(event_gk.S.Name') < 2^64
+  /\ TimeStamp_gk.has_encoding startTime_enc args.(event_gk.S.StartTime')
+  /\ TimeStamp_gk.has_encoding endTime_enc args.(event_gk.S.EndTime').
 #+end_src
 
-Some extra flexibility here is that grackle can allow the =TimeStamp= encoding to
-change without (hopefully) requiring regeneration of the =Event= code, although a
-recompile will be required according to coq consistency requirements.
+Some extra flexibility here is that grackle can allow the =TimeStamp= encoding to change without
+requiring regeneration of the =Event= code, although a recompile will be required according to rocq
+consistency requirements.
 
-**** Own
+Since lists in Rocq can be of arbitrary length, we require that the length of lists is less than 2^64
+in the encoding function so that the length can be correctly encoded into a 64 bit integer. 
+
+***** Own
 
 After =has_encoding=, which related the record to the wire format, we need a way
 to represent owning an instance of the record, which will be used in the pre and
 post conditions for the serialization lemmas.
 
 #+begin_src coq
-Definition own (args__v: val) (args__c: C) (dq: dfrac) : iProp Σ :=
-  ∃ (startTime__v endTime__v : val) ,
-  "%Hown_struct" ∷ ⌜ args__v = (#args__c.(id), (#(str args__c.(name)), (TimeStamp.to_val' args__c.(startTime), (TimeStamp.to_val' args__c.(endTime), #()))))%V ⌝ ∗
-  "Hown_startTime" ∷ TimeStamp.own startTime__v args__c.(startTime) dq ∗
-  "Hown_endTime" ∷ TimeStamp.own endTime__v args__c.(endTime) dq.
+Definition own (args__v: event_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
+  "%Hown_id" ∷ ⌜ args__v.(event_gk.S.Id') = args__c.(event_gk.S.Id') ⌝ ∗
+  "%Hown_name" ∷ ⌜ args__v.(event_gk.S.Name') = args__c.(event_gk.S.Name') ⌝ ∗
+  "%Hown_name_len" ∷ ⌜ length args__c.(event_gk.S.Name') < 2^64 ⌝ ∗
+  "Hown_startTime" ∷ TimeStamp_gk.own args__v.(event_gk.S.StartTime') args__c.(event_gk.S.StartTime') dq ∗
+  "Hown_endTime" ∷ TimeStamp_gk.own args__v.(event_gk.S.EndTime') args__c.(event_gk.S.EndTime') dq.
 #+end_src
 
-The =own= proposition relates the coq record to struct representation in goose
-lang. All values in goose lang have the =val= type at the meta level, but we can
-decompose them into a struct with the correct values in the correct order. Like
-with =has_encoding=, most of the simple fields like integers can be embedded
-directly. For nested messages, grackle asserts that the values in the goose lang
-=val= correspond to the nested messages using the next definition, =to_val'=. Since
-owning a nested struct may entail using some other piece of state (if there is a
-slice in the nested message, for instance), grackle also needs to assert
-ownership over that, which is accomplished by adding a call to the nested =own=
-predicate.
+The =own= proposition relates the rocq record to struct representation in goose lang. New goose structs
+have fields which the rocq proofs can access. Like with =has_encoding=, most of the simple fields like
+integers can be embedded directly. Since owning a nested struct may entail using some other piece of
+state (if there is a slice in the nested message, for instance), grackle also needs to assert
+ownership over that, which is accomplished by adding a call to the nested =own= predicate.
 
-**** To Value
+***** Encoding
 
-As briefly mentioned above, all values in goose lang are represented as a =val= at
-the Coq level. To enable this message to be nested within another message,
-grackle needs to know what value a given record will have. To do this, it
-generates a function from =C= to =val=, named =to_val'=. The apostrophe is required to
-conflicting with perennial names. This function is identical to the pure fact
-="%Hown_struct"= which is generated in the =own= predicate.
+The above rocq definitions exist to enable grackle to actually verify the =Marshal= and =Unmarshal=
+function generated on the Go side. The =wp_Encode= lemma describes the behavior of the =Marshal=
+function.
 
 #+begin_src coq
-Definition to_val' (c : C) : val :=
-  (#c.(id), (#(str c.(name)), (TimeStamp.to_val' c.(startTime), (TimeStamp.to_val' c.(endTime), #())))).
-#+end_src
-
-**** From Value
-
-Grackle produces a corresponding function which takes arbitrary goose lang values
-and attempts to convert them to the grackle coq record. The return type of this
-function is =option C= since a =val= can have algebraic structures ranging form a
-single literal to arbitrary structs, most of which will not be compatible with
-the layout of this specific struct.
-
-#+begin_src coq
-Definition from_val' (v : val) : option C :=
-  match v with
-  | (#(LitInt32 id), (#(LitString name), (startTime, (endTime, #()))))%V =>
-    match TimeStamp.from_val' startTime with
-    | Some startTime =>
-        match TimeStamp.from_val' endTime with
-        | Some endTime =>
-            Some (mkC id name startTime endTime)
-        | None => None
-        end
-    | None => None
-    end
-  | _ => None
-  end.
-#+end_src
-
-Most of the simple fields like integers can be interpreted at the pattern match
-level, nested messages cannot since the type of the message isn't a constructor
-for a =val=. Thus, a nested =match= structure is generated which requires all nested
-messages to parse correctly to produce a record from a =val=.
-
-**** IntoVal
-
-While we've already seen instances where converting back and forth between =C='s
-and =val='s are important, most of the time we want proofs involving grackle
-messages to handle these conversions using standard perennial relations and
-functions. In order for that to happen, grackle has to show that =to_val'= and
-=from_val'= refine =IntoVal= for =C=. This means that grackle can convert a =C= into a
-=val= when needed.
-
-#+begin_quote
-*Disclaimer:* The below code snippet isn't automatically generated /yet/ but should
- be by the end of the week.
-#+end_quote
-
-#+begin_src coq
-#[global]
-Instance Event_into_val : IntoVal C.
-Proof.
-  refine {|
-      to_val := to_val';
-      from_val := from_val';
-      IntoVal_def := (mkC (W32 0) "" (IntoVal_def TimeStamp.C) (IntoVal_def TimeStamp.C))
-    |}.
-  intros v.
-  destruct v as [i n [sh sm ss] [eh em es]]; done.
-Defined.
-#+end_src
-
-To show the =C= can be converted into a value, grackle provides the =to_val'= and
-=from_val'= functions as well as an initial value for a newly allocated instance
-of the record. These values match the default values =go= uses if you encountered
-something like =Event{}= since all types in =go= have default values. Since the
-structures of =C= and =S= match so closely, the proof is simple, requiring mostly a
-large =destruct= and calling =done= on all the new goals.
-
-**** IntoValForType
-
-While it's true that grackle can convert a =C= to a =val= and vice versa, it knows
-more than just that. Specifically, the =val= is an instance of the goose lang
-representation of the go struct. To ascribe a type to the returned =val=, grackle
-generates an instance of =IntoValForType C (struct.t <message name>)=.
-
-#+begin_quote
-*Disclaimer:* The below code snippet isn't automatically generated /yet/ but should
- be by the end of the week.
-#+end_quote
-
-#+begin_src coq
-#[global]
-Instance Event_into_val_for_type : IntoValForType C (struct.t Event).
-Proof. constructor; auto 10. Defined.
-#+end_src
-
-This proof is extremely simple, requiring only a single tactic.
-
-**** Own to Val
-
-Recall the observation that the ="%Hown_struct"= proposition in =own= is identical
-to =to_val'=​. For some field types, such as nested messages and slices, grackle
-needs to know that having ownership over a record =C= implies something about the
-shape of the corresponding =val=. To accomplish this goal, grackle generates
-=own_to_val=,
-
-#+begin_quote
-*Disclaimer:* The below code snippet isn't automatically generated /yet/ but should
- be by the end of the week.
-#+end_quote
-
-#+begin_src coq
-Lemma own_to_val (v : val) (c : C) (dq : dfrac) :
-  own v c dq -∗ own v c dq ∗ ⌜ v = to_val c ⌝.
-Proof.
-  (* Generated, but omitted from this README *)
-Qed.
-#+end_src
-
-This lemma allows grackle and later us to extract this correspondence between
-the two. Note that this lemma uses the goose standard way to convert types to
-values, =to_val= (missing the ='=). The lemma returns ownership of the coq record
-since otherwise perennial would consume it and the proof could only learn the
-pure fact while losing access to =own= since the program logic is affine.
-
-**** Encoding
-
-All of the above coq definitions exist to enable grackle to actually verify the
-=Marshal= and =Unmarshal= function generated on the Go side. The =wp_Encode= lemma
-describes the behavior of the =Marshal= function.
-
-#+begin_src coq
-Lemma wp_Encode (args__v : val) (args__c : C) (pre_sl : Slice.t) (prefix : list u8) (dq : dfrac):
+Lemma wp_Encode (args__t : event_gk.S.t) (args__c : C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
-        own args__v args__c dq ∗
-        own_slice pre_sl byteT (DfracOwn 1) prefix
+        is_pkg_init event_gk ∗
+        own args__t args__c dq ∗ 
+        own_slice pre_sl (DfracOwn 1) prefix ∗
+        own_slice_cap w8 pre_sl (DfracOwn 1)
   }}}
-    event_gk.Marshal args__v (slice_val pre_sl)
+    @! event_gk.Marshal #pre_sl #args__t
   {{{
-        enc enc_sl, RET (slice_val enc_sl);
+        enc enc_sl, RET #enc_sl;
         ⌜ has_encoding enc args__c ⌝ ∗
-        own args__v args__c dq ∗
-        own_slice enc_sl byteT (DfracOwn 1) (prefix ++ enc)
+        own args__t args__c dq ∗ 
+        own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
+        own_slice_cap w8 enc_sl (DfracOwn 1)
   }}}.
 
 Proof.
@@ -623,38 +496,38 @@ Proof.
 Qed.
 #+end_src
 
-The encoding lemma requires some level of ownership over an instance of the
-generated message, using =args__v= as the goose lang value and =args__c= as the coq
-level representation. Here, =dq= quantifies the discardable [[https://tchajed.github.io/sys-verif-fa24/notes/program-proofs/fractions.html][fractional ownership]]
-over any heap values in the =own= definition. Since only read access is needed to
-marshal, the value of =dq= is unbounded with respect to a =dfrac=. The =Marshal=
-function also needs ownership of the =prefix= slice that the serialized =args__v=
-will be appended to. Since =Marshal= writes to this slice, full ownership
-(=DfracOwn 1=) is required.
+The encoding lemma requires some level of ownership over an instance of the generated message, using
+=args__t= as the goose lang value and =args__c= as the rocq level representation (For a simple message,
+these might be the same). Here, =dq= quantifies
+the discardable [[https://tchajed.github.io/sys-verif-fa24/notes/program-proofs/fractions.html][fractional ownership]] over any heap values in the =own= definition. Since only read
+access is needed to marshal, the value of =dq= is unbounded with respect to a =dfrac=. The =Marshal=
+function also needs ownership of the =prefix= slice that the serialized =args__t= will be appended
+to. Since =Marshal= writes to this slice, full ownership (=DfracOwn 1=) and access to the slice's
+capacity is required.
 
-After marshaling, ownership of =args__v= is returned to the caller (the third
-piece of the post condition, =own args__v args__c dq=​) at the same level of
-ownership =Marshal= was called with. Additionally, the caller learns that the
-returned slice encodes =prefix ++ enc= (the second part of the postcondition),
-with =enc= being some list of bytes which correctly has an encoding for =args__c=
+After marshaling, ownership of =args__t= is returned to the caller (the second piece of the post
+condition, =own args__t args__c dq=​) at the same level of ownership =Marshal= was called
+with. Additionally, the caller learns that the returned slice encodes =prefix ++ enc= (the third part
+of the postcondition), with =enc= being some list of bytes which correctly has an encoding for =args__c=
 (using =has_encoding=, the first part of the post condition).
 
-**** Decoding
+***** Decoding
 
 The mirror image of =wp_Encode= is naturally =wp_Decode=, which specifies the
 behavior of calling =Unmarshal=.
 
 #+begin_src coq
-Lemma wp_Decode (enc : list u8) (enc_sl : Slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
   {{{
+        is_pkg_init event_gk ∗
         ⌜ has_encoding enc args__c ⌝ ∗
-        own_slice_small enc_sl byteT dq (enc ++ suffix)
+        own_slice enc_sl dq (enc ++ suffix)
   }}}
-    event_gk.Unmarshal (slice_val enc_sl)
+    @! event_gk.Unmarshal #enc_sl
   {{{
-        args__v suff_sl, RET (args__v, suff_sl);
-        own args__v args__c (DfracOwn 1) ∗
-        own_slice_small suff_sl byteT dq suffix
+        args__t suff_sl, RET (#args__t, #suff_sl);
+        own args__t args__c (DfracOwn 1) ∗ 
+        own_slice suff_sl dq suffix
   }}}.
 
 Proof.
@@ -662,58 +535,291 @@ Proof.
 Qed.
 #+end_src
 
-The conditions for this Texan triple are basically the inverse of =wp_Encode=.
-Calling =Unmarshal= requires some level of access to a byte slice (the serialized
-struct with a potentially empty suffix) and the pure fact that the beginning of
-the byte slice encodes some coq level record =args__c=.
+The conditions for this Texan triple are basically the inverse of =wp_Encode=.  Calling =Unmarshal=
+requires some level of access to a byte slice (the serialized struct with a potentially empty
+suffix) and the pure fact that the beginning of the byte slice encodes some rocq level =args__c=.
 
-After =Unmarshal= returns, the caller learns that they have full ownership of the
-newly created struct and ownership at the same level of just the =suffix= slice.
-Note that =dq= is only bound by being a valid discardable fractional permission.
-Removing =enc= from the beginning of the slice isn't a write (which would require
-full ownership), but rather returns a new pointer to an existing location in the
-same potentially read only slice used to call =Unmarshal=.
+After =Unmarshal= returns, the caller learns that they have full ownership of the newly created struct
+and ownership at the same level of just the =suffix= slice.  Note that =dq= is only bound by being a
+valid discardable fractional permission.  Removing =enc= from the beginning of the slice isn't a write
+(which would require full ownership), but rather returns a new pointer to an existing location in
+the same potentially read only slice used to call =Unmarshal=.
+
+*** Protobuf Enums
+
+Protobuf enums are largely treated as a different type of protobuf message, following many of
+Grackle's conventions for working with messages, including:
+
+- Outputting one go package per enum.
+- Generating a simple =Marshal= and =Unmarshal= function for each enum.
+- Outputting one rocq proof file per enum.
+
+This section will use the running example of the error enum defined in
+[[testdata/proto/calendar/calendar.proto]]:
+
+#+begin_src protobuf
+enum error {
+  eOk = 0;
+  eEndOfFile = 1;
+  eUnknown = 2;
+}
+#+end_src
+
+Recall that protobuf requires enums have an element with ID number 0, which is treated as the
+default value of the enum.
+
+**** Go
+
+***** Type Definition
+
+#+begin_src go
+type E uint32
+
+const (
+	EOk        E = 0
+	EEndOfFile E = 1
+	EUnknown   E = 2
+)
+#+end_src
+
+Grackle models the type of an enum as a named =uint32=. Like the structs output from protobuf
+messages, enums are always named =E= for enum, and are expected to be referenced in other programs as
+=error_gk.E= for this example. 
+
+A /named type/ is different from a type alias, with the primary difference being that an =E= cannot be
+assigned to a =uint32=, although it still can be cast to one. See [[Open and Closed Enums]] for more details.
+
+***** Marshal
+
+#+begin_src go
+func Marshal(enc []byte, e E) []byte {
+	return marshal.WriteInt32(enc, uint32(e))
+}
+#+end_src
+
+The =Marshal= is extremely simple, basically just casts the enum value to a =uint32= and marshals the
+underlying integer. This function needs to exist to support =repeated= protobuf fields, modeled in =go=
+as =[]error_gk.E=. 
+
+***** Unmarshal
+
+#+begin_src go
+func Unmarshal(s []byte) (E, []byte) {
+	e_raw, s := marshal.ReadInt32(s)
+	return E(e_raw), s
+}
+#+end_src
+
+Likewise, the =Unmarshal= function reads one 32-bit integer and returns the cast results. While the =go=
+code makes no provision for unmarshaling a value *not* defined in the proto file, the rocq proof for
+these functions will require knowing that the encoded value is one of the options defined in the
+proto file.
+
+***** Helper Global Variables
+
+#+begin_src go
+var Name = map[uint32]string{
+	0: "eOk",
+	1: "eEndOfFile",
+	2: "eUnknown",
+}
+
+var Value = map[string]uint32{
+	"eOk":        0,
+	"eEndOfFile": 1,
+	"eUnknown":   2,
+}
+#+end_src
+
+These global maps are defined as a convenience to the go programming, mapping the underlying =uint32=
+value to the name of the enum option defined in the proto file and via versa. This enables enum
+values to be round tripped through a =string= if desired.
+
+***** String  
+
+#+begin_src go
+func (e E) String() string {
+	return Name[uint32(e)]
+}
+#+end_src
+
+This is the standard go =String= function, which is used by (for example) the =%v= format specifier to
+print the enum value. This could be useful for debugging or logging purposes in a verified go
+project.
+
+**** Rocq
+
+The rocq proof will be generated in =error_proof_gk.v=.
+
+***** Package Initialization
+
+Unlike the packages generated from a protobuf message, the go code generated for an enum includes
+global variables. In perennial, this means that we have prove during the initialization process
+that the map variables are initialized with the correct value. The package initialization predicate
+will expose the fixed values in the go code using a discarded fraction, so verified code cannot
+modify these maps.
+
+#+begin_src coq
+Definition name_map_def : gmap w32 go_string := list_to_map [
+                                                ((W32 0), "eOk"%go);
+                                                ((W32 1), "eEndOfFile"%go);
+                                                ((W32 2), "eUnknown"%go)
+                                              ].
+Definition value_map_def : gmap go_string w32 := list_to_map [
+                                                 ("eOk"%go, (W32 0));
+                                                 ("eEndOfFile"%go, (W32 1));
+                                                 ("eUnknown"%go, (W32 2))
+                                               ].
+Definition is_initialized : iProp Σ :=
+  ∃ name_map value_map,
+  "HglobalName" ∷ (global_addr error_gk.Name) ↦□ name_map ∗
+  "Hname" ∷ name_map ↦$□ name_map_def ∗
+  "HglobalValue" ∷ (global_addr error_gk.Value) ↦□ value_map ∗
+  "Hvalue" ∷ value_map ↦$□ value_map_def.
+
+#[global] Instance : IsPkgInit error_gk := define_is_pkg_init is_initialized.
+#[global] Instance : GetIsPkgInitWf error_gk := build_get_is_pkg_init_wf.
+
+Lemma wp_initialize' get_is_pkg_init :
+  get_is_pkg_init_prop error_gk get_is_pkg_init ->
+  {{{ own_initializing get_is_pkg_init ∗ is_go_context ∗ □ is_pkg_defined error_gk }}}
+    error_gk.initialize' #()
+  {{{ RET #(); own_initializing get_is_pkg_init ∗ is_pkg_init error_gk }}}.
+
+Proof.
+  (* Generated, but omitted from this README *)
+Qed.
+#+end_src
+
+***** Inductive Definition
+
+While the go code models the enum as /technically/ open (meaning that you can define new members of
+the enum's type outside of the definition, i.e. with =error_gk.E(9)=), rocq has excellent support for
+inductive data types which naturally map to closed enums (meaning it is not possible to define new
+values of the type outside of the original declaration).
+
+See [[Open and Closed Enums]] for more information.
+
+#+begin_src coq 
+Inductive I :=
+| eOk
+| eEndOfFile
+| eUnknown.
+
+Definition to_tag i : w32 :=
+  match i with
+  | eOk => W32 0
+  | eEndOfFile => W32 1
+  | eUnknown => W32 2
+  end.
+#+end_src
+
+Rocq users can take advantage of the inductive type =error_gk.I= using basic rocq tactics like
+=destruct=. 
+
+***** Has Encoding & Own
+
+#+begin_src coq 
+Definition has_encoding (encoded : list u8) (args : I) : Prop :=
+  encoded = u32_le $ to_tag $ args.
+
+Definition own (args__v : error_gk.E.t) (args__c : I) (dq : dfrac) : iProp Σ :=
+  "%Herror_eq" ∷ ⌜ args__v = to_tag args__c ⌝.
+#+end_src
+
+The definitions for =has_encoding= and =own= output by Grackle follow all the rules for protobuf
+messages, but can be simplified by knowing an enum is just a single 32 bit unsigned integer. Since
+enums are modeled as an inductive type, they are by definition not [[Simple Message Optimization][simple]].
+
+***** Encode & Decode 
+
+#+begin_src coq 
+Lemma wp_Encode (args__t : error_gk.E.t) (args__c : I) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
+  {{{
+        is_pkg_init error_gk ∗
+        own args__t args__c dq ∗
+        own_slice pre_sl (DfracOwn 1) prefix ∗
+        own_slice_cap w8 pre_sl (DfracOwn 1)
+  }}}
+    @! error_gk.Marshal #pre_sl #args__t
+  {{{
+        enc enc_sl, RET #enc_sl;
+        ⌜ has_encoding enc args__c ⌝ ∗
+        own args__t args__c dq ∗
+        own_slice enc_sl (DfracOwn 1) (prefix ++ enc) ∗
+        own_slice_cap w8 enc_sl (DfracOwn 1)
+  }}}.
+
+Proof.
+  (* Generated, but omitted from this README *)
+Qed.
+
+Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : I) (suffix : list u8) (dq : dfrac):
+  {{{
+        is_pkg_init error_gk ∗  
+        own_slice enc_sl dq (enc ++ suffix) ∗
+        ⌜ has_encoding enc args__c ⌝
+  }}}
+    @! error_gk.Unmarshal #enc_sl
+  {{{
+        args__t suff_sl, RET (#args__t, #suff_sl);
+        own args__t args__c (DfracOwn 1) ∗
+        own_slice suff_sl dq suffix
+  }}}.
+
+Proof.
+  (* Generated, but omitted from this README *)
+Qed.
+#+end_src
+
+These lemma definitions exactly match the ones generated for protobuf messages, which is
+intentional, so that enums can be marshaled and unmarhaled in the same style as messages.
 
 ** Technical Considerations
 
-There are several technical considerations for a piece of software like grackle,
-relating to API design, proof generation and the underlying tool-chain. While
-the below discussion is non-exhaustive, they are some points I have additional
-comments on.
+There are several technical considerations for a piece of software like grackle, relating to API
+design, proof generation and the underlying tool-chain. While the below discussion is
+non-exhaustive, they are some points I have additional comments on.
 
 *** Stateless Design
 
-Grackle builds on top of the existing [[https://github.com/tchajed/marshal][marshal]] library for perennial, which
-provides a set of "primitives" for reading integers, byte slices and other go
-types. This library provides two APIs, a stateful and stateless one. The
-stateful version requires the programmer to create an object which internal
-tracks pervious write calls before expelling a binary blob when marshaling is
-complete (not unlike a java =StringBuilder=). The nice feature about this design
-is that it removes the requirement that the programmer track the =prefix= /
-=suffix= slices.
+Grackle builds on top of the existing [[https://github.com/tchajed/marshal][marshal]] library for perennial, which provides a set of
+"primitives" for reading integers, byte slices and other go types. This library provides two APIs, a
+stateful and stateless one. The stateful version requires the programmer to create an object which
+internal tracks pervious write calls before expelling a binary blob when marshaling is complete (not
+unlike a java =StringBuilder=). The nice feature about this design is that it removes the requirement
+that the programmer track the =prefix= / =suffix= slices.
 
-Grackle uses the stateless API which always return the =prefix= / =suffix= slices
-and adopts that style itself. The reason for this is mostly that this style is
-easier to reason about within perennial and enables stronger compositionality
-between messages. While grackle is technically a simple compiler, it doesn't
-employ standard compiler techniques like generating then transforming an
-abstract syntax tree, instead using go's template package (see [[#go-templates][go templates]] for
-more information). It's ability to track complex and contextual information like
-managing state is limited, particularly on the coq side (I think I could generate
-stateful go code, but it would make the coq proofs much more challenging).
-Ultimately the stateless design is a way to reduce complexity for an already
-complex piece of software.
+Grackle uses the stateless API which always return the =prefix= / =suffix= slices and adopts that style
+itself. The reason for this is mostly that this style is easier to reason about within perennial and
+enables stronger compositionality between messages. While grackle is technically a simple compiler,
+it doesn't employ standard compiler techniques like generating then transforming an abstract syntax
+tree, instead using go's template package (see [[#go-templates][go templates]] for more information). It's ability to
+track complex and contextual information like managing state is limited, particularly on the rocq
+side. Ultimately the stateless design is a way to reduce complexity for an already complex piece of
+software.
+
+*** Open and Closed Enums
+
+TODO
+
+*** Map Literals
+
+TODO
+
+*** Simple Message Optimization 
+
+TODO
 
 *** Proof Structure
 
-The body of the main =wp_Encode= and =wp_Decode= lemmas aren't given in this README,
-but there are some interesting things I have to say about their structure. These
-proofs can be found in the [[file:testdata/out/coq/event_proof.v][event_proof.v]] file.
+The body of the main =wp_Encode= and =wp_Decode= lemmas aren't given in this README, but there are some
+interesting things I have to say about their structure. These proofs can be found in the
+[[file:testdata/out/rocq/event_proof.v][event_proof.v]] file.
 
-As first described during go code generation, the proofs for these important
-lemmas can be thought of as a proof setup, followed by a series of proof
-snippets, one for each field in the proto message and then a conclusion.
-Visually, that might look something like this:
+As first described during code generation, the proofs for these important lemmas can be thought of
+as a proof setup, followed by a series of proof snippets, one for each field in the proto message
+and then a conclusion. Visually, that might look something like this:
 
 #+begin_src
 Proof.
@@ -759,105 +865,93 @@ Proof.
 Qed.
 #+end_src
 
-At first pass, it seems difficult to find proof snippets which can be
-arbitrarily ordered and instantiated. Fortunately, we can effectively break the
-task of marshaling or unmarshaling a struct down to operating on the head or end
-of a slice at a field level. Each snippet requires the same set of hypotheses,
-such as =Hsl= which tracks the =prefix= / =suffix= slices. Thus, it's the job of the
-proof setup to create the initial hypotheses needed to process each field. Since
-perennial employs an affine logic, each snippet then has to reintroduce the next
-version of any common hypotheses it consumes. The snippets also leak information
-about each field further down the chain of fields until the proof conclusion is
-reached. The conclusion's role is to show that the post condition as been
-satisfied, and to do this it assumes that all of the needed hypotheses have been
-created with a well-known name by the corresponding snippet.
+At first pass, it seems difficult to find proof snippets which can be arbitrarily ordered and
+instantiated. Fortunately, we can effectively break the task of marshaling or unmarshaling a struct
+down to operating on the head or end of a slice at a field level. Each snippet requires the same set
+of hypotheses, such as =Hsl= which tracks the =prefix= / =suffix= slices. Thus, it's the job of the proof
+setup to create the initial hypotheses needed to process each field. Since perennial employs an
+affine logic, each snippet then has to reintroduce the next version of any common hypotheses it
+consumes. The snippets also leak information about each field further down the chain of fields until
+the proof conclusion is reached. The conclusion's role is to show that the post condition as been
+satisfied, and to do this it assumes that all of the needed hypotheses have been created with a
+well-known name by the corresponding snippet.
 
-This type of proof design incentivizes compact, highly local proof snippets
-which ignore everything that isn't related to the field at hand. However in the
-conclusion, grackle needs to tie everything together. Consider the conclusion
-from the =Event= =Marshal= proof:
+This type of proof design incentivizes compact, highly local proof snippets which ignore everything
+that isn't related to the field at hand. However in the conclusion, grackle needs to tie everything
+together. Consider the conclusion from the =calendar_gk= =wp_Encode= proof:
 
 #+begin_src coq
-  wp_load. iApply "HΦ". iModIntro. rewrite -?app_assoc.
-  iFrame. iPureIntro.
-
-  unfold has_encoding. split.
-  {
-  exists startTime_enc, endTime_enc.
-  rewrite ?string_bytes_length.
-  rewrite Hargs_name_sz.
-  rewrite ?w64_to_nat_id. exact.
-
-  } done.
+  unfold has_encoding.
+  split; last done.
+  exists events_enc.
+  split; first repeat (f_equal; try word).
+  all: try done.
+  rewrite <- Hown_events_sz'.
+  done. 
 #+end_src
 
-The part in the braces needs to know that =startTime_enc=, =endTime_enc= and
-=Hargs_name_sz= all exist, since those are variables and propositions generated
-over the course of the proof. The existence of these non-local proof constructs
-mandates the usage of well-know names for everything that needs to referenced
-later. Maintaining these types of structures are required but more challenging
-than individual proof snippets. I like to believe that this requirement also
-enables grackle proofs to be highly readable and understanding by the proof
-engineer.
+This generated snippet needs to know that =events_enc= and =Hown_events_sz= exist,
+since those are variables and propositions generated over the course of the proof. The existence of
+these non-local proof constructs mandates the usage of well-know names for everything that needs to
+referenced later. Maintaining these types of structures are required but more challenging than
+individual proof snippets. I like to believe that this requirement also enables grackle proofs to be
+highly readable and understandable by the proof engineer.
 
 *** Go Templates
 
-Grackle makes extensive use of the [[https://pkg.go.dev/text/template][text/template]] templating package in the go
-standard library. The templates them selves can be found in [[file:internal/templates/][internal/templates]].
-Note that grackle uses =<​<= and =>​>= as template delimiters to avoid conflicts with
-Texan triples. This library is surprisingly expressive and powerful, but does
-have limitations.
+Grackle makes extensive use of the [[https://pkg.go.dev/text/template][text/template]] templating package in the go standard library. The
+templates themselves can be found in [[file:internal/templates/][internal/templates]]. Note that grackle uses =<​<= and =>​>= as
+template delimiters to avoid conflicts with Texan triples. This library is surprisingly expressive
+and powerful, but does have limitations.
 
-- I'm realizing as I write this README that the templates /do/ support comments
-  using =<​</*= and =*/>​>=, so adding some comments would improve readability.
-- The templates are all handcrafted. This is a boon as much as a con, since I
-  can finely control things like indentation in the Coq output, but it often
-  leads to hard to read templates that may do the same thing in multiple
-  different ways.
-- The templates struggle to track state between templates, which influenced the
-  choice to use the stateless API for grackle.
+- Go templates, particularly with non-standard templating delimiters, do not have syntax
+  highlighting in any text editor I use, which can match is challenging to match up ~<<end>>~ with the
+  corresponding =if= or =range= constructs.
+- While the templates /do/ support comments using =<​</*= and =*/>​>=,, the templates used in Grackle are
+  largely uncommented, since without syntax highlighting I prefer to keep each template as light as possible.
+- The templates are all handcrafted. This is a boon as much as a con, since I can finely control
+  things like indentation in the Rocq output, but it often leads to hard to read templates that may
+  do the same thing in multiple different ways.
+- The templates struggle to track state between templates, which influenced the choice to use the
+  stateless API for grackle.
 
-However I don't really want to be excessively negative here. The templating
-library did include several features I was surprised by, including:
+However I don't really want to be excessively negative here. The templating library did include
+several features I was surprised by, including:
 
-- Recursive templates. Generating things like the =to_val'= function and
-  ="%Hown_struct"= require carefully balancing nested and skewed parentheses.
-  While these could be tracked via a =range= construct, I find that a recursive
-  template is more effective.
-- Exposing custom =go= functions to the templates. In the =setupTemplates= function
-  in [[file:grackle.go][grackle.go]], lots of custom helper functions are exposed to the templates. A
-  lot of these are basic string manipulation functions, but several extend the
-  functionality of the templates themselves such as
-  - =callTemplate= which enabled support for dynamically building the name of the
-    template to call.
-  - =dict= which I use to bundle multiple "arguments" into one template call since
-    the templates only support taking one argument by default.
-- Extremely fine-grained control over the style of the output code. This is
-  particularly relevant for the coq code since the go code passes through
-  =gofmt= before becoming output. This enables me to pursue /readable/ automatically
-  generated coq which helps with debugging the proof snippets themselves.
+- Recursive templates. These were used in several places in the version of Grackle which targeted
+  old goose, although the current version has been simplified sufficiently to eliminate the need for
+  recursive templates.
+- Exposing custom =go= functions to the templates. In the =setupTemplates= function in [[file:grackle.go][grackle.go]], lots
+  of custom helper functions are exposed to the templates. A lot of these are basic string
+  manipulation functions, but several extend the functionality of the templates themselves such as
+  - =callTemplate= which enabled support for dynamically building the name of the template to call.
+  - =dict= which I use to bundle multiple "arguments" into one template call since the templates only
+    support taking one argument by default.
+- Extremely fine-grained control over the style of the output code. This is particularly relevant
+  for the rocq code since the go code passes through =gofmt= before becoming output. This enables me to
+  pursue /readable/ automatically generated rocq which helps with debugging the proof snippets
+  themselves.
 
 ** Development
 
-Grackle development makes use of several tools selected solely for my own
-convenience, however they aren't required to use or development the software.
-The only hard requirement is to have =go= and =protoc= installed (although I'd
-highly recommend having Coq installed to so that you can compile the output
-proofs). Notably, no code generation plugin is needed for =protoc=. Grackle uses
-it to generate a descriptor set which can be parsed by the go protobuf libraries
-to interpret the structure of the input proto files.
+Grackle development makes use of several tools selected solely for my own convenience, however they
+aren't required to use or development the software. The only hard requirement is to have =go= and
+=protoc= installed (although I'd highly recommend having Rocq installed to so that you can compile the
+output proofs). Notably, no code generation plugin is needed for =protoc=. Grackle uses it to generate
+a descriptor set which can be parsed by the go protobuf libraries to interpret the structure of the
+input proto files.
 
 Other things to be aware of in the grackle repository:
 
-- =direnv= is setup to use a =nix= flake. This is because I use nixos as my primary
-  operating system. The flake notably installs go, coq, protoc and [[https://github.com/goose-lang/goose][goose]]. Goose
-  is invoked by grackle via a go package, so it does not need to be installed on
-  your system, but I've found it helpful to have around.
-- The =run_tests.fish= script runs grackle over the example proto files, then
-  checks that all the output code compiles. Finally it runs the go test suite,
-  which is admittedly limited since it's easy to generate code that looks
-  correct but doesn't compile. Running this script provides a higher level of
-  confidence than the go test suite itself.
+- =direnv= is setup to use a =nix= flake. This is because I use nixos as my primary operating
+  system. The flake notably installs go, rocq, protoc and [[https://github.com/goose-lang/goose][goose]]. Goose is invoked by grackle via a go
+  package, so it does not need to be installed on your system, but I've found it helpful to have
+  around.
+- The =run_tests.fish= script runs grackle over the example proto files, then checks that all the
+  output code compiles. Finally it runs the go test suite, which is admittedly limited since it's
+  easy to generate code that looks correct but doesn't compile. Running this script provides a
+  higher level of confidence than the go test suite itself.
 
-#  LocalWords:  Protobuf proto coq encodings deserialized struct deserializing
-#  LocalWords:  nixos compositionality templating
+# Local Variables:
+# jinx-local-words: "compositionality enum enums nixos proto protobuf protoc templating"
+# End:
