@@ -389,7 +389,9 @@ is much more complex.
 For a top-level message, grackle will generate a proof file with the lower-cased
 message name plus the =_proof_gk= suffix. That file will contain:
 - A rocq type =C= corresponding to the go struct and the proto message. This could either be a rocq
-  record or an alias to the goose type directly. See the [[Simple Message Optimization]] for more details.
+  record or an alias to the goose type directly. See the [[#simple-message-optimization
+  ][Simple Message Optimization]] for more
+  details.
 - A definition =has_encoding= of what it means for a byte slice (or list of bytes
   in rocq) to encode the record.
 - A separation logic proposition =own= about what it means to own a struct.
@@ -420,11 +422,10 @@ Record C :=
 
 ***** Has Encoding
 
-Next grackle produces a =has_encoding= definition which relates the record =C= to
-the wire format. In cases where the field is an integer or similar stand-alone
-field, it is directly converted into a sequence of bytes and appended together.
-Nested messages are a bit different though. The definition is designed to be
-compositional, so =Event.has_encoding= asserts that there exists some sequence of
+Next grackle produces a =has_encoding= definition which relates the record =C= to the wire format. In
+cases where the field is an integer or similar stand-alone field, it is directly converted into a
+sequence of bytes and appended together.  Nested messages are a bit different though. The definition
+is designed to be compositional, so =Event.has_encoding= asserts that there exists some sequence of
 bytes which faithfully encodes the =startTime= and =endTime= time stamps using the
 =TimeStamp.has_encoding= definition.
 
@@ -540,8 +541,8 @@ requires some level of access to a byte slice (the serialized struct with a pote
 suffix) and the pure fact that the beginning of the byte slice encodes some rocq level =args__c=.
 
 After =Unmarshal= returns, the caller learns that they have full ownership of the newly created struct
-and ownership at the same level of just the =suffix= slice.  Note that =dq= is only bound by being a
-valid discardable fractional permission.  Removing =enc= from the beginning of the slice isn't a write
+and ownership at the same level of just the =suffix= slice. Note that =dq= is only bound by being a
+valid discardable fractional permission. Removing =enc= from the beginning of the slice isn't a write
 (which would require full ownership), but rather returns a new pointer to an existing location in
 the same potentially read only slice used to call =Unmarshal=.
 
@@ -587,7 +588,7 @@ messages, enums are always named =E= for enum, and are expected to be referenced
 =error_gk.E= for this example. 
 
 A /named type/ is different from a type alias, with the primary difference being that an =E= cannot be
-assigned to a =uint32=, although it still can be cast to one. See [[Open and Closed Enums]] for more details.
+assigned to a =uint32=, although it still can be cast to one. See [[#open-and-closed-enums][Open and Closed Enums]] for more details.
 
 ***** Marshal
 
@@ -698,7 +699,7 @@ the enum's type outside of the definition, i.e. with =error_gk.E(9)=), rocq has 
 inductive data types which naturally map to closed enums (meaning it is not possible to define new
 values of the type outside of the original declaration).
 
-See [[Open and Closed Enums]] for more information.
+See [[#open-and-closed-enums][Open and Closed Enums]] for more information.
 
 #+begin_src coq 
 Inductive I :=
@@ -729,7 +730,7 @@ Definition own (args__v : error_gk.E.t) (args__c : I) (dq : dfrac) : iProp Σ :=
 
 The definitions for =has_encoding= and =own= output by Grackle follow all the rules for protobuf
 messages, but can be simplified by knowing an enum is just a single 32 bit unsigned integer. Since
-enums are modeled as an inductive type, they are by definition not [[Simple Message Optimization][simple]].
+enums are modeled as an inductive type, they are by definition not [[#simple-message-optimization][simple]].
 
 ***** Encode & Decode 
 
@@ -801,15 +802,67 @@ software.
 
 *** Open and Closed Enums
 
-TODO
+There are two ways to define the behavior of an enumeration, as discussed in the [[https://protobuf.dev/programming-guides/enum/][protobuf
+documentation]]: open enums and closed enums.
+
+- An open enum (or really open inductive) allows you to define new members of the type ad-hoc. So if
+  a =2= was parsed into an enum with only defined protobuf values for =0= and =1=, some representation of
+  =2= would be passed into a program which may not be able to handle this value.
+- A closed enum which encounters an unknown value during a parse would report the default value for
+  the enum, refusing to allow an unknown value in the enum.
+
+The protobuf specification states that =proto3=, the version targeted by Grackle, should treat enums
+as open. Their motivation is to avoid unknown enum values from being dropped or reordered by brokers
+in the middle of a protobuf application. However, there are stronger reasoning benefits in rocq by
+modeling the enum as an =Inductive= type. Thus, Grackle breaks from the protobuf spec to model an enum
+as an =Inductive=, which you saw under [[#rocq-1][rocq enums]] in the code generation guide.
 
 *** Map Literals
 
-TODO
+Support for enums in Grackle came with global variable maps, inspired by the actual protobuf enum
+API. However, support in perennial for map literals was limited. I worked on improving this area of
+perennial. Goose would already output a map literal as a list of key-value pairs. However, it was
+difficult to convert from a pair of goose lang value to a goose lang value that is a tuple. I
+experimented with adding this rule to tactics like =wp_pures=, but that proved too aggressive and
+broke some other perennial features. Rather, it proved beneficial to have the tuple =IntoVal= instance
+but not include it in the default automation. Then it can be manually applied when needed to reduce
+a list of pairs of values to a list of pair values. I also contributed =wp_map_literal=, which takes a
+list of the new =map.kv_entry= goose lang constructs and returns a goose lang map  containing that set
+of key-value pairs.
+
+This work was implemented in [[https://github.com/mit-pdos/perennial/pull/323][perennial #323]].
 
 *** Simple Message Optimization 
 
-TODO
+Since new goose structs now have accessible fields, at first it seemed possible to have Grackle for
+new goose not use custom rocq records, like the old goose version had. Early manual examples for
+things like the =TimeStamp= and =Event= protobuf messages were even written which only used the goose
+generated representation of =timestamp_gk.S= and =event_gk.S=. However, as we pushed for more features
+in Grackle, it became clear that custom records were going to be required. The driving example here
+was for slices. Representing a slice in perennial requires connecting a =slice.t= to some rocq level
+list of objects of the type of the slice. Thus, we needed a way to track and move around this list,
+which led to the re-introduction of the custom records and the =own= predicate.
+
+However, since it was possible to write some Grackle proofs without a custom record type, I wanted
+to preserve the simplicity when possible, since this would be easier for Grackle users when =own= can
+just take the same parameter twice. 
+
+Formally, a message is simple if:
+
+- It doesn't contain an enum field
+- It doesn't contain a repeated field of any type.
+- It doesn't contain a field with protobuf type =bytes=.
+- It doesn't contain a message which isn't simple.
+
+The last requirement proved to be the tricky one, since checking if a message is simple now requires
+checking if all the nested messages are simple. Implementing this required in implicit topological
+sort of the messages in a protobuf file to determine the dependencies among messages. Also note that
+protobuf itself is fine with recursive or mutually recursive message definitions, which need to be
+handled to prevent Grackle from entering an infinite loop. Thus when Grackle detects such a loop
+(simply speaking by having a mechanism to check if Grackle currently in the process of determining
+weather the message it's about to check is simple), it assumes that the messages are *not* simple. It
+is always safe to assume a message is not simple when it is, but assuming that a message is simple
+when it's not will lead to failing proofs.
 
 *** Proof Structure
 
