@@ -4,6 +4,7 @@ Require Export New.generatedproof.github_com.goose_lang.primitive.
 Require Export New.generatedproof.github_com.goose_lang.std.
 Require Export New.generatedproof.github_com.tchajed.marshal.
 Require Export New.generatedproof.github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
+Require Export New.generatedproof.github_com.mjschwenne.grackle.testdata.out.go.user_gk.
 Require Export New.golang.theory.
 
 Require Export New.code.github_com.mjschwenne.grackle.testdata.out.go.event_gk.
@@ -21,6 +22,7 @@ Record t := mk {
   Name' : go_string;
   StartTime' : timestamp_gk.S.t;
   EndTime' : timestamp_gk.S.t;
+  Attendees' : slice.t;
 }.
 End def.
 End S.
@@ -29,20 +31,21 @@ Section instances.
 Context `{ffi_syntax}.
 
 Global Instance settable_S : Settable S.t :=
-  settable! S.mk < S.Id'; S.Name'; S.StartTime'; S.EndTime' >.
+  settable! S.mk < S.Id'; S.Name'; S.StartTime'; S.EndTime'; S.Attendees' >.
 Global Instance into_val_S : IntoVal S.t :=
   {| to_val_def v :=
     struct.val_aux event_gk.S [
     "Id" ::= #(S.Id' v);
     "Name" ::= #(S.Name' v);
     "StartTime" ::= #(S.StartTime' v);
-    "EndTime" ::= #(S.EndTime' v)
+    "EndTime" ::= #(S.EndTime' v);
+    "Attendees" ::= #(S.Attendees' v)
     ]%struct
   |}.
 
 Global Program Instance into_val_typed_S : IntoValTyped S.t event_gk.S :=
 {|
-  default_val := S.mk (default_val _) (default_val _) (default_val _) (default_val _);
+  default_val := S.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
 |}.
 Next Obligation. solve_to_val_type. Qed.
 Next Obligation. solve_zero_val. Qed.
@@ -61,17 +64,21 @@ Proof. solve_into_val_struct_field. Qed.
 Global Instance into_val_struct_field_S_EndTime : IntoValStructField "EndTime" event_gk.S S.EndTime'.
 Proof. solve_into_val_struct_field. Qed.
 
+Global Instance into_val_struct_field_S_Attendees : IntoValStructField "Attendees" event_gk.S S.Attendees'.
+Proof. solve_into_val_struct_field. Qed.
+
 
 Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_S Id' Name' StartTime' EndTime':
+Global Instance wp_struct_make_S Id' Name' StartTime' EndTime' Attendees':
   PureWp True
     (struct.make #event_gk.S (alist_val [
       "Id" ::= #Id';
       "Name" ::= #Name';
       "StartTime" ::= #StartTime';
-      "EndTime" ::= #EndTime'
+      "EndTime" ::= #EndTime';
+      "Attendees" ::= #Attendees'
     ]))%struct
-    #(S.mk Id' Name' StartTime' EndTime').
+    #(S.mk Id' Name' StartTime' EndTime' Attendees').
 Proof. solve_struct_make_pure_wp. Qed.
 
 
@@ -80,7 +87,8 @@ Global Instance S_struct_fields_split dq l (v : S.t) :
     "HId" ∷ l ↦s[event_gk.S :: "Id"]{dq} v.(S.Id') ∗
     "HName" ∷ l ↦s[event_gk.S :: "Name"]{dq} v.(S.Name') ∗
     "HStartTime" ∷ l ↦s[event_gk.S :: "StartTime"]{dq} v.(S.StartTime') ∗
-    "HEndTime" ∷ l ↦s[event_gk.S :: "EndTime"]{dq} v.(S.EndTime')
+    "HEndTime" ∷ l ↦s[event_gk.S :: "EndTime"]{dq} v.(S.EndTime') ∗
+    "HAttendees" ∷ l ↦s[event_gk.S :: "Attendees"]{dq} v.(S.Attendees')
   ).
 Proof.
   rewrite /named.
@@ -91,6 +99,7 @@ Proof.
   simpl_one_flatten_struct (# (S.Id' v)) (event_gk.S) "Id"%go.
   simpl_one_flatten_struct (# (S.Name' v)) (event_gk.S) "Name"%go.
   simpl_one_flatten_struct (# (S.StartTime' v)) (event_gk.S) "StartTime"%go.
+  simpl_one_flatten_struct (# (S.EndTime' v)) (event_gk.S) "EndTime"%go.
 
   solve_field_ref_f.
 Qed.
@@ -111,7 +120,8 @@ Global Instance is_pkg_defined_pure_event_gk : IsPkgDefinedPure event_gk :=
       is_pkg_defined_pure code.github_com.goose_lang.primitive.primitive ∧
       is_pkg_defined_pure code.github_com.goose_lang.std.std ∧
       is_pkg_defined_pure code.github_com.tchajed.marshal.marshal ∧
-      is_pkg_defined_pure code.github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.timestamp_gk;
+      is_pkg_defined_pure code.github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.timestamp_gk ∧
+      is_pkg_defined_pure code.github_com.mjschwenne.grackle.testdata.out.go.user_gk.user_gk;
   |}.
 
 #[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
@@ -122,7 +132,8 @@ Global Program Instance is_pkg_defined_event_gk : IsPkgDefined event_gk :=
        is_pkg_defined code.github_com.goose_lang.primitive.primitive ∗
        is_pkg_defined code.github_com.goose_lang.std.std ∗
        is_pkg_defined code.github_com.tchajed.marshal.marshal ∗
-       is_pkg_defined code.github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.timestamp_gk)%I
+       is_pkg_defined code.github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.timestamp_gk ∗
+       is_pkg_defined code.github_com.mjschwenne.grackle.testdata.out.go.user_gk.user_gk)%I
   |}.
 Final Obligation. iIntros. iFrame "#%". Qed.
 #[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.

@@ -2,6 +2,7 @@
 Require Export New.code.github_com.goose_lang.primitive.
 Require Export New.code.github_com.goose_lang.std.
 Require Export New.code.github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
+Require Export New.code.github_com.mjschwenne.grackle.testdata.out.go.user_gk.
 Require Export New.code.github_com.tchajed.marshal.
 
 From New.golang Require Import defn.
@@ -19,12 +20,13 @@ Definition S : go_type := structT [
   "Id" :: uint32T;
   "Name" :: stringT;
   "StartTime" :: timestamp_gk.S;
-  "EndTime" :: timestamp_gk.S
+  "EndTime" :: timestamp_gk.S;
+  "Attendees" :: sliceT
 ].
 
 Definition Marshal : go_string := "github.com/mjschwenne/grackle/testdata/out/go/event_gk.Marshal"%go.
 
-(* go: event_gk.go:23:6 *)
+(* go: event_gk.go:25:6 *)
 Definition Marshalⁱᵐᵖˡ : val :=
   λ: "enc" "e",
     exception_do (let: "e" := (mem.alloc "e") in
@@ -47,11 +49,21 @@ Definition Marshalⁱᵐᵖˡ : val :=
     let: "$a1" := (![#timestamp_gk.S] (struct.field_ref #S #"EndTime"%go "e")) in
     (func_call #timestamp_gk.Marshal) "$a0" "$a1") in
     do:  ("enc" <-[#sliceT] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
+    let: "$a1" := (s_to_w64 (let: "$a0" := (![#sliceT] (struct.field_ref #S #"Attendees"%go "e")) in
+    slice.len "$a0")) in
+    (func_call #marshal.WriteInt) "$a0" "$a1") in
+    do:  ("enc" <-[#sliceT] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![#sliceT] "enc") in
+    let: "$a1" := (![#sliceT] (struct.field_ref #S #"Attendees"%go "e")) in
+    let: "$a2" := (func_call #user_gk.Marshal) in
+    (func_call #marshal.WriteSlice #user_gk.S) "$a0" "$a1" "$a2") in
+    do:  ("enc" <-[#sliceT] "$r0");;;
     return: (![#sliceT] "enc")).
 
 Definition Unmarshal : go_string := "github.com/mjschwenne/grackle/testdata/out/go/event_gk.Unmarshal"%go.
 
-(* go: event_gk.go:33:6 *)
+(* go: event_gk.go:38:6 *)
 Definition Unmarshalⁱᵐᵖˡ : val :=
   λ: "s",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -87,15 +99,33 @@ Definition Unmarshalⁱᵐᵖˡ : val :=
     let: "$r1" := "$ret1" in
     do:  ("endTime" <-[#timestamp_gk.S] "$r0");;;
     do:  ("s" <-[#sliceT] "$r1");;;
+    let: "attendeesLen" := (mem.alloc (type.zero_val #uint64T)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    (func_call #marshal.ReadInt) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("attendeesLen" <-[#uint64T] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
+    let: "attendees" := (mem.alloc (type.zero_val #sliceT)) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![#sliceT] "s") in
+    let: "$a1" := (![#uint64T] "attendeesLen") in
+    let: "$a2" := (func_call #user_gk.Unmarshal) in
+    (func_call #marshal.ReadSlice #user_gk.S) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("attendees" <-[#sliceT] "$r0");;;
+    do:  ("s" <-[#sliceT] "$r1");;;
     return: (let: "$Id" := (![#uint32T] "id") in
      let: "$Name" := (![#stringT] "name") in
      let: "$StartTime" := (![#timestamp_gk.S] "startTime") in
      let: "$EndTime" := (![#timestamp_gk.S] "endTime") in
+     let: "$Attendees" := (![#sliceT] "attendees") in
      struct.make #S [{
        "Id" ::= "$Id";
        "Name" ::= "$Name";
        "StartTime" ::= "$StartTime";
-       "EndTime" ::= "$EndTime"
+       "EndTime" ::= "$EndTime";
+       "Attendees" ::= "$Attendees"
      }], ![#sliceT] "s")).
 
 Definition vars' : list (go_string * go_type) := [].
@@ -109,13 +139,14 @@ Definition msets' : list (go_string * (list (go_string * val))) := [(S.id, []); 
     pkg_vars := vars';
     pkg_functions := functions';
     pkg_msets := msets';
-    pkg_imported_pkgs := [code.github_com.goose_lang.primitive.primitive; code.github_com.goose_lang.std.std; code.github_com.tchajed.marshal.marshal; code.github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.timestamp_gk];
+    pkg_imported_pkgs := [code.github_com.goose_lang.primitive.primitive; code.github_com.goose_lang.std.std; code.github_com.tchajed.marshal.marshal; code.github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.timestamp_gk; code.github_com.mjschwenne.grackle.testdata.out.go.user_gk.user_gk];
   |}.
 
 Definition initialize' : val :=
   λ: <>,
     package.init #event_gk.event_gk (λ: <>,
-      exception_do (do:  (timestamp_gk.initialize' #());;;
+      exception_do (do:  (user_gk.initialize' #());;;
+      do:  (timestamp_gk.initialize' #());;;
       do:  (marshal.initialize' #());;;
       do:  (std.initialize' #());;;
       do:  (primitive.initialize' #());;;

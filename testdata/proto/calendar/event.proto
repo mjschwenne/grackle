@@ -1,10 +1,12 @@
 syntax = "proto3";
 
 import "timestamp.proto";
+import "user.proto";
 
 message Event {
-    int32 id = 1;
-    string name = 4;
-    TimeStamp startTime = 2;
-    TimeStamp endTime = 3;
+  int32 id = 1;
+  string name = 4;
+  TimeStamp startTime = 2;
+  TimeStamp endTime = 3;
+  repeated User attendees = 5;
 }

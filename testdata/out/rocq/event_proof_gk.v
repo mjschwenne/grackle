@@ -12,6 +12,8 @@ From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.event
 From New.generatedproof Require Import github_com.mjschwenne.grackle.testdata.out.go.event_gk.
 From Grackle.test Require Import timestamp_proof_gk.
 From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.timestamp_gk.
+From Grackle.test Require Import user_proof_gk.
+From New.code Require Import github_com.mjschwenne.grackle.testdata.out.go.user_gk.
 
 Module Event_gk.
 Section Event_gk.
@@ -21,24 +23,38 @@ Context `{!globalsGS Σ} {go_ctx : GoContext}.
 
 #[global] Instance : IsPkgInit event_gk := define_is_pkg_init True%I.
 
-Definition C := event_gk.S.t.
+Record C :=
+    mkC {
+        id' :  u32;
+        name' :  go_string;
+        startTime' :  TimeStamp_gk.C;
+        endTime' :  TimeStamp_gk.C;
+        attendees' : list User_gk.C;
+        }.
 
 Definition has_encoding (encoded:list u8) (args:C) : Prop :=
-  ∃ (startTime_enc endTime_enc : list u8), 
-  encoded = (u32_le args.(event_gk.S.Id')) ++
-              (u64_le $ length $ args.(event_gk.S.Name')) ++ args.(event_gk.S.Name') ++
+  ∃ (startTime_enc endTime_enc attendees_enc : list u8), 
+  encoded = (u32_le args.(id')) ++
+              (u64_le $ length $ args.(name')) ++ args.(name') ++
               startTime_enc ++
-              endTime_enc
-  /\ length args.(event_gk.S.Name') < 2^64
-  /\ TimeStamp_gk.has_encoding startTime_enc args.(event_gk.S.StartTime')
-  /\ TimeStamp_gk.has_encoding endTime_enc args.(event_gk.S.EndTime').
+              endTime_enc ++
+              (u64_le $ length $ args.(attendees')) ++ attendees_enc
+  /\ length args.(name') < 2^64
+  /\ TimeStamp_gk.has_encoding startTime_enc args.(startTime')
+  /\ TimeStamp_gk.has_encoding endTime_enc args.(endTime')
+  /\ encodes attendees_enc args.(attendees') User_gk.has_encoding
+  /\ length args.(attendees') < 2^64.
 
 Definition own (args__v: event_gk.S.t) (args__c: C) (dq: dfrac) : iProp Σ :=
-  "%Hown_id" ∷ ⌜ args__v.(event_gk.S.Id') = args__c.(event_gk.S.Id') ⌝ ∗
-  "%Hown_name" ∷ ⌜ args__v.(event_gk.S.Name') = args__c.(event_gk.S.Name') ⌝ ∗
-  "%Hown_name_len" ∷ ⌜ length args__c.(event_gk.S.Name') < 2^64 ⌝ ∗
-  "Hown_startTime" ∷ TimeStamp_gk.own args__v.(event_gk.S.StartTime') args__c.(event_gk.S.StartTime') dq ∗
-  "Hown_endTime" ∷ TimeStamp_gk.own args__v.(event_gk.S.EndTime') args__c.(event_gk.S.EndTime') dq.
+  ∃ (l__attendees : list user_gk.S.t), 
+  "%Hown_id" ∷ ⌜ args__v.(event_gk.S.Id') = args__c.(id') ⌝ ∗
+  "%Hown_name" ∷ ⌜ args__v.(event_gk.S.Name') = args__c.(name') ⌝ ∗
+  "%Hown_name_len" ∷ ⌜ length args__c.(name') < 2^64 ⌝ ∗
+  "Hown_startTime" ∷ TimeStamp_gk.own args__v.(event_gk.S.StartTime') args__c.(startTime') dq ∗
+  "Hown_endTime" ∷ TimeStamp_gk.own args__v.(event_gk.S.EndTime') args__c.(endTime') dq ∗
+  "Hown_attendees_sl" ∷ own_slice args__v.(event_gk.S.Attendees') dq l__attendees ∗
+  "Hown_attendees_own" ∷ ([∗ list] x;c ∈ l__attendees;args__c.(attendees'), User_gk.own x c dq) ∗
+  "%Hown_attendees_len" ∷ ⌜ length l__attendees < 2^64 ⌝.
 
 Lemma wp_Encode (args__t : event_gk.S.t) (args__c : C) (pre_sl : slice.t) (prefix : list u8) (dq : dfrac):
   {{{
@@ -77,13 +93,32 @@ Proof.
   iIntros (endTime_enc ?) "(%Hargs_endTime_enc & Hown_endTime & Hsl & Hcap)".
   wp_auto.
 
+  wp_apply (wp_WriteInt with "[$Hsl $Hcap]").
+  iIntros (?) "[Hsl Hcap]". wp_auto.
+
+  iDestruct (own_slice_len with "Hown_attendees_sl") as "[%Hown_attendees_sz %Hown_attendees_sz_nonneg]".
+  iDestruct (big_sepL2_length with "Hown_attendees_own") as "%Hown_attendees_sz'".
+  rewrite Hown_attendees_sz' in Hown_attendees_sz.
+  wp_apply (wp_WriteSlice with "[$Hsl $Hcap $Hown_attendees_sl $Hown_attendees_own]").
+  {
+    iIntros (????) "!>".
+    iIntros (?) "(Hown & Hsl & Hcap) HΦ".
+    wp_apply (User_gk.wp_Encode with "[$Hown $Hsl $Hcap]").
+    iApply "HΦ".
+  }
+  iIntros (attendees_enc attendees_sl') "(Hown_attendees & Hown_attendees_own & %Henc_attendees & Hsl & Hcap)".
+  wp_auto.
+
   iApply "HΦ". rewrite -?app_assoc.
   iFrame. iPureIntro.
 
   unfold has_encoding.
   split; last done.
-  exists startTime_enc, endTime_enc.
-  split. all: congruence || done. 
+  exists startTime_enc, endTime_enc, attendees_enc.
+  split; first repeat (f_equal; try word).
+  all: try done.
+  rewrite <- Hown_attendees_sz'.
+  done. 
 Qed.
 
 Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list u8) (dq : dfrac):
@@ -102,7 +137,7 @@ Lemma wp_Decode (enc : list u8) (enc_sl : slice.t) (args__c : C) (suffix : list 
 Proof.
   wp_start as "[%Henc Hsl]". wp_auto.
   unfold has_encoding in Henc.
-  destruct Henc as (startTime_enc & endTime_enc & Henc & Hlen_name & Henc_startTime & Henc_endTime ).
+  destruct Henc as (startTime_enc & endTime_enc & attendees_enc & Henc & Hlen_name & Henc_startTime & Henc_endTime & Henc_attendees & Hattendees_sz ).
   rewrite Henc. rewrite -?app_assoc.
 
   wp_apply (wp_ReadInt32 with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
@@ -119,6 +154,20 @@ Proof.
 
   wp_apply (TimeStamp_gk.wp_Decode endTime_enc with "[$Hsl]"); first done.
   iIntros (endTime__v ?) "[Hown_endTime Hsl]". wp_auto.
+
+  wp_apply (wp_ReadInt with "[$Hsl]"). iIntros (?) "Hsl". wp_auto.
+  wp_apply (wp_ReadSlice  with "[$Hsl]").
+  {
+    iSplit; auto.
+    iSplit; first word.
+    iIntros (????) "!>".
+    iIntros (?) "[Hsl Henc] HΦ".
+    wp_apply (User_gk.wp_Decode with "[$Hsl $Henc]").
+    iApply "HΦ".
+  }
+  iIntros (???) "(Hown_attendees_sl & Hown_attendees_own & Hsl)". wp_auto.
+  iDestruct (big_sepL2_length with "Hown_attendees_own") as "%Hown_attendees_sz".
+  rewrite <- Hown_attendees_sz in Hattendees_sz.
 
   iApply "HΦ". iFrame; done.
 Qed.

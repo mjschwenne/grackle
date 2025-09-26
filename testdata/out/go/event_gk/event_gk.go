@@ -11,6 +11,7 @@ import (
 	"github.com/tchajed/marshal"
 
 	"github.com/mjschwenne/grackle/testdata/out/go/timestamp_gk"
+	"github.com/mjschwenne/grackle/testdata/out/go/user_gk"
 )
 
 type S struct {
@@ -18,6 +19,7 @@ type S struct {
 	Name      string
 	StartTime timestamp_gk.S
 	EndTime   timestamp_gk.S
+	Attendees []user_gk.S
 }
 
 func Marshal(enc []byte, e S) []byte {
@@ -26,6 +28,9 @@ func Marshal(enc []byte, e S) []byte {
 	enc = marshal.WriteLenPrefixedBytes(enc, []byte(e.Name))
 	enc = timestamp_gk.Marshal(enc, e.StartTime)
 	enc = timestamp_gk.Marshal(enc, e.EndTime)
+
+	enc = marshal.WriteInt(enc, uint64(len(e.Attendees)))
+	enc = marshal.WriteSlice[user_gk.S](enc, e.Attendees, user_gk.Marshal)
 
 	return enc
 }
@@ -37,11 +42,14 @@ func Unmarshal(s []byte) (S, []byte) {
 	name := string(std.BytesClone(nameBytes))
 	startTime, s := timestamp_gk.Unmarshal(s)
 	endTime, s := timestamp_gk.Unmarshal(s)
+	attendeesLen, s := marshal.ReadInt(s)
+	attendees, s := marshal.ReadSlice[user_gk.S](s, attendeesLen, user_gk.Unmarshal)
 
 	return S{
 		Id:        id,
 		Name:      name,
 		StartTime: startTime,
 		EndTime:   endTime,
+		Attendees: attendees,
 	}, s
 }
