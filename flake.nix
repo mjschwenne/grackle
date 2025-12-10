@@ -2,11 +2,10 @@
   description = "A Flake for Grackle Development";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/a595dde4d0d31606e19dcec73db02279db59d201";
+    nixpkgs.url = "github:/NixOS/nixpkgs/f61125a668a320878494449750330ca58b78c557";
     flake-utils.url = "github:numtide/flake-utils";
     perennial = {
-      # The github fecther doesn't support submodules for some reason...
-      url = "git+https://github.com/mit-pdos/perennial.git";
+      url = "github:mit-pdos/perennial";
       # Break circular dependency, since perennial uses grackle in CI
       inputs.grackle.follows = "/";
     };
@@ -25,6 +24,7 @@
         };
         grackle = pkgs.callPackage ./nix/grackle {};
         goose = pkgs.callPackage ./nix/goose {};
+        inherit (perennial.packages.${system}) perennialPkgs;
         perennial-pkg = perennial.packages.${system}.default;
         rocq-build = pkgs.callPackage ./nix/rocq-build {perennial = perennial-pkg;};
       in {
@@ -34,27 +34,34 @@
         };
         devShells.default = with pkgs;
           mkShell {
-            buildInputs = [
-              # Rocq deps
-              rocq-core
-              rocqPackages.stdlib
-              perennial-pkg
+            buildInputs =
+              [
+                # Go deps
+                go
+                gopls
+                goose
 
-              # Go deps
-              go
-              gopls
-              goose
+                # Protobuf deps
+                protobuf
+                protoc-gen-go
+                proto-contrib
+                protoscope
 
-              # Protobuf deps
-              protobuf
-              protoc-gen-go
-              proto-contrib
-              protoscope
-
-              # nix helpers
-              nix-update
-            ];
+                # nix helpers
+                nix-update
+              ]
+              ++ (with perennialPkgs; [
+                rocq-runtime
+                rocq-stdlib
+                coq-coqutil
+                coq-record-update
+                rocq-stdpp
+                rocq-iris
+                iris-named-props
+                perennial-pkg
+              ]);
             shellHook = ''
+              export ROCQPATH=$COQPATH
               unset COQPATH
             '';
           };
