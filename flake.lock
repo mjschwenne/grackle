@@ -255,11 +255,11 @@
         "opam-rocq-repo": "opam-rocq-repo"
       },
       "locked": {
-        "lastModified": 1765336515,
-        "narHash": "sha256-RrnHdZ40b2OKdGopgyxhINfx3nCFEzt3yuPfm9olSu8=",
+        "lastModified": 1765424788,
+        "narHash": "sha256-Om2VIPZSFUGg2f5SDkKfoeDo9uMoFmeFg9pU36kUjcI=",
         "owner": "mit-pdos",
         "repo": "perennial",
-        "rev": "7f992ac379e42d2758749d5ee5fae7d5dd77b7c1",
+        "rev": "2dd5553d9d39eece8981e6ef9bf09c6a1e8f1efd",
         "type": "github"
       },
       "original": {
