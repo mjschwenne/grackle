@@ -1,11 +1,10 @@
 {
   stdenv,
-  rocq-core,
-  rocqPackages,
   perennial,
+  perennialPkgs,
   ...
 }: let
-  rocqv = rocq-core.rocq-version;
+  rocqv = "9.1.0";
 in
   stdenv.mkDerivation {
     pname = "grackle-rocq-build";
@@ -13,17 +12,22 @@ in
 
     src = ../../.;
 
-    buildInputs = [
-      rocq-core
-      rocqPackages.stdlib
+    nativeBuildInputs = with perennialPkgs; [
+      rocq-runtime
+      rocq-stdlib
+    ];
+    buildInputs = with perennialPkgs; [
+      coq-coqutil
+      coq-record-update
+      rocq-stdpp
+      rocq-iris
+      iris-named-props
       perennial
     ];
 
-    ROCQPATH = ''
-      ${perennial}/lib/coq/${rocqv}/user-contrib:$ROCQPATH
-    '';
-
     buildPhase = ''
+      export ROCQPATH=$COQPATH
+      unset COQPATH
       make -j$NIX_BUILD_CORES
     '';
 
